@@ -1,0 +1,1 @@
+<Context antiResourceLocking='true' antiJARLocking='true'>${nl}  <WatchedResource>../WEB-INF/web.xml</WatchedResource>${nl}</Context>

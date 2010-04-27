@@ -1,0 +1,12 @@
+<project name="test" default="build" xmlns:ivy="antlib:org.apache.ivy.ant">
+    <property file="build.properties" />
+
+    <import file="${ivybuild.dir}/ivy-build-aggregate.xml" />
+    
+    <!-- ======================================================
+      Module specific targets are to be placed in the head of this file, the bottom is reserved for targets common in all modules.
+      ======================================================== -->
+    <target name="nightly-build" depends="clean-local-repository,publish-nightly">
+        <echo message="A nightly build has been created"/>
+    </target>
+</project>

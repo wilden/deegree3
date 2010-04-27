@@ -1,0 +1,75 @@
+<?template start>
+<html>
+  <head>
+    <title>deegree Feature Info</title>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+  </head>
+  <body>
+    <?feature Lakes,Forests:nature>
+    <?feature not(Lakes, Forests):nonature>
+    <table>
+      <?feature BasicPolygons:polygons>
+      <?feature not(BasicPolygons):feature>
+    </table>
+  </body>
+</html>
+
+<?template nature>
+<p>
+  A lake/forest is included.
+</p>
+
+<?template nonature>
+<p>
+  Something other than a lake/forest is included.
+</p>
+
+<?template feature>
+<tr >
+  <table <?odd:oddcolor><?even:evencolor>>
+    <tr>
+      <td colspan="2" style="border: solid black 1px;">Feature type contains <?name:map ftname></td>
+    </tr>
+    <?property *:property>
+    <tr>
+      <td>Feature ID</td>
+      <td><?gmlid></td>
+    </tr>
+    <tr>
+      <td>Feature number</td>
+      <td><?index></td>
+    </tr>
+  </table>
+</tr>
+
+<?template polygons>
+<tr>
+  <table>
+    <tr>
+      <td colspan="2" style="border: solid black 1px;">We're here for the basic polygons</td>
+    </tr>
+    <tr>
+      <td>Feature ID</td>
+      <td><?gmlid></td>
+    </tr>
+    <tr>
+      <td>Feature number</td>
+      <td><?index></td>
+    </tr>
+  </table>
+</tr>
+
+<?template property>
+<tr>
+  <td <?odd:maybegray>>No. <?index> (<?name>)</td>
+  <td <?odd:maybegray>><?value></td>
+</tr>
+
+<?map ftname>
+Autos=autos
+Forests=forest areas
+Lakes=lakes
+
+<?template oddcolor>style="background-color: #aaaaaa;"
+<?template evencolor>style="background-color: white;"
+<?template maybegray>style="background-color: #cccccc;"

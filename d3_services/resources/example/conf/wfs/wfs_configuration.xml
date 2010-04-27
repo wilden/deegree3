@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deegreeWFS configVersion="0.4.0" xmlns="http://www.deegree.org/services/wfs" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.deegree.org/services/wfs http://schemas.deegree.org/wfs/0.4.0/wfs_configuration.xsd">
+	<ServiceConfiguration>
+        <MemoryFeatureStore xmlns="http://www.deegree.org/datasource">
+            <GMLSchemaFileURL gmlVersion="GML_31">datastores/gml/philosopher/Philosopher.xsd</GMLSchemaFileURL>
+            <GMLFeatureCollectionFileURL gmlVersion="GML_31">datastores/gml/philosopher/FeatureCollection.xml</GMLFeatureCollectionFileURL>
+        </MemoryFeatureStore>
+
+        <!-- <ShapefileDataSource xmlns="http://www.deegree.org/datasource">
+            <File>/home/schneider/geodaten/gshhs_lake/hshhs_lake.shp</File>
+            <CoordinateSystem>EPSG:4326</CoordinateSystem>
+        </ShapefileDataSource>-->
+        
+	</ServiceConfiguration>
+    <PublishedInformation>
+        <SupportedVersions>
+            <Version>1.0.0</Version>
+            <Version>1.1.0</Version>
+        </SupportedVersions>
+        <EnableTransactions>true</EnableTransactions>
+    </PublishedInformation>
+</deegreeWFS>

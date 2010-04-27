@@ -1,0 +1,11 @@
+<project name="services" default="build" xmlns:ivy="antlib:org.apache.ivy.ant">
+
+    <property file="build.properties" />
+
+    <import file="${ivybuild.dir}/ivy-build-aggregate.xml" />
+    
+    <target name="nightly-build" depends="clean-local-repository,publish-nightly">
+        <echo message="A nightly build has been created"/>
+    </target>
+
+</project>

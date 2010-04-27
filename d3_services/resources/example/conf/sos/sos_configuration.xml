@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deegreeSOS configVersion="0.4.0" xmlns="http://www.deegree.org/services/sos" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:md="http://www.deegree.org/webservices" xsi:schemaLocation="http://www.deegree.org/services/sos ../../../schema/sos/0.4.0/sos_configuration.xsd">
+  <PublishedInformation>
+    <md:ServiceIdentification>
+      <md:Title>The deegree Sensor Observation Service</md:Title>
+      <md:Abstract>SOS</md:Abstract>
+      <md:Fees>None, it's free</md:Fees>
+      <md:AccessConstraints>Open to all</md:AccessConstraints>
+    </md:ServiceIdentification>
+    <SupportedVersions>
+      <Version>1.0.0</Version>
+    </SupportedVersions>
+    <OWSOptions>
+      <!-- The default,  compliant with OWS 1.1.0 spec. -->
+      <!-- HTTPStatusCodeForExceptions>400</HTTPStatusCodeForExceptions -->
+      <!-- Non standard code for CITE/TeamEngine tests. They expect 200 :/ -->
+      <!-- HTTPStatusCodeForExceptions>200</HTTPStatusCodeForExceptions -->
+    </OWSOptions>
+  </PublishedInformation>
+  <ServiceConfiguration>
+    <Offering>
+      <name>queensland</name>
+      <srsName>EPSG:4326</srsName>
+      <Datastore>
+        <Connection>
+          <Driver>org.apache.derby.jdbc.EmbeddedDriver</Driver>
+          <Url>jdbc:derby:classpath:queensland</Url>
+          <User/>
+          <Password/>
+        </Connection>
+        <Class>org.deegree.services.sos.storage.SimpleObservationDatastore</Class>
+        <Table>queensland</Table>
+        <Column type="timestamp" name="date"/>
+        <Column type="procedure" name="s_id"/>
+        <Option name="db_timezone" value="GMT"/><!-- this does not matter as the date are days -->
+      </Datastore>
+      <Procedure xlink:href="urn:ogc:object:Sensor:latlon:mt_fullstop">
+        <FeatureOfInterest xlink:href="http://wfs.deegree.org/services?SERVICE=WFS&amp;REQUEST=GetFeature&amp;FEATUREID=urn:ogc:object:Sensor:latlon:mt_fullstop"/>
+        <Sensor xlink:href="../../data/sos/mt_fullstop-sensorml.xml"/>
+        <Option name="value" value="120110A"/>
+        <Option name="long_lat_position" value="145.495 -19.207222222"/>
+      </Procedure>
+      <Procedure xlink:href="urn:ogc:object:Sensor:latlon:cape_river">
+        <FeatureOfInterest xlink:href="http://wfs.deegree.org/services?SERVICE=WFS&amp;REQUEST=GetFeature&amp;FEATUREID=urn:ogc:object:Sensor:latlon:cape_river"/>
+        <Sensor xlink:href="../../data/sos/cape_river-sensorml.xml"/>
+        <Option name="value" value="120302AB"/>
+        <Option name="long_lat_position" value="146.427222222 -20.999444444"/>
+      </Procedure>
+	    <Procedure xlink:href="urn:ogc:object:Sensor:latlon:urannah">
+        <FeatureOfInterest xlink:href="http://wfs.deegree.org/services?SERVICE=WFS&amp;REQUEST=GetFeature&amp;FEATUREID=urn:ogc:object:Sensor:latlon:urannah"/>
+        <Sensor xlink:href="../../data/sos/urannah-sensorml.xml"/>
+        <Option name="value" value="120207A"/>
+        <Option name="long_lat_position" value="148.324444444 -20.918055556"/>
+      </Procedure>
+	    <Procedure xlink:href="urn:ogc:object:Sensor:latlon:sellheim">
+        <FeatureOfInterest xlink:href="http://wfs.deegree.org/services?SERVICE=WFS&amp;REQUEST=GetFeature&amp;FEATUREID=urn:ogc:object:Sensor:latlon:sellheim"/>
+        <Sensor xlink:href="../../data/sos/sellheim-sensorml.xml"/>
+        <Option name="value" value="120002BC"/>
+        <Option name="long_lat_position" value="146.436944444 -20.00777777778"/>
+      </Procedure>
+	    <Procedure xlink:href="urn:ogc:object:Sensor:latlon:myuna">
+        <FeatureOfInterest xlink:href="http://wfs.deegree.org/services?SERVICE=WFS&amp;REQUEST=GetFeature&amp;FEATUREID=urn:ogc:object:Sensor:latlon:myuna"/>
+        <Sensor xlink:href="../../data/sos/myuna-sensorml.xml"/>
+        <Option name="value" value="120205A"/>
+        <Option name="long_lat_position" value="147.596388889 -20.583611111"/>
+      </Procedure>
+	    <Procedure xlink:href="urn:ogc:object:Sensor:latlon:clare">
+        <FeatureOfInterest xlink:href="http://wfs.deegree.org/services?SERVICE=WFS&amp;REQUEST=GetFeature&amp;FEATUREID=urn:ogc:object:Sensor:latlon:clare"/>
+        <Sensor xlink:href="../../data/sos/clare-sensorml.xml"/>
+        <Option name="value" value="120006AB"/>
+        <Option name="long_lat_position" value="147.239722222 -19.764166667"/>
+      </Procedure>
+	    <Procedure xlink:href="urn:ogc:object:Sensor:latlon:blue_range">
+        <FeatureOfInterest xlink:href="http://wfs.deegree.org/services?SERVICE=WFS&amp;REQUEST=GetFeature&amp;FEATUREID=urn:ogc:object:Sensor:latlon:blue_range"/>
+        <Sensor xlink:href="../../data/sos/blue_range-sensorml.xml"/>
+        <Option name="value" value="120107AB"/>
+        <Option name="long_lat_position" value="145.419444444 -19.168333333"/>
+      </Procedure>
+	    <Procedure xlink:href="urn:ogc:object:Sensor:latlon:bluff_downs">
+        <FeatureOfInterest xlink:href="http://wfs.deegree.org/services?SERVICE=WFS&amp;REQUEST=GetFeature&amp;FEATUREID=urn:ogc:object:Sensor:latlon:bluff_downs"/>
+        <Sensor xlink:href="../../data/sos/bluff_downs-sensorml.xml"/>
+        <Option name="value" value="120106AB"/>
+        <Option name="long_lat_position" value="145.540277778 -19.681944444"/>
+      </Procedure>		
+	    <Procedure xlink:href="urn:ogc:object:Sensor:latlon:belyando_river">
+        <FeatureOfInterest xlink:href="http://wfs.deegree.org/services?SERVICE=WFS&amp;REQUEST=GetFeature&amp;FEATUREID=urn:ogc:object:Sensor:latlon:belyando_river"/>
+        <Sensor xlink:href="../../data/sos/belyando_river-sensorml.xml"/>
+        <Option name="value" value="120301AB"/>
+        <Option name="long_lat_position" value="146.859722222 -21.533333333"/>
+      </Procedure>
+      <Property xlink:href="urn:ogc:def:phenomenon:OGC:runOff">
+        <Column type="property" name="run_off"/>
+        <Option name="uom" value="cumecs"/>
+      </Property>
+    </Offering>
+  </ServiceConfiguration>
+</deegreeSOS>

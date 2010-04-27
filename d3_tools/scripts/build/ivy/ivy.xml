@@ -1,0 +1,35 @@
+<!--
+    found in the ${basedir}/scripts/build/ivy/ivy.properties
+    module.organisation = org.deegree
+    module.name = ${ant.project.name}
+    jar.name=deegree-${module.name}-${module.version.prefix}
+    javadoc.name=${jar.name}-javadoc
+    src.name=${jar.name}-src
+-->
+<ivy-module version="1.0">
+    <info organisation="${module.organisation}" module="${module.name}" />
+    <configurations>
+      <!-- include file="${core.dir}/ivy.xml" /-->
+      <conf name="${module.name}-build" description="Use core+services jars and dependent jars" />
+      <conf name="${module.name}-javadoc" description="The source" visibility="private" />      
+      <conf name="${module.name}-src" description="The sources" visibility="private" />
+      <conf name="${module.name}-report" description="The report" visibility="private" />      
+    </configurations>
+    <publications>
+      <artifact name="${jar.name}" type="jar" conf="${module.name}-build" ext="jar"/>
+      <artifact name="${javadoc.name}" type="zip" conf="${module.name}-javadoc" />      
+      <artifact name="${src.name}" type="zip" conf="${module.name}-src" />
+      <artifact name="${report.name}" type="html" conf="${module.name}-report" />
+    </publications>
+    <dependencies defaultconfmapping="${module.name}-build->default">
+        <dependency org="${module.organisation}" name="services" rev="latest.integration" transitive="true" conf="${module.name}-build->services-build"/>
+
+
+        <dependency org="commons" name="commons-cli" rev="1.1+" transitive="false" conf="${module.name}-build" />
+        
+        <!--  for the import of vrml files -->
+        <dependency org="java3d" name="j3d-vrml97" rev="06.04.20-deegree" transitive="false" conf="${module.name}-build" />
+        <dependency org="java3d" name="j3dutils" rev="1.5.2" transitive="false" conf="${module.name}-build" />
+        <dependency org="java3d" name="j3dcore" rev="1.5.2" transitive="false" conf="${module.name}-build" />
+    </dependencies>
+</ivy-module>

@@ -63,7 +63,7 @@ import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.TexturePaint;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Area;
+import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.Path2D.Double;
@@ -408,6 +408,7 @@ public class Java2DRenderer implements Renderer {
                 if ( patch instanceof PolygonPatch ) {
                     PolygonPatch polygonPatch = (PolygonPatch) patch;
                     for ( Curve curve : polygonPatch.getBoundaryRings() ) {
+                        curve.setCoordinateSystem( surface.getCoordinateSystem() );
                         render( styling, curve );
                     }
                 } else {
@@ -512,20 +513,14 @@ public class Java2DRenderer implements Renderer {
             if ( patch instanceof PolygonPatch ) {
                 LinkedList<Double> lines = new LinkedList<Double>();
                 PolygonPatch polygonPatch = (PolygonPatch) patch;
-                Area polygon = null;
+
+                // just appending the holes appears to work, the Java2D rendering mechanism can determine that they lie
+                // inside and thus no substraction etc. is needed. This speeds up things SIGNIFICANTLY
+                GeneralPath polygon = new GeneralPath();
                 for ( Curve curve : polygonPatch.getBoundaryRings() ) {
                     Double d = fromCurve( curve );
                     lines.add( d );
-                    if ( polygon == null ) {
-                        polygon = new Area( d );
-                    } else {
-                        polygon.subtract( new Area( d ) );
-                    }
-                }
-
-                if ( polygon == null ) {
-                    LOG.warn( "Trying to render polygon without rings." );
-                    return;
+                    polygon.append( d, false );
                 }
 
                 applyFill( styling.fill, styling.uom );
@@ -546,8 +541,6 @@ public class Java2DRenderer implements Renderer {
             return;
         }
 
-        geom = transform( geom );
-
         if ( geom instanceof Point ) {
             LOG.warn( "Trying to render point with polygon styling." );
         }
@@ -556,6 +549,7 @@ public class Java2DRenderer implements Renderer {
         }
         if ( geom instanceof Surface ) {
             LOG.trace( "Drawing {} with {}", geom, styling );
+            geom = transform( geom );
             render( styling, (Surface) geom );
         }
         if ( geom instanceof MultiGeometry<?> ) {

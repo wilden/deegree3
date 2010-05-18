@@ -71,6 +71,7 @@ import java.awt.image.BufferedImage;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import org.deegree.crs.CRS;
 import org.deegree.crs.exceptions.TransformationException;
 import org.deegree.crs.exceptions.UnknownCRSException;
 import org.deegree.geometry.Envelope;
@@ -119,6 +120,8 @@ public class Java2DRenderer implements Renderer {
     private double pixelSize = 0.28;
 
     private double res;
+
+    private CRS targetCRS;
 
     /**
      * @param graphics
@@ -180,6 +183,7 @@ public class Java2DRenderer implements Renderer {
 
             try {
                 if ( bbox.getCoordinateSystem() != null ) {
+                    this.targetCRS = bbox.getCoordinateSystem();
                     transformer = new GeometryTransformer( bbox.getCoordinateSystem().getWrappedCRS() );
                 }
             } catch ( IllegalArgumentException e ) {
@@ -349,7 +353,14 @@ public class Java2DRenderer implements Renderer {
     <T> T transform( T g ) {
         if ( transformer != null ) {
             try {
-                return (T) transformer.transform( (Geometry) g );
+                if ( g != null ) {
+                    // TODO minimize transformations in all other cases as well
+                    CRS crs = ( (Geometry) g ).getCoordinateSystem();
+                    if ( targetCRS != null || targetCRS.equals( crs ) ) {
+                        return (T) g;
+                    }
+                }
+                return (T) transformer.transform( (Geometry) g );                
             } catch ( IllegalArgumentException e ) {
                 LOG.debug( "Stack trace:", e );
                 LOG.warn( "Could not transform geometry of type '{}' before rendering, this may lead to problems.",

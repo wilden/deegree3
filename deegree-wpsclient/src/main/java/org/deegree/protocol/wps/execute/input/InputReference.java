@@ -33,64 +33,42 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute;
+package org.deegree.protocol.wps.execute.input;
 
-import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.execute.input.ExecuteInput;
-import org.deegree.protocol.wps.execute.output.DocumentOutputDefinition;
-import org.deegree.protocol.wps.execute.output.ExecuteOutput;
-import org.deegree.protocol.wps.execute.output.ExecuteStatus;
-import org.deegree.protocol.wps.execute.output.OutputDefinition;
+import java.util.Map;
 
 /**
  * The <code></code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * 
- * @author last edited by: $Author: ionita $
+ * @author last edited by: $Author$
  * 
- * @version $Revision: $, $Date: $
+ * @version $Revision$, $Date$
  * 
  */
-public class ExecuteResponse {
+public class InputReference {
 
-    private CodeType processId;
+    private Map<String, String> headers;
 
-    private ExecuteStatus status;
+    private String body;
 
-    private ExecuteInput[] inputs;
+    private String bodyXlink;
 
-    private DocumentOutputDefinition[] outputDefs;
+    private String xlink;
 
-    private ExecuteOutput[] outputs;
+    private String method;
 
-    public ExecuteResponse( CodeType processId, ExecuteStatus status, ExecuteInput[] inputs,
-                            DocumentOutputDefinition[] outputDefs, ExecuteOutput[] outputs ) {
-        this.processId = processId;
-        this.status = status;
-        this.inputs = inputs;
-        this.outputDefs = outputDefs;
-        this.outputs = outputs;
+    public InputReference( Map<String, String> headers, String body, String bodyXlink, String xlink, String method ) {
+        this.headers = headers;
+        this.body = body;
+        this.bodyXlink = bodyXlink;
+        this.xlink = xlink;
+        this.method = method;
     }
 
-    public CodeType getProcessId() {
-        return processId;
-    }
-
-    public ExecuteStatus getStatus() {
-        return status;
-    }
-
-    public ExecuteInput[] getInputs() {
-        return inputs;
-    }
-
-    public OutputDefinition[] getDocumentOutputDefinition() {
-        return outputDefs;
-    }
-
-    public ExecuteOutput[] getOutputs() {
-        return outputs;
+    public String getXlink() {
+        return xlink;
     }
 
 }

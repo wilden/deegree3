@@ -33,64 +33,45 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute;
+package org.deegree.protocol.wps.execute.output;
 
 import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.execute.input.ExecuteInput;
-import org.deegree.protocol.wps.execute.output.DocumentOutputDefinition;
-import org.deegree.protocol.wps.execute.output.ExecuteOutput;
-import org.deegree.protocol.wps.execute.output.ExecuteStatus;
-import org.deegree.protocol.wps.execute.output.OutputDefinition;
+import org.deegree.protocol.wps.execute.datatypes.ComplexAttributes;
 
 /**
  * The <code></code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * 
- * @author last edited by: $Author: ionita $
+ * @author last edited by: $Author$
  * 
- * @version $Revision: $, $Date: $
+ * @version $Revision$, $Date$
  * 
  */
-public class ExecuteResponse {
+public class OutputDefinition implements ResponseFormat {
 
-    private CodeType processId;
+    private CodeType id;
 
-    private ExecuteStatus status;
+    private String uom;
 
-    private ExecuteInput[] inputs;
+    private ComplexAttributes complexAttributes;
 
-    private DocumentOutputDefinition[] outputDefs;
-
-    private ExecuteOutput[] outputs;
-
-    public ExecuteResponse( CodeType processId, ExecuteStatus status, ExecuteInput[] inputs,
-                            DocumentOutputDefinition[] outputDefs, ExecuteOutput[] outputs ) {
-        this.processId = processId;
-        this.status = status;
-        this.inputs = inputs;
-        this.outputDefs = outputDefs;
-        this.outputs = outputs;
+    public OutputDefinition( CodeType id, String uom, ComplexAttributes complexAttributes ) {
+        this.id = id;
+        this.uom = uom;
+        this.complexAttributes = complexAttributes;
     }
 
-    public CodeType getProcessId() {
-        return processId;
+    public CodeType getId() {
+        return id;
     }
 
-    public ExecuteStatus getStatus() {
-        return status;
+    public String getUom() {
+        return uom;
     }
 
-    public ExecuteInput[] getInputs() {
-        return inputs;
-    }
-
-    public OutputDefinition[] getDocumentOutputDefinition() {
-        return outputDefs;
-    }
-
-    public ExecuteOutput[] getOutputs() {
-        return outputs;
+    public ComplexAttributes getComplexAttributes() {
+        return complexAttributes;
     }
 
 }

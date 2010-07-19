@@ -9,8 +9,8 @@
   <name>deegree-wpsclient</name>
   <url>http://www.deegree.org</url>
   <scm>
-    <developerConnection>scm:svn:http://svn.wald.intevation.org/svn/deegree/deegree3/trunk/deegree-wpsclient</developerConnection>
-    <url>http://svn.wald.intevation.org/svn/deegree/deegree3/trunk/deegree-wpsclient</url>
+    <developerConnection>scm:svn:http://svn.wald.intevation.org/svn/deegree/deegree3/branch/aionita/deegree-wpsclient</developerConnection>
+    <url>http://svn.wald.intevation.org/svn/deegree/deegree3/branch/aionita/deegree-wpsclient</url>
   </scm>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

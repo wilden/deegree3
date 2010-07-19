@@ -33,64 +33,65 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute;
+package org.deegree.protocol.wps.execute.datatypes;
 
-import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.execute.input.ExecuteInput;
-import org.deegree.protocol.wps.execute.output.DocumentOutputDefinition;
-import org.deegree.protocol.wps.execute.output.ExecuteOutput;
-import org.deegree.protocol.wps.execute.output.ExecuteStatus;
-import org.deegree.protocol.wps.execute.output.OutputDefinition;
+import java.io.InputStream;
+
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The <code></code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * 
- * @author last edited by: $Author: ionita $
+ * @author last edited by: $Author$
  * 
- * @version $Revision: $, $Date: $
+ * @version $Revision$, $Date$
  * 
  */
-public class ExecuteResponse {
+public class XMLDataType implements DataType {
 
-    private CodeType processId;
+    private static Logger LOG = LoggerFactory.getLogger( XMLDataType.class );
 
-    private ExecuteStatus status;
+    private InputStream data;
 
-    private ExecuteInput[] inputs;
+    private ComplexAttributes complexAttribs;
 
-    private DocumentOutputDefinition[] outputDefs;
-
-    private ExecuteOutput[] outputs;
-
-    public ExecuteResponse( CodeType processId, ExecuteStatus status, ExecuteInput[] inputs,
-                            DocumentOutputDefinition[] outputDefs, ExecuteOutput[] outputs ) {
-        this.processId = processId;
-        this.status = status;
-        this.inputs = inputs;
-        this.outputDefs = outputDefs;
-        this.outputs = outputs;
+    public XMLDataType( InputStream data, ComplexAttributes complexAttribs ) {
+        this.data = data;
+        this.complexAttribs = complexAttribs;
     }
 
-    public CodeType getProcessId() {
-        return processId;
+    /**
+     * 
+     * @return an {@link InputStream} instance
+     */
+    public InputStream getData() {
+        return data;
     }
 
-    public ExecuteStatus getStatus() {
-        return status;
+    /**
+     * 
+     * @return an {@link XMLStreamReader} instance
+     */
+    public XMLStreamReader getAsXMLStream() {
+        XMLInputFactory inFactory = XMLInputFactory.newInstance();
+        XMLStreamReader xmlReader = null;
+        try {
+            xmlReader = inFactory.createXMLStreamReader( data );
+        } catch ( XMLStreamException e ) {
+            LOG.error( "Error while creating an XML stream to read. " + e.getMessage() );
+        }
+        return xmlReader;
     }
 
-    public ExecuteInput[] getInputs() {
-        return inputs;
-    }
-
-    public OutputDefinition[] getDocumentOutputDefinition() {
-        return outputDefs;
-    }
-
-    public ExecuteOutput[] getOutputs() {
-        return outputs;
+    public ComplexAttributes getComplexAttributes() {
+        return complexAttribs;
     }
 
 }

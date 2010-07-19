@@ -35,10 +35,6 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.getcapabilities;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.deegree.commons.tom.ows.Version;
 
 /**
  * 

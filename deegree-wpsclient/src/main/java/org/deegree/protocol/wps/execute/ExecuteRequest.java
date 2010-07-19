@@ -35,62 +35,55 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.execute;
 
+import java.util.List;
+
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.protocol.wps.execute.input.ExecuteInput;
-import org.deegree.protocol.wps.execute.output.DocumentOutputDefinition;
-import org.deegree.protocol.wps.execute.output.ExecuteOutput;
-import org.deegree.protocol.wps.execute.output.ExecuteStatus;
-import org.deegree.protocol.wps.execute.output.OutputDefinition;
+import org.deegree.protocol.wps.execute.output.ResponseFormat;
 
 /**
  * The <code></code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * 
- * @author last edited by: $Author: ionita $
+ * @author last edited by: $Author$
  * 
- * @version $Revision: $, $Date: $
+ * @version $Revision$, $Date$
  * 
  */
-public class ExecuteResponse {
+public class ExecuteRequest {
 
     private CodeType processId;
 
-    private ExecuteStatus status;
+    private List<ExecuteInput> inputList;
 
-    private ExecuteInput[] inputs;
+    private ResponseFormat responseFormat;
 
-    private DocumentOutputDefinition[] outputDefs;
-
-    private ExecuteOutput[] outputs;
-
-    public ExecuteResponse( CodeType processId, ExecuteStatus status, ExecuteInput[] inputs,
-                            DocumentOutputDefinition[] outputDefs, ExecuteOutput[] outputs ) {
+    public ExecuteRequest( CodeType processId, List<ExecuteInput> inputList, ResponseFormat responseFormat ) {
         this.processId = processId;
-        this.status = status;
-        this.inputs = inputs;
-        this.outputDefs = outputDefs;
-        this.outputs = outputs;
+        this.inputList = inputList;
+        this.responseFormat = responseFormat;
     }
 
-    public CodeType getProcessId() {
+    /**
+     * @return
+     */
+    public CodeType getId() {
         return processId;
     }
 
-    public ExecuteStatus getStatus() {
-        return status;
+    /**
+     * @return
+     */
+    public List<ExecuteInput> getInputList() {
+        return inputList;
     }
 
-    public ExecuteInput[] getInputs() {
-        return inputs;
-    }
-
-    public OutputDefinition[] getDocumentOutputDefinition() {
-        return outputDefs;
-    }
-
-    public ExecuteOutput[] getOutputs() {
-        return outputs;
+    /**
+     * @return
+     */
+    public ResponseFormat getOutputFormat() {
+        return responseFormat;
     }
 
 }

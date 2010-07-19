@@ -33,64 +33,50 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute;
-
-import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.execute.input.ExecuteInput;
-import org.deegree.protocol.wps.execute.output.DocumentOutputDefinition;
-import org.deegree.protocol.wps.execute.output.ExecuteOutput;
-import org.deegree.protocol.wps.execute.output.ExecuteStatus;
-import org.deegree.protocol.wps.execute.output.OutputDefinition;
+package org.deegree.protocol.wps.execute.output;
 
 /**
  * The <code></code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * 
- * @author last edited by: $Author: ionita $
+ * @author last edited by: $Author$
  * 
- * @version $Revision: $, $Date: $
+ * @version $Revision$, $Date$
  * 
  */
-public class ExecuteResponse {
-
-    private CodeType processId;
-
-    private ExecuteStatus status;
-
-    private ExecuteInput[] inputs;
+public class ResponseDocumentFormat implements ResponseFormat {
 
     private DocumentOutputDefinition[] outputDefs;
 
-    private ExecuteOutput[] outputs;
+    private Boolean storeExecuteResponse;
 
-    public ExecuteResponse( CodeType processId, ExecuteStatus status, ExecuteInput[] inputs,
-                            DocumentOutputDefinition[] outputDefs, ExecuteOutput[] outputs ) {
-        this.processId = processId;
-        this.status = status;
-        this.inputs = inputs;
+    private Boolean lineage;
+
+    private Boolean status;
+
+    public ResponseDocumentFormat( DocumentOutputDefinition[] outputDefs, Boolean storeExecuteResponse,
+                                   Boolean lineage, Boolean status ) {
         this.outputDefs = outputDefs;
-        this.outputs = outputs;
+        this.storeExecuteResponse = storeExecuteResponse;
+        this.lineage = lineage;
+        this.status = status;
     }
 
-    public CodeType getProcessId() {
-        return processId;
-    }
-
-    public ExecuteStatus getStatus() {
-        return status;
-    }
-
-    public ExecuteInput[] getInputs() {
-        return inputs;
-    }
-
-    public OutputDefinition[] getDocumentOutputDefinition() {
+    public DocumentOutputDefinition[] getDocOutputDefs() {
         return outputDefs;
     }
 
-    public ExecuteOutput[] getOutputs() {
-        return outputs;
+    public Boolean getStoreExecuteResponse() {
+        return storeExecuteResponse;
+    }
+
+    public Boolean getLineage() {
+        return lineage;
+    }
+
+    public Boolean getStatus() {
+        return status;
     }
 
 }

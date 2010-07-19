@@ -33,64 +33,36 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute;
+package org.deegree.protocol.wps.execute.output;
 
-import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.execute.input.ExecuteInput;
-import org.deegree.protocol.wps.execute.output.DocumentOutputDefinition;
-import org.deegree.protocol.wps.execute.output.ExecuteOutput;
-import org.deegree.protocol.wps.execute.output.ExecuteStatus;
-import org.deegree.protocol.wps.execute.output.OutputDefinition;
+import org.deegree.protocol.wps.execute.datatypes.ComplexAttributes;
 
 /**
  * The <code></code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * 
- * @author last edited by: $Author: ionita $
+ * @author last edited by: $Author$
  * 
- * @version $Revision: $, $Date: $
+ * @version $Revision$, $Date$
  * 
  */
-public class ExecuteResponse {
+public class OutputReference {
 
-    private CodeType processId;
+    private String href;
 
-    private ExecuteStatus status;
+    private ComplexAttributes complexAttributes;
 
-    private ExecuteInput[] inputs;
-
-    private DocumentOutputDefinition[] outputDefs;
-
-    private ExecuteOutput[] outputs;
-
-    public ExecuteResponse( CodeType processId, ExecuteStatus status, ExecuteInput[] inputs,
-                            DocumentOutputDefinition[] outputDefs, ExecuteOutput[] outputs ) {
-        this.processId = processId;
-        this.status = status;
-        this.inputs = inputs;
-        this.outputDefs = outputDefs;
-        this.outputs = outputs;
+    public OutputReference( String href, ComplexAttributes complexAttributes ) {
+        this.href = href;
+        this.complexAttributes = complexAttributes;
     }
 
-    public CodeType getProcessId() {
-        return processId;
+    public String getHref() {
+        return href;
     }
 
-    public ExecuteStatus getStatus() {
-        return status;
+    public ComplexAttributes getComplexAttributes() {
+        return complexAttributes;
     }
-
-    public ExecuteInput[] getInputs() {
-        return inputs;
-    }
-
-    public OutputDefinition[] getDocumentOutputDefinition() {
-        return outputDefs;
-    }
-
-    public ExecuteOutput[] getOutputs() {
-        return outputs;
-    }
-
 }

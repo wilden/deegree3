@@ -48,12 +48,12 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.deegree.commons.tom.ows.CodeType;
+import org.deegree.commons.tom.ows.LanguageString;
 import org.deegree.protocol.wps.execute.ExecuteRequest;
 import org.deegree.protocol.wps.execute.ExecuteRequestWriter;
 import org.deegree.protocol.wps.execute.ExecuteResponse;
 import org.deegree.protocol.wps.execute.ExecuteResponseReader;
 import org.deegree.protocol.wps.execute.input.ExecuteInput;
-import org.deegree.protocol.wps.execute.output.ExecuteStatus;
 import org.deegree.protocol.wps.execute.output.ResponseFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,8 +75,6 @@ public class Process {
 
     private CodeType processId;
 
-    private ExecuteStatus status;
-
     private String title;
 
     private String processAbstract;
@@ -89,6 +87,16 @@ public class Process {
         this.title = title;
         this.processAbstract = processAbstract;
     }
+
+    // /**
+    // * internally call DescribeProcess when the user needs description parameters beyond GetCapabilities
+    // */
+    // private void doDescribeProcess() {
+    // URL url = new URL( baseURL );
+    // URLConnection conn = url.openConnection();
+    // conn.setDoOutput( true );
+    //
+    // }
 
     /**
      * TODO adjust return type and implement me!
@@ -130,16 +138,54 @@ public class Process {
         return response;
     }
 
-    public String getBaseURL() {
-        return baseURL;
-    }
-
     public CodeType getId() {
         return processId;
     }
 
-    public ExecuteStatus getStatus() {
-        return status;
+    /**
+     * Returns whether the process supports storing the response document (= asynchronous operation).
+     * 
+     * @return true, if the process supports storing the response document, false otherwise
+     */
+    public boolean getStoreSupported() {
+        return false;
+    }
+
+    /**
+     * Returns whether the process supports polling status information during asynchronous operation.
+     * 
+     * @return true, if the process supports polling status information, false otherwise
+     */
+    public boolean getStatusSupported() {
+        return false;
+    }
+
+    public String getVersion() {
+        return null;
+    }
+
+    public LanguageString getTitle() {
+        return null;
+    }
+
+    public LanguageString getAbstract() {
+        return null;
+    }
+
+    public Object[] getInputParameters() {
+        return null;
+    }
+
+    public Object getInputParameter( CodeType paramId ) {
+        return null;
+    }
+
+    public Object[] getOutputParameters() {
+        return null;
+    }
+
+    public Object getOutputParameters( CodeType paramId ) {
+        return null;
     }
 
     @Override

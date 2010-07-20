@@ -35,6 +35,9 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.execute.datatypes;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 /**
@@ -49,17 +52,18 @@ import java.io.InputStream;
  */
 public class BinaryDataType implements DataType {
 
-    private InputStream data;
-
     private ComplexAttributes complexAttributes;
 
-    public BinaryDataType( InputStream data, ComplexAttributes complexAttributes ) {
-        this.data = data;
+    private File file;
+
+    public BinaryDataType( File file, ComplexAttributes complexAttributes ) {
+        this.file = file;
         this.complexAttributes = complexAttributes;
     }
 
-    public InputStream getData() {
-        return data;
+    public InputStream getData()
+                            throws FileNotFoundException {
+        return new FileInputStream( file );
     }
 
     public ComplexAttributes getComplexAttributes() {

@@ -35,18 +35,24 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.execute;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
+import org.apache.commons.codec.binary.Base64;
 import org.deegree.commons.tom.ows.CodeType;
+import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.protocol.wps.execute.datatypes.BinaryDataType;
 import org.deegree.protocol.wps.execute.datatypes.BoundingBoxDataType;
 import org.deegree.protocol.wps.execute.datatypes.ComplexAttributes;
@@ -256,18 +262,42 @@ public class ExecuteResponseReader {
     }
 
     /**
+     * <ul>
+     * <li>Precondition: cursor must point at the <code>START_ELEMENT</code> event (&lt;wps:ComplexData&gt;)</li>
+     * <li>Postcondition: cursor points at the corresponding <code>END_ELEMENT</code> event (&lt;/wps:ComplexData&gt;)</li>
+     * </ul>
+     * 
      * @return
      * @throws XMLStreamException
+     * @throws IOException
      */
     private DataType parseComplexData()
                             throws XMLStreamException {
         ComplexAttributes complexAttribs = parseComplexAttributes();
 
-        InputStream inStream = new ByteArrayInputStream( reader.getText().getBytes() );
-        if ( complexAttribs.getMimeType().startsWith( "text/xml" ) ) {
-            return new XMLDataType( inStream, complexAttribs );
+        File tmpFile = null;
+        try {
+            tmpFile = File.createTempFile( "output", ".xml" );
+            OutputStream sink = new FileOutputStream( tmpFile );
+
+            if ( complexAttribs.getMimeType().startsWith( "text/xml" )
+                 || complexAttribs.getMimeType().startsWith( "application/xml" ) ) {
+                XMLStreamWriter xmlWriter = XMLOutputFactory.newInstance().createXMLStreamWriter( sink, "UTF-8" );
+                XMLAdapter.writeElement( xmlWriter, reader );
+                xmlWriter.close();
+                return new XMLDataType( tmpFile, complexAttribs );
+            }
+
+            // TODO check: is this announced encoding really base64?
+            String base64String = reader.getText();
+            byte[] bytes = Base64.decodeBase64( base64String );
+            sink.write( bytes );
+            sink.close();
+        } catch ( IOException e ) {
+            LOG.error( e.getMessage() );
         }
-        return new BinaryDataType( inStream, complexAttribs );
+
+        return new BinaryDataType( tmpFile, complexAttribs );
     }
 
     /**

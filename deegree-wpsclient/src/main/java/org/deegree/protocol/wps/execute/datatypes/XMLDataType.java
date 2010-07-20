@@ -35,7 +35,9 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.execute.datatypes;
 
-import java.io.InputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -58,33 +60,28 @@ public class XMLDataType implements DataType {
 
     private static Logger LOG = LoggerFactory.getLogger( XMLDataType.class );
 
-    private InputStream data;
+    private File file;
 
     private ComplexAttributes complexAttribs;
 
-    public XMLDataType( InputStream data, ComplexAttributes complexAttribs ) {
-        this.data = data;
+    public XMLDataType( File file, ComplexAttributes complexAttribs ) {
+        this.file = file;
         this.complexAttribs = complexAttribs;
     }
 
     /**
      * 
-     * @return an {@link InputStream} instance
-     */
-    public InputStream getData() {
-        return data;
-    }
-
-    /**
-     * 
      * @return an {@link XMLStreamReader} instance
+     * @throws FileNotFoundException
      */
     public XMLStreamReader getAsXMLStream() {
         XMLInputFactory inFactory = XMLInputFactory.newInstance();
         XMLStreamReader xmlReader = null;
         try {
-            xmlReader = inFactory.createXMLStreamReader( data );
+            xmlReader = inFactory.createXMLStreamReader( new FileInputStream( file ), "UTF-8" );
         } catch ( XMLStreamException e ) {
+            LOG.error( "Error while creating an XML stream to read. " + e.getMessage() );
+        } catch ( FileNotFoundException e ) {
             LOG.error( "Error while creating an XML stream to read. " + e.getMessage() );
         }
         return xmlReader;

@@ -37,7 +37,6 @@ package org.deegree.protocol.wps.execute;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 
@@ -45,6 +44,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.deegree.commons.tom.ows.CodeType;
+import org.deegree.commons.xml.XMLAdapter;
+import org.deegree.protocol.wps.execute.datatypes.BinaryDataType;
 import org.deegree.protocol.wps.execute.datatypes.BoundingBoxDataType;
 import org.deegree.protocol.wps.execute.datatypes.ComplexAttributes;
 import org.deegree.protocol.wps.execute.datatypes.DataType;
@@ -223,22 +224,23 @@ public class ExecuteRequestWriter {
 
                         writeComplexAttributes( complexInput.getComplexAttributes() );
 
-                        InputStream data = complexInput.getData();
+                        XMLAdapter.writeElement( writer, ( (XMLDataType) dataType ).getAsXMLStream() );
 
-                        BufferedReader reader = new BufferedReader( new InputStreamReader( data ) );
-                        char[] cbuf = new char[1024];
-                        int readStatus = -1;
-                        try {
-                            do {
-                                readStatus = reader.read( cbuf );
-                                writer.writeCharacters( cbuf, 0, cbuf.length );
-                            } while ( readStatus != -1 );
-                        } catch ( IOException e ) {
-                            LOG.error( "Error while transfering the input data in the Execute request from the source Java bean to the WPS. "
-                                       + e.getMessage() );
-                            e.printStackTrace();
-                        }
                         writer.writeEndElement();
+
+                    } else if ( dataType instanceof BinaryDataType ) {
+                        BinaryDataType binaryInput = (BinaryDataType) dataType;
+
+                        try {
+                            writer.writeStartElement( wpsPrefix, "ComplexData", wpsNS );
+                            BufferedReader buff = new BufferedReader( new InputStreamReader( binaryInput.getData() ) );
+                            char[] cbuf = new char[1024];
+                            buff.read( cbuf );
+                            writer.writeCharacters( cbuf, 0, 1023 );
+                            writer.writeEndElement();
+                        } catch ( IOException e ) {
+                            LOG.error( e.getMessage() );
+                        }
 
                     } else if ( dataType instanceof LiteralDataType ) {
                         LiteralDataType literalDataType = (LiteralDataType) dataType;
@@ -282,5 +284,4 @@ public class ExecuteRequestWriter {
             writer.writeEndElement(); // DataInputs
         }
     }
-
 }

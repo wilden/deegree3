@@ -61,24 +61,21 @@ import org.slf4j.LoggerFactory;
  * TODO Enhance Exception handling
  * 
  * @author <a href="mailto:kiehle@lat-lon.de">Christian Kiehle</a>
+ * @author <a href="mailto:walenciak@uni-heidelberg.de">Georg Walenciak</a>
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
  */
-public class WPSClient100 {
+public class WPSClient {
 
-    private static Logger LOG = LoggerFactory.getLogger( WPSClient100.class );
+    private static Logger LOG = LoggerFactory.getLogger( WPSClient.class );
 
     private WPSCapabilities serviceCapabilities;
 
     private Map<String, Process> processIdToProcess = new HashMap<String, Process>();
 
     private XMLAdapter capabilitesDoc;
-
-    public static final String OWS7_BASE_URL = "http://ows7.lat-lon.de/d3WPS_JTS/services?";
-
-    private static final String OWS7_FULL_SERVICE_URL = "http://ows7.lat-lon.de/d3WPS_JTS/services?service=WPS&version=1.0.0&request=GetCapabilities";
 
     /**
      * Public constructor to access a WPS instance based on its GetCapabilities URL
@@ -89,7 +86,7 @@ public class WPSClient100 {
      *             in case a DescribeProcess URL could not constructed from WPS Capabilities response
      * 
      */
-    public WPSClient100( URL capabilitiesURL ) throws Exception {
+    public WPSClient( URL capabilitiesURL ) {
         try {
             this.capabilitesDoc = new XMLAdapter( capabilitiesURL );
         } catch ( Exception e ) {
@@ -102,8 +99,8 @@ public class WPSClient100 {
         serviceCapabilities = new WPSCapabilities( this.capabilitesDoc );
         for ( ProcessBrief offering : serviceCapabilities.getProcessOfferings() ) {
             String processId = offering.getIdentifier();
-            Process process = new Process( OWS7_BASE_URL, new CodeType( processId ), offering.getTitle(),
-                                           offering.getAbstract() );
+            Process process = new Process( capabilitiesURL.toExternalForm(), new CodeType( processId ),
+                                           offering.getTitle(), offering.getAbstract() );
             processIdToProcess.put( processId, process );
         }
     }
@@ -153,6 +150,17 @@ public class WPSClient100 {
             throw new RuntimeException( "WPS has no registered process with id " + processId );
         }
         return processIdToProcess.get( processId );
+    }
+
+    /**
+     * Retrieve Process by providing its id.
+     * 
+     * @param processId
+     * @return {@link Process} instance containing all relevant process information.
+     */
+    public Process getProcess( CodeType processId ) {
+        // TODO
+        return null;
     }
 
     // public void executeRequest( String processId, ClientInput[] inputs, ResponseFormType[] outputFormats ) {

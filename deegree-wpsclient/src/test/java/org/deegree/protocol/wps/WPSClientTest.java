@@ -68,8 +68,6 @@ public class WPSClientTest {
 
     private static final File BINARY_INPUT = new File( WPSClientTest.class.getResource( "image.png" ).getPath() );
 
-    // provide URL to enable tests
-    // private static final String DEMO_SERVICE_URL = null;
     private static final String DEMO_SERVICE_URL = "http://deegree3-testing.deegree.org/deegree-wps-demo-3.0-pre6/services?service=WPS&version=1.0.0&request=GetCapabilities";
 
     @Before
@@ -85,7 +83,9 @@ public class WPSClientTest {
         URL processUrl = new URL( DEMO_SERVICE_URL );
         WPSClient wpsClient = new WPSClient( processUrl );
         Process p1 = wpsClient.getProcess( "Buffer", null );
+        Assert.assertNotNull( p1 );
         Process p2 = wpsClient.getProcess( "ParameterDemoProcess", null );
+        Assert.assertNotNull( p2 );
     }
 
     @Test
@@ -129,6 +129,8 @@ public class WPSClientTest {
         execution.setRequestedOutput( "BufferedGeometry", null, null, false, null, null, null );
         ExecuteResponse response = execution.start();
 
+        Assert.assertNotNull( response );
+        // TODO test response
         // XMLDataType data = (XMLDataType) response.getOutputs()[0].getDataType();
         // XMLStreamReader reader = data.getAsXMLStream();
         // XMLAdapter searchableXML = new XMLAdapter( reader );

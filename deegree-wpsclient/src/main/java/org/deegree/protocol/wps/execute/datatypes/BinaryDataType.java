@@ -70,6 +70,12 @@ public class BinaryDataType implements DataType {
         this.complexAttributes = new ComplexAttributes( mimeType, encoding, null );
     }
 
+    /**
+     * Get the binary data as a stream
+     * 
+     * @return an {@link InputStream} to the binary data
+     * @throws IOException
+     */
     public InputStream getDataStream()
                             throws IOException {
         if ( inputStream != null ) {

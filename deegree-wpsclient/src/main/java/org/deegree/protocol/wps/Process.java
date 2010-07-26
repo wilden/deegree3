@@ -113,6 +113,9 @@ public class Process {
     //
     // }
 
+    /**
+     * Create a process execution instance that will manage the execution of the process.
+     */
     public ProcessExecution prepareExecution() {
         return new ProcessExecution( this );
     }
@@ -124,7 +127,7 @@ public class Process {
      * @return
      * @throws OWSException
      */
-    public ExecuteResponse execute( List<ExecuteInput> inputList, ResponseFormat responseFormats )
+    ExecuteResponse execute( List<ExecuteInput> inputList, ResponseFormat responseFormats )
                             throws OWSException {
         ExecuteResponse response = null;
         try {

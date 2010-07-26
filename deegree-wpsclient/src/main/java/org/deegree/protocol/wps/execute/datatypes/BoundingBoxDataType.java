@@ -61,14 +61,29 @@ public class BoundingBoxDataType implements DataType {
         this.dim = dim;
     }
 
+    /**
+     * Get coordinates of bounding box
+     * 
+     * @return coordinates, as a double array: x0, y0, x1, y1, etc.
+     */
     public double[] getCoordinates() {
         return coordinates;
     }
 
+    /**
+     * Get coordinate system of the bounding box
+     * 
+     * @return crs as String
+     */
     public String getCrs() {
         return crs;
     }
 
+    /**
+     * Get dimension of the bounding box
+     * 
+     * @return dimension as string
+     */
     public int getDim() {
         return dim;
     }

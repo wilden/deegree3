@@ -63,14 +63,29 @@ public class LiteralDataType implements DataType {
         this.uom = uom;
     }
 
+    /**
+     * Get value of literal instance
+     * 
+     * @return the value as String
+     */
     public String getValue() {
         return value;
     }
 
+    /**
+     * Get data type of literal instance
+     * 
+     * @return datatype as String
+     */
     public String getDataType() {
         return dataType;
     }
 
+    /**
+     * Get unit-of-measure of literal instance
+     * 
+     * @return uom as String
+     */
     public String getUom() {
         return uom;
     }

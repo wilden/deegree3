@@ -82,52 +82,161 @@ public class ProcessExecution {
     }
 
     /**
+     * Add literal input data under the specified id.
+     * 
      * @param id
+     *            input id of the parameter
      * @param codeSpace
+     *            codespace of the id, may be null
      * @param value
+     *            value of the literal input
      * @param type
+     *            data type in which the value should be considered
      * @param uom
+     *            unit of measure of the value
      */
     public void addLiteralInput( String id, String codeSpace, String value, String type, String uom ) {
         inputs.add( new ExecuteInput( new CodeType( id, codeSpace ), new LiteralDataType( value, type, uom ) ) );
     }
 
+    /**
+     * Add Bounding box input data under the specified id.
+     * 
+     * @param id
+     *            input id of the parameter
+     * @param codeSpace
+     *            codespace of the id, may be null
+     * @param coordinates
+     *            {@link double} array of coordinates: x0, y0, x1, x2, etc.
+     * @param crs
+     *            coordinates system of the bbox, as string, may be null
+     * @param dim
+     *            dimension of the bbox, e.g. 2 for plane coordinates
+     */
     public void addBBoxInput( String id, String codeSpace, double[] coordinates, String crs, int dim ) {
         inputs.add( new ExecuteInput( new CodeType( id, codeSpace ), new BoundingBoxDataType( coordinates, crs, dim ) ) );
     }
 
+    /**
+     * Add XML input data under the specified id as URL.
+     * 
+     * @param id
+     *            input id of the parameter
+     * @param codeSpace
+     *            codespace of the id, may be null
+     * @param url
+     *            {@link URL} to the xml data
+     * @param mimeType
+     *            mime type of the xml data, may be null
+     * @param encoding
+     *            encoding of the xml data, may be null
+     * @param schema
+     *            schema of the xml fragment, may be null
+     */
     public void addXMLInput( String id, String codeSpace, URL url, String mimeType, String encoding, String schema ) {
         XMLDataType xmlData = new XMLDataType( url, false, mimeType, encoding, schema );
         inputs.add( new ExecuteInput( new CodeType( id, codeSpace ), xmlData ) );
     }
 
+    /**
+     * Add XML input data under the specified id as XML stream reader.
+     * 
+     * @param id
+     *            input id of the parameter
+     * @param codeSpace
+     *            codespace of the id, may be null
+     * @param reader
+     *            {@link XMLStreamReader} to the xml data
+     * @param mimeType
+     *            mime type of the xml data, may be null
+     * @param encoding
+     *            encoding of the xml data, may be null
+     * @param schema
+     *            schema of the xml fragment, may be null
+     */
     public void addXMLInput( String id, String codeSpace, XMLStreamReader reader, String mimeType, String encoding,
                              String schema ) {
         XMLDataType xmlDataType = new XMLDataType( reader, mimeType, encoding, schema );
         inputs.add( new ExecuteInput( new CodeType( id, codeSpace ), xmlDataType ) );
     }
 
+    /**
+     * Add binary input data under the specified id as URL.
+     * 
+     * @param id
+     *            input id of the parameter
+     * @param codeSpace
+     *            codespace of the id, may be null
+     * @param url
+     *            {@link URL} to the binary data
+     * @param mimeType
+     *            mime type of the binary data, may be null
+     * @param encoding
+     *            encoding of the binary data, may be null
+     */
     public void addBinaryInput( String id, String codeSpace, URL url, String mimeType, String encoding ) {
         BinaryDataType binaryData = new BinaryDataType( url, false, mimeType, encoding );
         inputs.add( new ExecuteInput( new CodeType( id, codeSpace ), binaryData ) );
     }
 
+    /**
+     * Add binary input data under the specified id as input stream.
+     * 
+     * @param id
+     *            input id of the parameter
+     * @param codeSpace
+     *            codespace of the id, may be null
+     * @param inputStream
+     *            input stream to the binary data
+     * @param mimeType
+     *            mime type of the binary data, may be null
+     * @param encoding
+     *            encoding of the binary data, may be null
+     */
     public void addBinaryInput( String id, String codeSpace, InputStream inputStream, String mimeType, String encoding ) {
         BinaryDataType binaryData = new BinaryDataType( inputStream, mimeType, encoding );
         inputs.add( new ExecuteInput( new CodeType( id, codeSpace ), binaryData ) );
     }
 
+    /**
+     * Set format of the identified output as an XML response document. Use this method or
+     * {@link #setRawOutput(String, String, String, String, String) } to specify the format in which the output should be
+     * presented.
+     * 
+     * @param outputId
+     *            id of the output parameter
+     * @param codeSpace
+     *            codespace of the id, may be null
+     * @param uom
+     *            unit of measure, in case it is a Literal Output, otherwise null
+     * @param asRef
+     *            return output as an URL, boolean
+     * @param mimeType
+     *            mimeType of the data, may be null
+     * @param encoding
+     *            encoding of data, may be null
+     * @param schema
+     */
     public void setRequestedOutput( String outputId, String codeSpace, String uom, boolean asRef, String mimeType,
                                     String encoding, String schema ) {
         outputDefs.add( new OutputDefinition( new CodeType( outputId ), uom, asRef, mimeType, encoding, schema ) );
     }
 
     /**
+     * Set format of the identified output as raw data. Use this method or
+     * {@link #setRequestedOutput(String, String, String, boolean, String, String, String)} to specify the format in
+     * which the output should be presented.
+     * 
      * @param outputId
+     *            id of the output parameter
      * @param codeSpace
+     *            codespace of the id, may be null
      * @param mimeType
+     *            mimeType of the data, may be null
      * @param encoding
+     *            encoding of data, may be null
      * @param schema
+     *            schema of data, in case it is an XML document
      * @throws Exception
      */
     public void setRawOutput( String outputId, String codeSpace, String mimeType, String encoding, String schema )
@@ -146,9 +255,15 @@ public class ProcessExecution {
 
     }
 
+    /**
+     * Perform the execute request synchronously.
+     * 
+     * @return {@link ExecuteResponse} instance that provides access to the output data.
+     * @throws OWSException
+     */
     public ExecuteResponse start()
                             throws OWSException {
-        ResponseFormat responseFormat = new ResponseFormat( rawOutput, false, false, false, outputDefs );
+        responseFormat = new ResponseFormat( rawOutput, false, false, false, outputDefs );
         ExecuteResponse response = process.execute( inputs, responseFormat );
         return response;
     }

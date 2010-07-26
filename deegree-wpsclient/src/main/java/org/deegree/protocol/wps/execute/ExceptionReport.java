@@ -33,9 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.output;
-
-import org.deegree.protocol.wps.execute.datatypes.ComplexAttributes;
+package org.deegree.protocol.wps.execute;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -47,22 +45,39 @@ import org.deegree.protocol.wps.execute.datatypes.ComplexAttributes;
  * @version $Revision$, $Date$
  * 
  */
-public class OutputReference {
+public class ExceptionReport {
 
-    private String href;
+    private String message;
 
-    private ComplexAttributes complexAttributes;
+    private String code;
 
-    public OutputReference( String href, ComplexAttributes complexAttributes ) {
-        this.href = href;
-        this.complexAttributes = complexAttributes;
+    private String locator;
+
+    public ExceptionReport( String message, String code, String locator ) {
+        this.message = message;
+        this.code = code;
+        this.locator = locator;
     }
 
-    public String getHref() {
-        return href;
+    /**
+     * @return
+     */
+    public String getMessage() {
+        return message;
     }
 
-    public ComplexAttributes getComplexAttributes() {
-        return complexAttributes;
+    /**
+     * @return
+     */
+    public String getCode() {
+        return code;
     }
+
+    /**
+     * @return
+     */
+    public String getLocator() {
+        return locator;
+    }
+
 }

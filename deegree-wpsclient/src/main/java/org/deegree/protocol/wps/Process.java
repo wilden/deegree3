@@ -35,7 +35,13 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps;
 
+import static org.deegree.protocol.wps.WPSConstants.WPS_100_NS;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -47,14 +53,18 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.apache.axiom.om.xpath.AXIOMXPath;
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
+import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.protocol.wps.execute.ExecuteRequest;
-import org.deegree.protocol.wps.execute.ExecuteRequestWriter;
 import org.deegree.protocol.wps.execute.ExecuteResponse;
-import org.deegree.protocol.wps.execute.ExecuteResponseReader;
+import org.deegree.protocol.wps.execute.RequestWriter;
+import org.deegree.protocol.wps.execute.ResponseReader;
 import org.deegree.protocol.wps.execute.input.ExecuteInput;
 import org.deegree.protocol.wps.execute.output.ResponseFormat;
+import org.deegree.services.controller.ows.OWSException;
+import org.jaxen.JaxenException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,6 +72,7 @@ import org.slf4j.LoggerFactory;
  * ProcessInfo object containing all information relevant to a single process.
  * 
  * @author <a href="mailto:kiehle@lat-lon.de">Christian Kiehle</a>
+ * @author <a href="mailto:walenciak@uni-heidelberg.de">Georg Walenciak</a>
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * @author last edited by: $Author$
  * 
@@ -71,18 +82,22 @@ public class Process {
 
     private static Logger LOG = LoggerFactory.getLogger( Process.class );
 
-    private String baseURL;
+    private WPSClient wpsclient;
+
+    private String version;
 
     private CodeType processId;
 
-    private String title;
+    private LanguageString title;
 
-    private String processAbstract;
+    private LanguageString processAbstract;
 
     private boolean describeProcessPerformed = false;
 
-    public Process( String baseURL, CodeType processId, String title, String processAbstract ) {
-        this.baseURL = baseURL;
+    public Process( WPSClient wpsclient, String version, CodeType processId, LanguageString title,
+                    LanguageString processAbstract ) {
+        this.wpsclient = wpsclient;
+        this.version = version;
         this.processId = processId;
         this.title = title;
         this.processAbstract = processAbstract;
@@ -98,32 +113,60 @@ public class Process {
     //
     // }
 
+    public ProcessExecution prepareExecution() {
+        return new ProcessExecution( this );
+    }
+
     /**
-     * TODO adjust return type and implement me!
      * 
-     * @param inputParams
+     * @param inputList
+     * @param responseFormats
      * @return
+     * @throws OWSException
      */
-    public ExecuteResponse execute( List<ExecuteInput> inputList, ResponseFormat executeOutputFormatList ) {
-        URL url;
+    public ExecuteResponse execute( List<ExecuteInput> inputList, ResponseFormat responseFormats )
+                            throws OWSException {
         ExecuteResponse response = null;
         try {
-            url = new URL( baseURL );
+            // TODO what if server only supports Get?
+            URL url = wpsclient.getExecuteURL( true );
+
             URLConnection conn = url.openConnection();
             conn.setDoOutput( true );
+            conn.setUseCaches( false );
+            conn.setRequestProperty( "Content-Type", "application/xml" );
 
             XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
             XMLStreamWriter writer = outFactory.createXMLStreamWriter( conn.getOutputStream() );
 
-            ExecuteRequest executeRequest = new ExecuteRequest( processId, inputList, executeOutputFormatList );
-            ExecuteRequestWriter executer = new ExecuteRequestWriter( writer );
+            // XMLStreamWriter writer = outFactory.createXMLStreamWriter( new FileOutputStream(
+            // File.createTempFile(
+            // "wpsClientIn",
+            // ".xml" ) ) );
+
+            ExecuteRequest executeRequest = new ExecuteRequest( processId, inputList, responseFormats );
+            RequestWriter executer = new RequestWriter( writer );
             executer.write100( executeRequest );
             writer.flush();
             writer.close();
 
             XMLInputFactory inFactory = XMLInputFactory.newInstance();
             XMLStreamReader reader = inFactory.createXMLStreamReader( conn.getInputStream() );
-            ExecuteResponseReader responseReader = new ExecuteResponseReader( reader );
+
+            reader.nextTag(); // so that it points to START_ELEMENT, hence prepared to be processed by XMLAdapter
+
+            if ( LOG.isDebugEnabled() ) {
+                File logOutputFile = File.createTempFile( "wpsClient", "Out.xml" );
+                OutputStream outStream = new FileOutputStream( logOutputFile );
+                XMLStreamWriter straightWriter = XMLOutputFactory.newInstance().createXMLStreamWriter( outStream );
+                XMLAdapter.writeElement( straightWriter, reader );
+                LOG.debug( "Service output can be found at " + logOutputFile.toString() );
+                straightWriter.close();
+
+                reader = XMLInputFactory.newInstance().createXMLStreamReader( new FileInputStream( logOutputFile ) );
+            }
+
+            ResponseReader responseReader = new ResponseReader( reader );
             response = responseReader.parse100();
             reader.close();
 
@@ -136,6 +179,13 @@ public class Process {
         }
 
         return response;
+    }
+
+    private void addNsToXPath( AXIOMXPath xpath )
+                            throws JaxenException {
+        xpath.addNamespace( "wps", WPS_100_NS );
+        xpath.addNamespace( "ows", "http://www.opengis.net/ows/1.1" );
+        xpath.addNamespace( "xlink", "http://www.w3.org/1999/xlink" );
     }
 
     public CodeType getId() {

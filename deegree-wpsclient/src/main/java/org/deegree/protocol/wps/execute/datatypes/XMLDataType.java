@@ -35,14 +35,15 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.execute.datatypes;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URL;
 
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import org.deegree.commons.xml.stax.StAXParsingHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,35 +61,70 @@ public class XMLDataType implements DataType {
 
     private static Logger LOG = LoggerFactory.getLogger( XMLDataType.class );
 
-    private File file;
-
     private ComplexAttributes complexAttribs;
 
-    public XMLDataType( File file, ComplexAttributes complexAttribs ) {
-        this.file = file;
-        this.complexAttribs = complexAttribs;
+    private URL url;
+
+    private XMLStreamReader reader;
+
+    private boolean isWebAccessible;
+
+    public XMLDataType( URL url, boolean isWebAcessible, String mimeType, String encoding, String schema ) {
+        this.url = url;
+        this.isWebAccessible = true;
+        this.complexAttribs = new ComplexAttributes( mimeType, null, schema );
     }
 
     /**
      * 
-     * @return an {@link XMLStreamReader} instance
-     * @throws FileNotFoundException
+     * @param reader
+     *            cursor must point at a <code>START_ELEMENT</code> event, position afterwards is undefined
+     * @param mimeType
+     * @param encoding
+     * @param schema
+     */
+    public XMLDataType( XMLStreamReader reader, String mimeType, String encoding, String schema ) {
+        if ( reader.getEventType() != XMLStreamConstants.START_ELEMENT ) {
+            String msg = "The given XML stream does not point to a START_ELEMENT event.";
+            throw new IllegalArgumentException( msg );
+        }
+        this.reader = reader;
+        this.isWebAccessible = false;
+        this.complexAttribs = new ComplexAttributes( mimeType, encoding, schema );
+    }
+
+    /**
+     * Gets the xml data as {@link XMLStreamReader}. In case the xml stream begins with the START_DOCUMENT event, the
+     * returning stream will have skipped it.
+     * 
+     * @return an {@link XMLStreamReader} instance, positioned after the START_DOCUMENT element
      */
     public XMLStreamReader getAsXMLStream() {
-        XMLInputFactory inFactory = XMLInputFactory.newInstance();
-        XMLStreamReader xmlReader = null;
         try {
-            xmlReader = inFactory.createXMLStreamReader( new FileInputStream( file ), "UTF-8" );
+            if ( reader == null ) {
+                XMLInputFactory inFactory = XMLInputFactory.newInstance();
+                reader = inFactory.createXMLStreamReader( url.openStream() );
+            }
+            if ( reader.getEventType() == XMLStreamConstants.START_DOCUMENT ) {
+                StAXParsingHelper.nextElement( reader );
+            }
         } catch ( XMLStreamException e ) {
-            LOG.error( "Error while creating an XML stream to read. " + e.getMessage() );
-        } catch ( FileNotFoundException e ) {
-            LOG.error( "Error while creating an XML stream to read. " + e.getMessage() );
+            // TODO
+            e.printStackTrace();
+        } catch ( IOException e ) {
+            // TODO
+            e.printStackTrace();
         }
-        return xmlReader;
+
+        return reader;
     }
 
     public ComplexAttributes getComplexAttributes() {
         return complexAttribs;
     }
 
+    @Override
+    public URL getWebAccessibleURL() {
+        return isWebAccessible ? url : null;
+    }
 }

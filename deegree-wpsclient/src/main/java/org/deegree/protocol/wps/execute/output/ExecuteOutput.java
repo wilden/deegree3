@@ -52,18 +52,14 @@ public class ExecuteOutput {
 
     private CodeType id;
 
-    private OutputReference outputReference;
-
     private DataType dataType;
-
-    public ExecuteOutput( CodeType id, OutputReference outputReference ) {
-        this.id = id;
-        this.outputReference = outputReference;
-    }
 
     public ExecuteOutput( CodeType id, DataType dataType ) {
         this.id = id;
         this.dataType = dataType;
     }
 
+    public DataType getDataType() {
+        return dataType;
+    }
 }

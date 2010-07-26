@@ -35,6 +35,8 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.execute.datatypes;
 
+import java.net.URL;
+
 /**
  * *
  * 
@@ -45,4 +47,11 @@ package org.deegree.protocol.wps.execute.datatypes;
  */
 public interface DataType {
     // marker interface
+
+    /**
+     * Returns the web-accessible URL of the output (if it has been requested to be stored).
+     * 
+     * @returns the web-accessible URL of the output, or <code>null</code> if it has not been requested to be stored
+     */
+    public URL getWebAccessibleURL();
 }

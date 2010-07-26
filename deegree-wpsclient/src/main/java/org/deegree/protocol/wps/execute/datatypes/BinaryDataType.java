@@ -35,10 +35,9 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.execute.datatypes;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -54,20 +53,33 @@ public class BinaryDataType implements DataType {
 
     private ComplexAttributes complexAttributes;
 
-    private File file;
+    private URL url;
 
-    public BinaryDataType( File file, ComplexAttributes complexAttributes ) {
-        this.file = file;
-        this.complexAttributes = complexAttributes;
+    private InputStream inputStream;
+
+    private boolean isWebAccessible;
+
+    public BinaryDataType( URL url, boolean isWebAccessible, String mimeType, String encoding ) {
+        this.url = url;
+        this.isWebAccessible = isWebAccessible;
+        this.complexAttributes = new ComplexAttributes( mimeType, encoding, null );
     }
 
-    public InputStream getData()
-                            throws FileNotFoundException {
-        return new FileInputStream( file );
+    public BinaryDataType( InputStream inputStream, String mimeType, String encoding ) {
+        this.inputStream = inputStream;
+        this.complexAttributes = new ComplexAttributes( mimeType, encoding, null );
     }
 
-    public ComplexAttributes getComplexAttributes() {
-        return complexAttributes;
+    public InputStream getDataStream()
+                            throws IOException {
+        if ( inputStream != null ) {
+            return inputStream;
+        }
+        return url.openStream();
     }
 
+    @Override
+    public URL getWebAccessibleURL() {
+        return isWebAccessible ? url : null;
+    }
 }

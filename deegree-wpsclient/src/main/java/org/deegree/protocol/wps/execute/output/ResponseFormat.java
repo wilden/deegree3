@@ -35,6 +35,8 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.execute.output;
 
+import java.util.List;
+
 /**
  * The <code></code> class TODO add class documentation here.
  * 
@@ -45,6 +47,45 @@ package org.deegree.protocol.wps.execute.output;
  * @version $Revision$, $Date$
  * 
  */
-public interface ResponseFormat {
-    // marker interface
+public class ResponseFormat {
+
+    private boolean rawOutput;
+
+    private Boolean asynch;
+
+    private Boolean includeRequestInfo;
+
+    private Boolean updateStatus;
+
+    private List<OutputDefinition> outputDefs;
+
+    public ResponseFormat( boolean rawOutput, boolean asynch, boolean includeRequestInfo, boolean updateStatus,
+                           List<OutputDefinition> outputDefs ) {
+        this.rawOutput = rawOutput;
+        this.asynch = asynch;
+        this.includeRequestInfo = includeRequestInfo;
+        this.updateStatus = updateStatus;
+        this.outputDefs = outputDefs;
+    }
+
+    public boolean isRaw() {
+        return rawOutput;
+    }
+
+    public Boolean isAsynch() {
+        return asynch;
+    }
+
+    public Boolean includesRequestInfo() {
+        return includeRequestInfo;
+    }
+
+    public Boolean updatesStatus() {
+        return updateStatus;
+    }
+
+    public List<OutputDefinition> getOutputDefinitions() {
+        return outputDefs;
+    }
+
 }

@@ -35,6 +35,8 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.execute.datatypes;
 
+import java.net.URL;
+
 /**
  * The <code></code> class TODO add class documentation here.
  * 
@@ -73,4 +75,8 @@ public class LiteralDataType implements DataType {
         return uom;
     }
 
+    @Override
+    public URL getWebAccessibleURL() {
+        return null;
+    }
 }

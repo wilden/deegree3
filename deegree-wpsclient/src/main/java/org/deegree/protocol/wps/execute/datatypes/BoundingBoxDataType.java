@@ -35,6 +35,8 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.execute.datatypes;
 
+import java.net.URL;
+
 /**
  * The <code></code> class TODO add class documentation here.
  * 
@@ -59,7 +61,7 @@ public class BoundingBoxDataType implements DataType {
         this.dim = dim;
     }
 
-    public double[] getCoordiantes() {
+    public double[] getCoordinates() {
         return coordinates;
     }
 
@@ -71,4 +73,8 @@ public class BoundingBoxDataType implements DataType {
         return dim;
     }
 
+    @Override
+    public URL getWebAccessibleURL() {
+        return null;
+    }
 }

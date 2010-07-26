@@ -38,13 +38,22 @@ package org.deegree.protocol.wps.getcapabilities;
 
 import static org.deegree.protocol.wps.WPSConstants.WPS_100_NS;
 
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.namespace.QName;
 
+import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.xpath.AXIOMXPath;
+import org.deegree.commons.tom.ows.CodeType;
+import org.deegree.commons.tom.ows.LanguageString;
 import org.deegree.commons.xml.NamespaceContext;
 import org.deegree.commons.xml.XMLAdapter;
+import org.deegree.protocol.wps.Process;
+import org.deegree.protocol.wps.WPSClient;
+import org.jaxen.JaxenException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,6 +77,8 @@ public class WPSCapabilities {
 
     private XMLAdapter capabilitiesDoc;
 
+    private List<Process> processes;
+
     private String service;
 
     private String version;
@@ -78,6 +89,10 @@ public class WPSCapabilities {
 
     private String schemaLocation;
 
+    private static final String owsNS = "http://www.opengis.net/ows/1.1";
+
+    private static final String xmlNS = "http://www.w3.org/XML/1998/namespace";
+
     /*
      * Add namespaces relevant for the WPSCapabilities, i.e. wps and ows
      */
@@ -87,30 +102,83 @@ public class WPSCapabilities {
         NS_CONTEXT.addNamespace( "ows", "http://www.opengis.net/ows/1.1" );
     }
 
-    public XMLAdapter getCapabilities() {
-        return capabilitiesDoc;
-    }
-
-    public List<ProcessBrief> getProcessOfferings() {
-        // TODO
-        return null;
-    }
-
     /**
      * Public constructor to be initialized with a capabilities document
      * 
      * @param capabilitiesDoc
      *            an WPS capabilities document to be parsed
+     * @throws JaxenException
      */
-    public WPSCapabilities( XMLAdapter capabilitiesDoc ) {
+    public WPSCapabilities( WPSClient wpsclient, XMLAdapter capabilitiesDoc ) {
         LOG.debug( "WPSCapabilities initialized" );
         this.capabilitiesDoc = capabilitiesDoc;
-        OMElement rootElement = capabilitiesDoc.getRootElement();
-        this.service = rootElement.getAttributeValue( new QName( "service" ) );
-        this.lang = rootElement.getAttributeValue( new QName( "lang" ) );
-        this.version = rootElement.getAttributeValue( new QName( "version" ) );
-        this.schemaLocation = rootElement.getAttributeValue( new QName( "schemaLocation" ) );
-        this.updateSequence = rootElement.getAttributeValue( new QName( "updateSequence" ) );
+        OMElement rootEl = capabilitiesDoc.getRootElement();
+        this.service = rootEl.getAttributeValue( new QName( "service" ) );
+        this.lang = rootEl.getAttributeValue( new QName( "lang" ) );
+        this.version = rootEl.getAttributeValue( new QName( "version" ) );
+        this.schemaLocation = rootEl.getAttributeValue( new QName( "schemaLocation" ) );
+        this.updateSequence = rootEl.getAttributeValue( new QName( "updateSequence" ) );
+
+        // find out using XPath
+        URL executeURL = null;
+
+        try {
+            processes = new ArrayList<Process>();
+            AXIOMXPath xpath;
+            xpath = new AXIOMXPath( "wps:ProcessOfferings/wps:Process" );
+            addNsToXPath( xpath );
+            List<OMElement> nodes = xpath.selectNodes( rootEl );
+            for ( OMElement node : nodes ) {
+                xpath = new AXIOMXPath( "@wps:processVersion" );
+                addNsToXPath( xpath );
+                OMAttribute omVersion = (OMAttribute) xpath.selectSingleNode( node );
+                String version = null;
+                if ( omVersion != null ) {
+                    version = omVersion.getAttributeValue();
+                }
+
+                xpath = new AXIOMXPath( "ows:Identifier" );
+                addNsToXPath( xpath );
+                OMElement omId = (OMElement) xpath.selectSingleNode( node );
+                String codeSpace = omId.getAttributeValue( new QName( "codeSpace" ) );
+                CodeType id = new CodeType( omId.getText(), codeSpace );
+
+                xpath = new AXIOMXPath( "ows:Title" );
+                addNsToXPath( xpath );
+                OMElement omTitle = (OMElement) xpath.selectSingleNode( node );
+                String lang = omTitle.getAttributeValue( new QName( xmlNS, "lang" ) );
+                LanguageString title = new LanguageString( omTitle.getText(), lang );
+
+                xpath = new AXIOMXPath( "ows:Abstract" );
+                addNsToXPath( xpath );
+                OMElement omAbstract = (OMElement) xpath.selectSingleNode( node );
+                lang = omTitle.getAttributeValue( new QName( xmlNS, "lang" ) );
+                LanguageString processAbstract = new LanguageString( omAbstract.getText(), lang );
+
+                processes.add( new Process( wpsclient, version, id, title, processAbstract ) );
+            }
+        } catch ( JaxenException e ) {
+            LOG.error( e.getMessage() );
+        }
+
+    }
+
+    public XMLAdapter getCapabilitiesAsXMLAdapter() {
+        return capabilitiesDoc;
+    }
+
+    public List<Process> getProcessOfferings() {
+        return processes;
+    }
+
+    /**
+     * @throws JaxenException
+     * 
+     */
+    private void addNsToXPath( AXIOMXPath xpath )
+                            throws JaxenException {
+        xpath.addNamespace( "wps", WPS_100_NS );
+        xpath.addNamespace( "ows", "http://www.opengis.net/ows/1.1" );
     }
 
     @Override

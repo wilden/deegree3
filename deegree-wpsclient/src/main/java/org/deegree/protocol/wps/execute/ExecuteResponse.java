@@ -35,12 +35,8 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.execute;
 
-import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.execute.input.ExecuteInput;
-import org.deegree.protocol.wps.execute.output.DocumentOutputDefinition;
 import org.deegree.protocol.wps.execute.output.ExecuteOutput;
 import org.deegree.protocol.wps.execute.output.ExecuteStatus;
-import org.deegree.protocol.wps.execute.output.OutputDefinition;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -54,43 +50,20 @@ import org.deegree.protocol.wps.execute.output.OutputDefinition;
  */
 public class ExecuteResponse {
 
-    private CodeType processId;
-
     private ExecuteStatus status;
-
-    private ExecuteInput[] inputs;
-
-    private DocumentOutputDefinition[] outputDefs;
 
     private ExecuteOutput[] outputs;
 
-    public ExecuteResponse( CodeType processId, ExecuteStatus status, ExecuteInput[] inputs,
-                            DocumentOutputDefinition[] outputDefs, ExecuteOutput[] outputs ) {
-        this.processId = processId;
+    public ExecuteResponse( ExecuteStatus status, ExecuteOutput[] outputs ) {
         this.status = status;
-        this.inputs = inputs;
-        this.outputDefs = outputDefs;
         this.outputs = outputs;
-    }
-
-    public CodeType getProcessId() {
-        return processId;
     }
 
     public ExecuteStatus getStatus() {
         return status;
     }
 
-    public ExecuteInput[] getInputs() {
-        return inputs;
-    }
-
-    public OutputDefinition[] getDocumentOutputDefinition() {
-        return outputDefs;
-    }
-
     public ExecuteOutput[] getOutputs() {
         return outputs;
     }
-
 }

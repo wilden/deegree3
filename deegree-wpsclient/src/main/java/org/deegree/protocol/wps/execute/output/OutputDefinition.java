@@ -48,7 +48,7 @@ import org.deegree.protocol.wps.execute.datatypes.ComplexAttributes;
  * @version $Revision$, $Date$
  * 
  */
-public class OutputDefinition implements ResponseFormat {
+public class OutputDefinition {
 
     private CodeType id;
 
@@ -56,10 +56,13 @@ public class OutputDefinition implements ResponseFormat {
 
     private ComplexAttributes complexAttributes;
 
-    public OutputDefinition( CodeType id, String uom, ComplexAttributes complexAttributes ) {
+    private boolean asRef;
+
+    public OutputDefinition( CodeType id, String uom, boolean asRef, String mimeType, String encoding, String schema ) {
         this.id = id;
         this.uom = uom;
-        this.complexAttributes = complexAttributes;
+        this.asRef = asRef;
+        this.complexAttributes = new ComplexAttributes( mimeType, encoding, schema );
     }
 
     public CodeType getId() {
@@ -72,6 +75,10 @@ public class OutputDefinition implements ResponseFormat {
 
     public ComplexAttributes getComplexAttributes() {
         return complexAttributes;
+    }
+
+    public boolean isReference() {
+        return asRef;
     }
 
 }

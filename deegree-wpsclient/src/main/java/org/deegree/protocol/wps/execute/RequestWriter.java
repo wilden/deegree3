@@ -35,14 +35,15 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.execute;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.apache.axiom.om.util.Base64;
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.protocol.wps.execute.datatypes.BinaryDataType;
@@ -53,9 +54,7 @@ import org.deegree.protocol.wps.execute.datatypes.LiteralDataType;
 import org.deegree.protocol.wps.execute.datatypes.XMLDataType;
 import org.deegree.protocol.wps.execute.input.ExecuteInput;
 import org.deegree.protocol.wps.execute.input.InputReference;
-import org.deegree.protocol.wps.execute.output.DocumentOutputDefinition;
 import org.deegree.protocol.wps.execute.output.OutputDefinition;
-import org.deegree.protocol.wps.execute.output.ResponseDocumentFormat;
 import org.deegree.protocol.wps.execute.output.ResponseFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,9 +69,9 @@ import org.slf4j.LoggerFactory;
  * @version $Revision$, $Date$
  * 
  */
-public class ExecuteRequestWriter {
+public class RequestWriter {
 
-    private static Logger LOG = LoggerFactory.getLogger( ExecuteRequestWriter.class );
+    private static Logger LOG = LoggerFactory.getLogger( RequestWriter.class );
 
     private static final String wpsPrefix = "wps";
 
@@ -88,7 +87,7 @@ public class ExecuteRequestWriter {
 
     private static XMLStreamWriter writer;
 
-    public ExecuteRequestWriter( XMLStreamWriter writer ) {
+    public RequestWriter( XMLStreamWriter writer ) {
         this.writer = writer;
     }
 
@@ -120,49 +119,52 @@ public class ExecuteRequestWriter {
     private void writeOutputs( ResponseFormat outputFormat )
                             throws XMLStreamException {
         if ( outputFormat != null ) {
-            writer.writeStartElement( wpsPrefix, "ResponseForm", wpsNS );
+            List<OutputDefinition> outputs = outputFormat.getOutputDefinitions();
 
-            if ( outputFormat instanceof ResponseDocumentFormat ) {
-                writer.writeStartElement( wpsPrefix, "ResponseDocument", wpsNS );
+            if ( outputs != null && outputs.size() > 0 ) {
+                writer.writeStartElement( wpsPrefix, "ResponseForm", wpsNS );
 
-                ResponseDocumentFormat docOutput = (ResponseDocumentFormat) outputFormat;
-                if ( docOutput.getStoreExecuteResponse() != null ) {
-                    writer.writeAttribute( "storeExecuteResponse", String.valueOf( docOutput.getStoreExecuteResponse() ) );
-                }
-                if ( docOutput.getLineage() != null ) {
-                    writer.writeAttribute( "lineage", String.valueOf( docOutput.getLineage() ) );
-                }
-                if ( docOutput.getLineage() != null ) {
-                    writer.writeAttribute( "status", String.valueOf( docOutput.getStatus() ) );
-                }
+                if ( !outputFormat.isRaw() ) {
+                    writer.writeStartElement( wpsPrefix, "ResponseDocument", wpsNS );
 
-                DocumentOutputDefinition[] output = docOutput.getDocOutputDefs();
-                for ( int i = 0; i < output.length; i++ ) {
-                    writer.writeStartElement( wpsPrefix, "Output", wpsNS );
-                    if ( output[i].isReference() != null ) {
-                        writer.writeAttribute( "asReference", String.valueOf( output[i].isReference() ) );
+                    if ( outputFormat.isAsynch() != null ) {
+                        writer.writeAttribute( "storeExecuteResponse", String.valueOf( outputFormat.isAsynch() ) );
                     }
-                    writeIdentifier( output[i].getId() );
-
-                    if ( output[i].getUom() != null ) {
-                        writer.writeAttribute( "uom", output[i].getUom() );
+                    if ( outputFormat.includesRequestInfo() != null ) {
+                        writer.writeAttribute( "lineage", String.valueOf( outputFormat.includesRequestInfo() ) );
                     }
-                    writeComplexAttributes( output[i].getComplexAttributes() );
+                    if ( outputFormat.updatesStatus() != null ) {
+                        writer.writeAttribute( "status", String.valueOf( outputFormat.updatesStatus() ) );
+                    }
+
+                    for ( OutputDefinition outputDef : outputs ) {
+                        writer.writeStartElement( wpsPrefix, "Output", wpsNS );
+                        if ( outputDef.isReference() ) {
+                            writer.writeAttribute( "asReference", "true" );
+                        }
+                        writeIdentifier( outputDef.getId() );
+
+                        if ( outputDef.getUom() != null ) {
+                            writer.writeAttribute( "uom", outputDef.getUom() );
+                        }
+                        if ( outputDef.getComplexAttributes() != null ) {
+                            writeComplexAttributes( outputDef.getComplexAttributes() );
+                        }
+                        writer.writeEndElement();
+                    }
+                    writer.writeEndElement();
+
+                } else {
+                    writer.writeStartElement( wpsPrefix, "RawDataOutput", wpsNS );
+
+                    writeIdentifier( outputFormat.getOutputDefinitions().get( 0 ).getId() );
+
+                    if ( outputFormat.getOutputDefinitions().get( 0 ).getUom() != null ) {
+                        writer.writeAttribute( "uom", outputFormat.getOutputDefinitions().get( 0 ).getUom() );
+                    }
+                    writeComplexAttributes( outputFormat.getOutputDefinitions().get( 0 ).getComplexAttributes() );
                     writer.writeEndElement();
                 }
-                writer.writeEndElement();
-
-            } else if ( outputFormat instanceof OutputDefinition ) {
-                writer.writeStartElement( wpsPrefix, "RawDataOutput", wpsNS );
-
-                OutputDefinition rawOutput = (OutputDefinition) outputFormat;
-                writeIdentifier( rawOutput.getId() );
-
-                if ( rawOutput.getUom() != null ) {
-                    writer.writeAttribute( "uom", rawOutput.getUom() );
-                }
-                writeComplexAttributes( rawOutput.getComplexAttributes() );
-                writer.writeEndElement();
             }
         }
     }
@@ -186,8 +188,12 @@ public class ExecuteRequestWriter {
 
     private void writeIdentifier( CodeType id )
                             throws XMLStreamException {
-        writer.writeStartElement( wpsPrefix, "Identifier", wpsNS );
-        writer.writeCharacters( id.getCodeSpace() + ":" + id.getCode() );
+        writer.writeStartElement( "ows", "Identifier", owsNS );
+        if ( id.getCodeSpace() != null ) {
+            writer.writeCharacters( id.getCodeSpace() + ":" + id.getCode() );
+        } else {
+            writer.writeCharacters( id.getCode() );
+        }
         writer.writeEndElement();
     }
 
@@ -205,18 +211,16 @@ public class ExecuteRequestWriter {
                 ExecuteInput dataInput = inputList.get( i );
 
                 writer.writeStartElement( wpsPrefix, "Input", wpsNS );
-                writer.writeStartElement( owsPrefix, "Identifier", owsNS );
-                writer.writeCharacters( dataInput.getId().getCodeSpace() + ":" + dataInput.getId().getCode() );
-                writer.writeEndElement();
+                writeIdentifier( dataInput.getId() );
 
                 if ( dataInput.getInputReference() != null ) {
                     InputReference referenceInput = dataInput.getInputReference();
                     writer.writeStartElement( wpsPrefix, "Reference", wpsNS );
                     writer.writeAttribute( "href", referenceInput.getXlink() );
                     writer.writeEndElement();
-
                 } else {
 
+                    writer.writeStartElement( wpsPrefix, "Data", wpsNS );
                     DataType dataType = dataInput.getDataType();
                     if ( dataType instanceof XMLDataType ) {
                         XMLDataType complexInput = (XMLDataType) dataType;
@@ -224,7 +228,9 @@ public class ExecuteRequestWriter {
 
                         writeComplexAttributes( complexInput.getComplexAttributes() );
 
-                        XMLAdapter.writeElement( writer, ( (XMLDataType) dataType ).getAsXMLStream() );
+                        XMLStreamReader xmldata = complexInput.getAsXMLStream();
+
+                        XMLAdapter.writeElement( writer, xmldata );
 
                         writer.writeEndElement();
 
@@ -233,10 +239,13 @@ public class ExecuteRequestWriter {
 
                         try {
                             writer.writeStartElement( wpsPrefix, "ComplexData", wpsNS );
-                            BufferedReader buff = new BufferedReader( new InputStreamReader( binaryInput.getData() ) );
-                            char[] cbuf = new char[1024];
-                            buff.read( cbuf );
-                            writer.writeCharacters( cbuf, 0, 1023 );
+                            byte[] buffer = new byte[1024];
+                            int read = -1;
+                            InputStream is = binaryInput.getDataStream();
+                            while ( ( read = is.read( buffer ) ) != -1 ) {
+                                String encoded = Base64.encode( buffer, 0, read );
+                                writer.writeCharacters( encoded );
+                            }
                             writer.writeEndElement();
                         } catch ( IOException e ) {
                             LOG.error( e.getMessage() );
@@ -259,7 +268,7 @@ public class ExecuteRequestWriter {
                         BoundingBoxDataType bboxInput = (BoundingBoxDataType) dataType;
                         writer.writeStartElement( wpsPrefix, "BoundingBoxData", wpsNS );
 
-                        double[] coords = bboxInput.getCoordiantes();
+                        double[] coords = bboxInput.getCoordinates();
                         int dim = 2;
                         if ( bboxInput.getDim() > 0 ) {
                             dim = bboxInput.getDim();
@@ -268,16 +277,20 @@ public class ExecuteRequestWriter {
                         if ( bboxInput.getCrs() != null ) {
                             writer.writeAttribute( "crs", bboxInput.getCrs() );
                         }
-                        writer.writeStartElement( wpsPrefix, "LowerCorner", wpsNS );
+                        writer.writeStartElement( owsPrefix, "LowerCorner", owsNS );
                         for ( int j = 0; j < dim; j++ ) {
-                            writer.writeCharacters( String.valueOf( coords[j] ) );
-                        }
-                        writer.writeStartElement( wpsPrefix, "UpperCorner", wpsNS );
-                        for ( int j = dim; j < 2 * dim; j++ ) {
-                            writer.writeCharacters( String.valueOf( coords[j] ) );
+                            writer.writeCharacters( String.valueOf( coords[j] ) + " " );
                         }
                         writer.writeEndElement();
+
+                        writer.writeStartElement( owsPrefix, "UpperCorner", owsNS );
+                        for ( int j = dim; j < 2 * dim; j++ ) {
+                            writer.writeCharacters( String.valueOf( coords[j] ) + " " );
+                        }
+                        writer.writeEndElement();
+                        writer.writeEndElement(); // BoundingBox
                     }
+                    writer.writeEndElement(); // Data
                 }
                 writer.writeEndElement(); // Input
             }

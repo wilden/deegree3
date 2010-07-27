@@ -119,7 +119,8 @@ public class ResponseReader {
         List<ExecuteOutput> outputs = null;
 
         try {
-            int state = reader.nextTag(); // TODO replace with StaXParsingHelper
+            StAXParsingHelper.nextElement( reader );
+            int state = reader.getEventType();
             if ( new QName( owsNS, "ExceptionReport" ).equals( reader.getName() ) ) {
                 ExceptionReport excep = parseException();
                 LOG.error( "Service returned returned OWSException. " + excep.getMessage() );
@@ -193,17 +194,17 @@ public class ResponseReader {
                         data = new BinaryDataType( new URL( href ), true, mimeType, attribs.getEncoding() );
                     }
                     output = new ExecuteOutput( id, data );
-                    reader.nextTag(); // TODO replace with StaXParsingHelper
+                    StAXParsingHelper.nextElement( reader );
                 }
                 if ( reader.getName().getLocalPart().equals( "Data" ) ) {
                     data = parseDataType();
                     output = new ExecuteOutput( id, data );
-                    reader.nextTag(); // TODO replace with StaXParsingHelper
+                    StAXParsingHelper.nextElement( reader );
                 }
 
                 outputs.add( output );
-                reader.nextTag(); // TODO replace with StaXParsingHelper // </Output>
-                reader.nextTag(); // TODO replace with StaXParsingHelper
+                StAXParsingHelper.nextElement( reader ); // </Output>
+                StAXParsingHelper.nextElement( reader );
             }
         } catch ( MalformedURLException e ) {
             e.printStackTrace();
@@ -225,23 +226,23 @@ public class ResponseReader {
     private List<OutputDefinition> parseOutputDefinition()
                             throws XMLStreamException {
         List<OutputDefinition> outputDefs = new ArrayList<OutputDefinition>();
-        reader.nextTag(); // TODO replace with StaXParsingHelper // <Output>
+        StAXParsingHelper.nextElement( reader ); // <Output>
         while ( reader.getName().getLocalPart().equals( "Output" ) ) {
             ComplexAttributes complexAttribs = parseComplexAttributes();
             String uom = reader.getAttributeValue( null, "uom" );
 
-            reader.nextTag(); // TODO replace with StaXParsingHelper
+            StAXParsingHelper.nextElement( reader );
             LanguageString outputTitle = null;
             if ( "Title".equals( reader.getName().getLocalPart() ) ) {
                 String lang = reader.getAttributeValue( xmlNS, "lang" );
                 outputTitle = new LanguageString( reader.getElementText(), lang );
-                reader.nextTag(); // TODO replace with StaXParsingHelper
+                StAXParsingHelper.nextElement( reader );
             }
             LanguageString outputAbstract = null;
             if ( "Abstract".equals( reader.getName().getLocalPart() ) ) {
                 String lang = reader.getAttributeValue( xmlNS, "lang" );
                 outputAbstract = new LanguageString( reader.getElementText(), lang );
-                reader.nextTag(); // TODO replace with StaXParsingHelper
+                StAXParsingHelper.nextElement( reader );
             }
 
             boolean asRef = false;
@@ -250,17 +251,19 @@ public class ResponseReader {
                 asRef = Boolean.valueOf( asRefStr );
             }
 
-            reader.nextTag(); // TODO replace with StaXParsingHelper
+            StAXParsingHelper.nextElement( reader );
             CodeType id = parseIdentifier();
             outputDefs.add( new OutputDefinition( id, uom, asRef, complexAttribs.getMimeType(),
                                                   complexAttribs.getEncoding(), complexAttribs.getSchema() ) );
 
-            int state = reader.nextTag(); // TODO replace with StaXParsingHelper
+            StAXParsingHelper.nextElement( reader );
+            int state = reader.getEventType();
             while ( state != XMLStreamConstants.END_ELEMENT || !reader.getName().getLocalPart().equals( "Output" ) ) {
-                state = reader.nextTag(); // TODO replace with StaXParsingHelper
+                StAXParsingHelper.nextElement( reader );
+                state = reader.getEventType();
             }
         }
-        reader.nextTag(); // TODO replace with StaXParsingHelper
+        StAXParsingHelper.nextElement( reader );
         return outputDefs;
     }
 
@@ -278,31 +281,32 @@ public class ResponseReader {
         List<ExecuteInput> inputs = new ArrayList<ExecuteInput>();
         InputReference inputRef = null;
         DataType dataType = null;
-        reader.nextTag(); // TODO replace with StaXParsingHelper // "Input"
+        StAXParsingHelper.nextElement( reader ); // "Input"
+
         while ( "Input".equals( reader.getName().getLocalPart() ) ) {
 
             ExecuteInput input = null;
-            reader.nextTag(); // TODO replace with StaXParsingHelper // "Identifier"
+            StAXParsingHelper.nextElement( reader ); // "Identifier"
             CodeType id = parseIdentifier();
             while ( !"Reference".equals( reader.getName().getLocalPart() )
                     && !"Data".equals( reader.getName().getLocalPart() ) ) {
-                reader.nextTag(); // TODO replace with StaXParsingHelper
+                StAXParsingHelper.nextElement( reader );
             }
 
             if ( "Reference".equals( reader.getName().getLocalPart() ) ) {
                 inputRef = parseInputRef();
                 input = new ExecuteInput( id, inputRef );
-                reader.nextTag(); // TODO replace with StaXParsingHelper
+                StAXParsingHelper.nextElement( reader );
             }
 
             if ( "Data".equals( reader.getName().getLocalPart() ) ) {
                 dataType = parseDataType();
                 input = new ExecuteInput( id, dataType );
-                reader.nextTag(); // TODO replace with StaXParsingHelper
+                StAXParsingHelper.nextElement( reader );
             }
             inputs.add( input );
-            reader.nextTag(); // TODO replace with StaXParsingHelper // </Input>
-            reader.nextTag(); // TODO replace with StaXParsingHelper
+            StAXParsingHelper.nextElement( reader ); // </Input>
+            StAXParsingHelper.nextElement( reader );
         }
         return inputs;
     }
@@ -321,7 +325,7 @@ public class ResponseReader {
     private DataType parseDataType()
                             throws XMLStreamException {
         DataType dataType = null;
-        reader.nextTag(); // TODO replace with StaXParsingHelper
+        StAXParsingHelper.nextElement( reader );
         String localName = reader.getName().getLocalPart();
         if ( "ComplexData".equals( localName ) ) {
             dataType = parseComplexData();
@@ -437,14 +441,14 @@ public class ResponseReader {
         }
         String crs = reader.getAttributeValue( null, "crs" );
 
-        reader.nextTag(); // TODO replace with StaXParsingHelper // <LowerCorner>
+        StAXParsingHelper.nextElement( reader ); // <LowerCorner>
         String[] coordStr = reader.getElementText().split( "\\s" );
         double[] coords = new double[2 * dim];
         for ( int i = 0; i < dim; i++ ) {
             coords[i] = Double.parseDouble( coordStr[i] );
         }
 
-        reader.nextTag(); // TODO replace with StaXParsingHelper // <UpperCorner>
+        StAXParsingHelper.nextElement( reader ); // <UpperCorner>
         coordStr = reader.getElementText().split( "\\s" );
         for ( int i = dim; i < 2 * dim; i++ ) {
             coords[i] = Double.parseDouble( coordStr[i - dim] );
@@ -487,24 +491,24 @@ public class ResponseReader {
         method = reader.getAttributeValue( null, "method" );
         complexAttribs = parseComplexAttributes();
 
-        reader.nextTag(); // TODO replace with StaXParsingHelper
+        StAXParsingHelper.nextElement( reader );
         while ( "Header".equals( reader.getName().getLocalPart() ) ) {
             String key = reader.getAttributeValue( null, "key" );
             String value = reader.getAttributeValue( null, "value" );
             headers.put( key, value );
-            reader.nextTag(); // TODO replace with StaXParsingHelper // </Header>
-            reader.nextTag(); // TODO replace with StaXParsingHelper
+            StAXParsingHelper.nextElement( reader ); // </Header>
+            StAXParsingHelper.nextElement( reader );
         }
 
         if ( "Body".equals( reader.getName().getLocalPart() ) ) {
             body = reader.getElementText();
-            reader.nextTag(); // TODO replace with StaXParsingHelper
+            StAXParsingHelper.nextElement( reader );
         }
 
         if ( "BodyReference".equals( reader.getName().getLocalPart() ) ) {
             bodyXlink = reader.getAttributeValue( xlinkNS, "href" );
             body = reader.getElementText();
-            reader.nextTag(); // TODO replace with StaXParsingHelper
+            StAXParsingHelper.nextElement( reader );
         }
         return new InputReference( headers, body, bodyXlink, xlink, method );
     }
@@ -540,7 +544,7 @@ public class ResponseReader {
             creationTime = attribute;
         }
 
-        reader.nextTag(); // TODO replace with StaXParsingHelper
+        StAXParsingHelper.nextElement( reader );
         String localName = reader.getName().getLocalPart();
         if ( "ProcessAccepted".equals( localName ) || "ProcessSucceeded".equals( localName ) ) {
             statusMsg = reader.getElementText();
@@ -551,12 +555,12 @@ public class ResponseReader {
             if ( percentStr != null ) {
                 percent = Integer.parseInt( percentStr );
             }
-            reader.nextTag(); // TODO replace with StaXParsingHelper
+            StAXParsingHelper.nextElement( reader );
         }
         // if ( "ProcessFailed".equals( localName ) ) {
         // exceptionReport = parseException();
         // }
-        reader.nextTag(); // TODO replace with StaXParsingHelper // </Status>
+        StAXParsingHelper.nextElement( reader ); // </Status>
         return new ExecuteStatus( statusMsg, percent, creationTime, exceptionReport );
     }
 
@@ -574,8 +578,8 @@ public class ResponseReader {
         String locator = null;
         String message = null;
         try {
-            reader.nextTag(); // TODO replace with StaXParsingHelper // "Exception"
-            reader.nextTag(); // TODO replace with StaXParsingHelper // "ExceptionText"
+            StAXParsingHelper.nextElement( reader ); // "Exception"
+            StAXParsingHelper.nextElement( reader ); // "ExceptionText"
             code = reader.getAttributeValue( null, "exceptionCode" );
             locator = reader.getAttributeValue( null, "locator" );
             message = reader.getElementText();
@@ -597,7 +601,7 @@ public class ResponseReader {
     private CodeType parseProcess()
                             throws XMLStreamException {
         CodeType id = null;
-        reader.nextTag(); // TODO replace with StaXParsingHelper
+        StAXParsingHelper.nextElement( reader );
         id = parseIdentifier();
         int state = reader.next();
         return id; // TODO maybe create a process bean and return it

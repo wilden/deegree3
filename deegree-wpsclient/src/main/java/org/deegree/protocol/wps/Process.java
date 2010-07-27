@@ -114,7 +114,9 @@ public class Process {
     // }
 
     /**
-     * Create a process execution instance that will manage the execution of the process.
+     * Create a {@link ProcessExecution} instance that will manage the execution of the process.
+     * 
+     * @return a {@link ProcessExecution} instance
      */
     public ProcessExecution prepareExecution() {
         return new ProcessExecution( this );

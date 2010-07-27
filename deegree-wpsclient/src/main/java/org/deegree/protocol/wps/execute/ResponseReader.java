@@ -368,11 +368,15 @@ public class ResponseReader {
             tmpFile = File.createTempFile( "output", ".bin" );
             OutputStream sink = new FileOutputStream( tmpFile );
 
-            // TODO check: is this announced encoding really base64?
-            String base64String = reader.getElementText();
-            System.out.println( base64String );
-            byte[] bytes = Base64.decodeBase64( base64String );
-            sink.write( bytes );
+            if ( "base64".equals( attribs.getEncoding() ) ) {
+                String base64String = reader.getElementText();
+                byte[] bytes = Base64.decodeBase64( base64String );
+                sink.write( bytes );
+            } else {
+                LOG.warn( "The encoding of binary data (found at response location "
+                          + reader.getLocation()
+                          + ") is not base64. Currently only from this format the decoding can be performed. Skipping the data." );
+            }
             sink.close();
 
             data = new BinaryDataType( tmpFile.toURI().toURL(), false, attribs.getMimeType(), attribs.getEncoding() );

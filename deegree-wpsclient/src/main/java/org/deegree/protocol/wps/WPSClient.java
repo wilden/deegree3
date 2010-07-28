@@ -156,14 +156,6 @@ public class WPSClient {
         }
     }
 
-    // /**
-    // *
-    // * @return the capabilities of a service
-    // */
-    // public WPSCapabilities getCapabilities() {
-    // return serviceCapabilities;
-    // }
-
     public String getServiceVersion() {
         return "1.0.0";
     }
@@ -194,17 +186,19 @@ public class WPSClient {
     }
 
     /**
-     * Retrieve Process by providing its id as string.
+     * Retrieve Process by providing its id (and codespace, if needed).
      * 
-     * @param processId
-     *            the id as {@link CodeType}
+     * @param id
+     *            id as String
+     * @param codeSpace
+     *            codespace as String, may be null
      * @return {@link Process} instance containing all relevant process information.
      */
-    public Process getProcess( String id, String idCodeSpace ) {
-        if ( !processIdToProcess.containsKey( new CodeType( id, idCodeSpace ) ) ) {
+    public Process getProcess( String id, String codeSpace ) {
+        if ( !processIdToProcess.containsKey( new CodeType( id, codeSpace ) ) ) {
             throw new RuntimeException( "WPS has no registered process with id " + id );
         }
-        return processIdToProcess.get( new CodeType( id, idCodeSpace ) );
+        return processIdToProcess.get( new CodeType( id, codeSpace ) );
     }
 
 }

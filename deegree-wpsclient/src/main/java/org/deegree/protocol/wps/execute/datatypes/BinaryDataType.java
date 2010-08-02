@@ -39,6 +39,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
+import org.deegree.protocol.wps.ComplexAttributes;
+
 /**
  * The <code></code> class TODO add class documentation here.
  * 

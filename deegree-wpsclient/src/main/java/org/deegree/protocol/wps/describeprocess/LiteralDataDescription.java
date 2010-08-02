@@ -33,10 +33,12 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.output;
+package org.deegree.protocol.wps.describeprocess;
 
-import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.execute.datatypes.DataType;
+import java.net.URL;
+
+import org.deegree.commons.utils.Pair;
+import org.deegree.commons.utils.Triple;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -48,22 +50,50 @@ import org.deegree.protocol.wps.execute.datatypes.DataType;
  * @version $Revision$, $Date$
  * 
  */
-public class ExecuteOutput {
+public class LiteralDataDescription implements DataDescription {
 
-    private CodeType id;
+    private String dataType;
 
-    private DataType dataType;
+    private URL dataTypeRef;
 
-    public ExecuteOutput( CodeType id, DataType dataType ) {
-        this.id = id;
+    private String defaultUom;
+
+    private String defaultUomRef;
+
+    private Pair<String, String>[] supportedUoms;
+
+    private String[] allowedValues;
+
+    /**
+     * Triple for (minValue, maxValue, spacing). Both minValue and maxValue are included in the interval. When the
+     * interval is continuous spacing is set to: 1 (for integers), 0 (for floats)
+     */
+    private Triple<String, String, String>[] range;
+
+    private boolean anyValue;
+
+    private URL valueRef;
+
+    private URL valueRefForm;
+
+    public LiteralDataDescription( String dataType, URL dataTypeRef, String defaultUom, String defaultUomRef,
+                                   Pair<String, String>[] supportedUoms, String[] allowedValues,
+                                   Triple<String, String, String>[] range, boolean anyValue, URL reference,
+                                   URL referenceForm ) {
         this.dataType = dataType;
+        this.dataTypeRef = dataTypeRef;
+        this.defaultUom = defaultUom;
+        this.defaultUomRef = defaultUomRef;
+        this.supportedUoms = supportedUoms;
+        this.allowedValues = allowedValues;
+        this.range = range;
+        this.anyValue = anyValue;
+        this.valueRef = reference;
+        this.valueRefForm = referenceForm;
     }
 
-    public CodeType getId() {
-        return id;
+    public boolean isAnyValue() {
+        return anyValue;
     }
 
-    public DataType getDataType() {
-        return dataType;
-    }
 }

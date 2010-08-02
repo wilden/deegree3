@@ -44,6 +44,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.deegree.commons.xml.stax.StAXParsingHelper;
+import org.deegree.protocol.wps.ComplexAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

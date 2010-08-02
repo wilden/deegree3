@@ -33,13 +33,14 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.output;
+package org.deegree.protocol.wps.describeprocess;
 
 import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.ComplexAttributes;
+import org.deegree.commons.tom.ows.LanguageString;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * The <code>InputDescription</code> class represents the input properties of a process parameter. It is filled out from
+ * a DescribeProcess response.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * 
@@ -48,37 +49,42 @@ import org.deegree.protocol.wps.ComplexAttributes;
  * @version $Revision$, $Date$
  * 
  */
-public class OutputDefinition {
+public class InputDescription {
 
     private CodeType id;
 
-    private String uom;
+    private LanguageString inputTitle;
 
-    private ComplexAttributes complexAttributes;
+    private LanguageString inputAbstract;
 
-    private boolean asRef;
+    // metadata
 
-    public OutputDefinition( CodeType id, String uom, boolean asRef, String mimeType, String encoding, String schema ) {
+    private String minOccurs;
+
+    private String maxOccurs;
+
+    private DataDescription dataDescription;
+
+    public InputDescription( CodeType id, LanguageString inputTitle, LanguageString inputAbstract, String minOccurs,
+                             String maxOccurs, DataDescription dataDescription ) {
         this.id = id;
-        this.uom = uom;
-        this.asRef = asRef;
-        this.complexAttributes = new ComplexAttributes( mimeType, encoding, schema );
+        this.inputTitle = inputTitle;
+        this.inputAbstract = inputAbstract;
+        this.minOccurs = minOccurs;
+        this.maxOccurs = maxOccurs;
+        this.dataDescription = dataDescription;
     }
 
-    public CodeType getId() {
-        return id;
+    public String getMinOccurs() {
+        return minOccurs;
     }
 
-    public String getUom() {
-        return uom;
+    public String getMaxOccurs() {
+        return maxOccurs;
     }
 
-    public ComplexAttributes getComplexAttributes() {
-        return complexAttributes;
-    }
-
-    public boolean isReference() {
-        return asRef;
+    public DataDescription getData() {
+        return dataDescription;
     }
 
 }

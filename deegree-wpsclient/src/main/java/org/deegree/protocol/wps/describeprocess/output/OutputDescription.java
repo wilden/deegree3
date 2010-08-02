@@ -33,10 +33,10 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.output;
+package org.deegree.protocol.wps.describeprocess.output;
 
 import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.ComplexAttributes;
+import org.deegree.commons.tom.ows.LanguageString;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -48,37 +48,23 @@ import org.deegree.protocol.wps.ComplexAttributes;
  * @version $Revision$, $Date$
  * 
  */
-public class OutputDefinition {
+public class OutputDescription {
 
     private CodeType id;
 
-    private String uom;
+    private LanguageString outputTitle;
 
-    private ComplexAttributes complexAttributes;
+    private LanguageString outputAbstract;
 
-    private boolean asRef;
+    // metadata
 
-    public OutputDefinition( CodeType id, String uom, boolean asRef, String mimeType, String encoding, String schema ) {
+    private GenericOutput outputData;
+
+    public OutputDescription( CodeType id, LanguageString outputTitle, LanguageString outputAbstract,
+                              GenericOutput outputData ) {
         this.id = id;
-        this.uom = uom;
-        this.asRef = asRef;
-        this.complexAttributes = new ComplexAttributes( mimeType, encoding, schema );
+        this.outputTitle = outputTitle;
+        this.outputAbstract = outputAbstract;
+        this.outputData = outputData;
     }
-
-    public CodeType getId() {
-        return id;
-    }
-
-    public String getUom() {
-        return uom;
-    }
-
-    public ComplexAttributes getComplexAttributes() {
-        return complexAttributes;
-    }
-
-    public boolean isReference() {
-        return asRef;
-    }
-
 }

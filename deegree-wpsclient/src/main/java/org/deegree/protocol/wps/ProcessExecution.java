@@ -35,15 +35,30 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
 import org.deegree.commons.tom.ows.CodeType;
+import org.deegree.commons.xml.XMLAdapter;
+import org.deegree.protocol.wps.execute.ExecuteRequest;
 import org.deegree.protocol.wps.execute.ExecuteResponse;
+import org.deegree.protocol.wps.execute.RequestWriter;
+import org.deegree.protocol.wps.execute.ResponseReader;
 import org.deegree.protocol.wps.execute.datatypes.BinaryDataType;
 import org.deegree.protocol.wps.execute.datatypes.BoundingBoxDataType;
 import org.deegree.protocol.wps.execute.datatypes.LiteralDataType;
@@ -52,6 +67,8 @@ import org.deegree.protocol.wps.execute.input.ExecuteInput;
 import org.deegree.protocol.wps.execute.output.OutputDefinition;
 import org.deegree.protocol.wps.execute.output.ResponseFormat;
 import org.deegree.services.controller.ows.OWSException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -64,6 +81,8 @@ import org.deegree.services.controller.ows.OWSException;
  * 
  */
 public class ProcessExecution {
+
+    private static Logger LOG = LoggerFactory.getLogger( ProcessExecution.class );
 
     private Process process;
 
@@ -125,7 +144,7 @@ public class ProcessExecution {
      * @param codeSpace
      *            codespace of the id, may be null
      * @param url
-     *            {@link URL} to the xml data
+     *            {@link URL} to the xml data, must not be null
      * @param mimeType
      *            mime type of the xml data, may be null
      * @param encoding
@@ -146,7 +165,7 @@ public class ProcessExecution {
      * @param codeSpace
      *            codespace of the id, may be null
      * @param reader
-     *            {@link XMLStreamReader} to the xml data
+     *            {@link XMLStreamReader} to the xml data, mustn't be null
      * @param mimeType
      *            mime type of the xml data, may be null
      * @param encoding
@@ -168,7 +187,7 @@ public class ProcessExecution {
      * @param codeSpace
      *            codespace of the id, may be null
      * @param url
-     *            {@link URL} to the binary data
+     *            {@link URL} to the binary data, mustn't be null
      * @param mimeType
      *            mime type of the binary data, may be null
      * @param encoding
@@ -187,7 +206,7 @@ public class ProcessExecution {
      * @param codeSpace
      *            codespace of the id, may be null
      * @param inputStream
-     *            input stream to the binary data
+     *            input stream to the binary data, mustn't be null
      * @param mimeType
      *            mime type of the binary data, may be null
      * @param encoding
@@ -210,7 +229,7 @@ public class ProcessExecution {
      * @param uom
      *            unit of measure, in case it is a Literal Output, otherwise null
      * @param asRef
-     *            return output as an URL, boolean
+     *            return output as an URL
      * @param mimeType
      *            mimeType of the data, may be null
      * @param encoding
@@ -252,7 +271,7 @@ public class ProcessExecution {
      * @param updateStatus
      */
     public void startAsync( boolean updateStatus ) {
-
+        throw new UnsupportedOperationException( "Async execution is not finished yet." );
     }
 
     /**
@@ -263,8 +282,61 @@ public class ProcessExecution {
      */
     public ExecuteResponse start()
                             throws OWSException {
+
         responseFormat = new ResponseFormat( rawOutput, false, false, false, outputDefs );
-        ExecuteResponse response = process.execute( inputs, responseFormat );
+
+        ExecuteResponse response = null;
+        try {
+            // TODO what if server only supports Get?
+            URL url = process.getWPSClient().getExecuteURL( true );
+
+            URLConnection conn = url.openConnection();
+            conn.setDoOutput( true );
+            conn.setUseCaches( false );
+            conn.setRequestProperty( "Content-Type", "application/xml" );
+
+            XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
+            XMLStreamWriter writer = outFactory.createXMLStreamWriter( conn.getOutputStream() );
+
+            // XMLStreamWriter writer = outFactory.createXMLStreamWriter( new FileOutputStream(
+            // File.createTempFile(
+            // "wpsClientIn",
+            // ".xml" ) ) );
+
+            ExecuteRequest executeRequest = new ExecuteRequest( process.getId(), inputs, responseFormat );
+            RequestWriter executer = new RequestWriter( writer );
+            executer.write100( executeRequest );
+            writer.flush();
+            writer.close();
+
+            XMLInputFactory inFactory = XMLInputFactory.newInstance();
+            XMLStreamReader reader = inFactory.createXMLStreamReader( conn.getInputStream() );
+
+            reader.nextTag(); // so that it points to START_ELEMENT, hence prepared to be processed by XMLAdapter
+
+            if ( LOG.isDebugEnabled() ) {
+                File logOutputFile = File.createTempFile( "wpsClient", "Out.xml" );
+                OutputStream outStream = new FileOutputStream( logOutputFile );
+                XMLStreamWriter straightWriter = XMLOutputFactory.newInstance().createXMLStreamWriter( outStream );
+                XMLAdapter.writeElement( straightWriter, reader );
+                LOG.debug( "Service output can be found at " + logOutputFile.toString() );
+                straightWriter.close();
+
+                reader = XMLInputFactory.newInstance().createXMLStreamReader( new FileInputStream( logOutputFile ) );
+            }
+
+            ResponseReader responseReader = new ResponseReader( reader );
+            response = responseReader.parse100();
+            reader.close();
+
+        } catch ( MalformedURLException e ) {
+            LOG.error( "Invalid URL found when connecting to WPS for Execute. " + e.getMessage() );
+        } catch ( XMLStreamException e ) {
+            LOG.error( "Error during Execute operation. " + e.getMessage() );
+        } catch ( IOException e ) {
+            LOG.error( "Error during Execute operation. " + e.getMessage() );
+        }
+
         return response;
     }
 }

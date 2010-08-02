@@ -33,10 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.output;
-
-import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.ComplexAttributes;
+package org.deegree.protocol.wps;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -48,37 +45,30 @@ import org.deegree.protocol.wps.ComplexAttributes;
  * @version $Revision$, $Date$
  * 
  */
-public class OutputDefinition {
+public class ComplexAttributes {
 
-    private CodeType id;
+    private String mimeType;
 
-    private String uom;
+    private String encoding;
 
-    private ComplexAttributes complexAttributes;
+    private String schema;
 
-    private boolean asRef;
-
-    public OutputDefinition( CodeType id, String uom, boolean asRef, String mimeType, String encoding, String schema ) {
-        this.id = id;
-        this.uom = uom;
-        this.asRef = asRef;
-        this.complexAttributes = new ComplexAttributes( mimeType, encoding, schema );
+    public ComplexAttributes( String mimeType, String encoding, String schema ) {
+        this.mimeType = mimeType;
+        this.encoding = encoding;
+        this.schema = schema;
     }
 
-    public CodeType getId() {
-        return id;
+    public String getMimeType() {
+        return mimeType;
     }
 
-    public String getUom() {
-        return uom;
+    public String getEncoding() {
+        return encoding;
     }
 
-    public ComplexAttributes getComplexAttributes() {
-        return complexAttributes;
-    }
-
-    public boolean isReference() {
-        return asRef;
+    public String getSchema() {
+        return schema;
     }
 
 }

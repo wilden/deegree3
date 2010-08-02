@@ -33,10 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.output;
-
-import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.ComplexAttributes;
+package org.deegree.protocol.wps.describeprocess;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -48,37 +45,15 @@ import org.deegree.protocol.wps.ComplexAttributes;
  * @version $Revision$, $Date$
  * 
  */
-public class OutputDefinition {
+public class BBoxDataDescription implements DataDescription {
 
-    private CodeType id;
+    private String defaultCRS;
 
-    private String uom;
+    private String[] supportedCRSs;
 
-    private ComplexAttributes complexAttributes;
-
-    private boolean asRef;
-
-    public OutputDefinition( CodeType id, String uom, boolean asRef, String mimeType, String encoding, String schema ) {
-        this.id = id;
-        this.uom = uom;
-        this.asRef = asRef;
-        this.complexAttributes = new ComplexAttributes( mimeType, encoding, schema );
-    }
-
-    public CodeType getId() {
-        return id;
-    }
-
-    public String getUom() {
-        return uom;
-    }
-
-    public ComplexAttributes getComplexAttributes() {
-        return complexAttributes;
-    }
-
-    public boolean isReference() {
-        return asRef;
+    public BBoxDataDescription( String defaultCRS, String[] supportedCRSs ) {
+        this.defaultCRS = defaultCRS;
+        this.supportedCRSs = supportedCRSs;
     }
 
 }

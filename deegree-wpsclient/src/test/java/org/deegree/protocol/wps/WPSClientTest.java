@@ -45,6 +45,8 @@ import javax.xml.stream.XMLStreamReader;
 import org.deegree.commons.xml.NamespaceContext;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.XPath;
+import org.deegree.protocol.wps.describeprocess.InputDescription;
+import org.deegree.protocol.wps.describeprocess.LiteralDataDescription;
 import org.deegree.protocol.wps.execute.ExecuteResponse;
 import org.deegree.protocol.wps.execute.datatypes.BoundingBoxDataType;
 import org.deegree.protocol.wps.execute.datatypes.LiteralDataType;
@@ -75,6 +77,19 @@ public class WPSClientTest {
         if ( DEMO_SERVICE_URL == null ) {
             throw new RuntimeException( "Cannot proceed: Service URL not provided." );
         }
+    }
+
+    @Test
+    public void testGetInputDescription()
+                            throws MalformedURLException {
+        URL processUrl = new URL( DEMO_SERVICE_URL );
+        WPSClient wpsClient = new WPSClient( processUrl );
+        Process p1 = wpsClient.getProcess( "Buffer", null );
+        InputDescription literalInput = p1.getInputType( "BufferDistance", null );
+        LiteralDataDescription literalData = (LiteralDataDescription) literalInput.getData();
+        Assert.assertEquals( "1", literalInput.getMinOccurs() );
+        Assert.assertEquals( "1", literalInput.getMaxOccurs() );
+        Assert.assertEquals( true, literalData.isAnyValue() );
     }
 
     @Test

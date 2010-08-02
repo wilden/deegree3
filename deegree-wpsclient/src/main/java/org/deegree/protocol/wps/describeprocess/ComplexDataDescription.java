@@ -33,9 +33,8 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.output;
+package org.deegree.protocol.wps.describeprocess;
 
-import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.protocol.wps.ComplexAttributes;
 
 /**
@@ -48,37 +47,17 @@ import org.deegree.protocol.wps.ComplexAttributes;
  * @version $Revision$, $Date$
  * 
  */
-public class OutputDefinition {
+public class ComplexDataDescription implements DataDescription {
 
-    private CodeType id;
+    // private int maximumFileSize;
 
-    private String uom;
+    private ComplexAttributes defaultFormat;
 
-    private ComplexAttributes complexAttributes;
+    private ComplexAttributes[] supportedFormats;
 
-    private boolean asRef;
-
-    public OutputDefinition( CodeType id, String uom, boolean asRef, String mimeType, String encoding, String schema ) {
-        this.id = id;
-        this.uom = uom;
-        this.asRef = asRef;
-        this.complexAttributes = new ComplexAttributes( mimeType, encoding, schema );
-    }
-
-    public CodeType getId() {
-        return id;
-    }
-
-    public String getUom() {
-        return uom;
-    }
-
-    public ComplexAttributes getComplexAttributes() {
-        return complexAttributes;
-    }
-
-    public boolean isReference() {
-        return asRef;
+    public ComplexDataDescription( ComplexAttributes defaultFormat, ComplexAttributes[] supportedFormats ) {
+        this.defaultFormat = defaultFormat;
+        this.supportedFormats = supportedFormats;
     }
 
 }

@@ -37,39 +37,25 @@ package org.deegree.protocol.wps;
 
 import static org.deegree.protocol.wps.WPSConstants.WPS_100_NS;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
-import java.util.List;
-
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
+import java.net.URLEncoder;
+import java.util.Collection;
+import java.util.Map;
 
 import org.apache.axiom.om.xpath.AXIOMXPath;
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
-import org.deegree.commons.xml.XMLAdapter;
-import org.deegree.protocol.wps.execute.ExecuteRequest;
-import org.deegree.protocol.wps.execute.ExecuteResponse;
-import org.deegree.protocol.wps.execute.RequestWriter;
-import org.deegree.protocol.wps.execute.ResponseReader;
-import org.deegree.protocol.wps.execute.input.ExecuteInput;
-import org.deegree.protocol.wps.execute.output.ResponseFormat;
-import org.deegree.services.controller.ows.OWSException;
+import org.deegree.protocol.wps.describeprocess.DescribeProcessExecution;
+import org.deegree.protocol.wps.describeprocess.InputDescription;
+import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
 import org.jaxen.JaxenException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * ProcessInfo object containing all information relevant to a single process.
+ * TODO
  * 
  * @author <a href="mailto:kiehle@lat-lon.de">Christian Kiehle</a>
  * @author <a href="mailto:walenciak@uni-heidelberg.de">Georg Walenciak</a>
@@ -92,10 +78,14 @@ public class Process {
 
     private LanguageString processAbstract;
 
+    private Map<CodeType, InputDescription> allowedInputs;
+
+    private Map<CodeType, OutputDescription> outputFormats;
+
     private boolean describeProcessPerformed = false;
 
-    public Process( WPSClient wpsclient, String version, CodeType processId, LanguageString title,
-                    LanguageString processAbstract ) {
+    Process( WPSClient wpsclient, String version, CodeType processId, LanguageString title,
+             LanguageString processAbstract ) {
         this.wpsclient = wpsclient;
         this.version = version;
         this.processId = processId;
@@ -103,15 +93,29 @@ public class Process {
         this.processAbstract = processAbstract;
     }
 
-    // /**
-    // * internally call DescribeProcess when the user needs description parameters beyond GetCapabilities
-    // */
-    // private void doDescribeProcess() {
-    // URL url = new URL( baseURL );
-    // URLConnection conn = url.openConnection();
-    // conn.setDoOutput( true );
-    //
-    // }
+    /**
+     * perform DescribeProcess
+     */
+    private void doDescribeProcess() {
+        URL url = wpsclient.getDescribeProcessURL( false );
+        String finalURLStr;
+        try {
+            finalURLStr = url.toExternalForm() + "?service=WPS&version=" + URLEncoder.encode( version, "UTF-8" )
+                          + "&request=DescribeProcess&identifier="
+                          + URLEncoder.encode( concatenateCodeType( processId ), "UTF-8" );
+            URL finalURL = new URL( finalURLStr );
+            DescribeProcessExecution dpExecution = new DescribeProcessExecution( finalURL );
+            allowedInputs = dpExecution.parseInputs();
+            outputFormats = dpExecution.parseOutputs();
+        } catch ( UnsupportedEncodingException e ) {
+            e.printStackTrace();
+            throw new RuntimeException( "DescribeProcess request failed as the operation URL could not be encode. " );
+        } catch ( MalformedURLException e ) {
+            e.printStackTrace();
+            throw new RuntimeException( "DescribeProcess request failed as the operation URL could not be encode. " );
+        }
+
+    }
 
     /**
      * Create a {@link ProcessExecution} instance that will manage the execution of the process.
@@ -120,70 +124,6 @@ public class Process {
      */
     public ProcessExecution prepareExecution() {
         return new ProcessExecution( this );
-    }
-
-    /**
-     * 
-     * @param inputList
-     * @param responseFormats
-     * @return
-     * @throws OWSException
-     */
-    ExecuteResponse execute( List<ExecuteInput> inputList, ResponseFormat responseFormats )
-                            throws OWSException {
-        ExecuteResponse response = null;
-        try {
-            // TODO what if server only supports Get?
-            URL url = wpsclient.getExecuteURL( true );
-
-            URLConnection conn = url.openConnection();
-            conn.setDoOutput( true );
-            conn.setUseCaches( false );
-            conn.setRequestProperty( "Content-Type", "application/xml" );
-
-            XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
-            XMLStreamWriter writer = outFactory.createXMLStreamWriter( conn.getOutputStream() );
-
-            // XMLStreamWriter writer = outFactory.createXMLStreamWriter( new FileOutputStream(
-            // File.createTempFile(
-            // "wpsClientIn",
-            // ".xml" ) ) );
-
-            ExecuteRequest executeRequest = new ExecuteRequest( processId, inputList, responseFormats );
-            RequestWriter executer = new RequestWriter( writer );
-            executer.write100( executeRequest );
-            writer.flush();
-            writer.close();
-
-            XMLInputFactory inFactory = XMLInputFactory.newInstance();
-            XMLStreamReader reader = inFactory.createXMLStreamReader( conn.getInputStream() );
-
-            reader.nextTag(); // so that it points to START_ELEMENT, hence prepared to be processed by XMLAdapter
-
-            if ( LOG.isDebugEnabled() ) {
-                File logOutputFile = File.createTempFile( "wpsClient", "Out.xml" );
-                OutputStream outStream = new FileOutputStream( logOutputFile );
-                XMLStreamWriter straightWriter = XMLOutputFactory.newInstance().createXMLStreamWriter( outStream );
-                XMLAdapter.writeElement( straightWriter, reader );
-                LOG.debug( "Service output can be found at " + logOutputFile.toString() );
-                straightWriter.close();
-
-                reader = XMLInputFactory.newInstance().createXMLStreamReader( new FileInputStream( logOutputFile ) );
-            }
-
-            ResponseReader responseReader = new ResponseReader( reader );
-            response = responseReader.parse100();
-            reader.close();
-
-        } catch ( MalformedURLException e ) {
-            LOG.error( "Invalid URL found when connecting to WPS for Execute. " + e.getMessage() );
-        } catch ( XMLStreamException e ) {
-            LOG.error( "Error during Execute operation. " + e.getMessage() );
-        } catch ( IOException e ) {
-            LOG.error( "Error during Execute operation. " + e.getMessage() );
-        }
-
-        return response;
     }
 
     private void addNsToXPath( AXIOMXPath xpath )
@@ -227,20 +167,48 @@ public class Process {
         return null;
     }
 
-    public Object[] getInputParameters() {
-        return null;
+    public InputDescription[] getInputTypes() {
+        if ( allowedInputs == null ) {
+            doDescribeProcess();
+        }
+        Collection<InputDescription> collection = allowedInputs.values();
+        return collection.toArray( new InputDescription[collection.size()] );
     }
 
-    public Object getInputParameter( CodeType paramId ) {
-        return null;
+    public InputDescription getInputType( String paramId, String codeSpace ) {
+        if ( allowedInputs == null ) {
+            doDescribeProcess();
+        }
+        return allowedInputs.get( new CodeType( paramId, codeSpace ) );
     }
 
-    public Object[] getOutputParameters() {
-        return null;
+    public OutputDescription[] getOutputTypes() {
+        if ( outputFormats == null ) {
+            doDescribeProcess();
+        }
+        Collection<OutputDescription> collection = outputFormats.values();
+        return collection.toArray( new OutputDescription[collection.size()] );
     }
 
-    public Object getOutputParameters( CodeType paramId ) {
-        return null;
+    public OutputDescription getOutputType( String paramId, String codeSpace ) {
+        if ( outputFormats == null ) {
+            doDescribeProcess();
+        }
+        return outputFormats.get( new CodeType( paramId, codeSpace ) );
+    }
+
+    /**
+     * @param id
+     *            a {@link CodeType}
+     * @return string representation of codetype: either codeSpace:code or code
+     */
+    // TODO this method feels that it doesn't belong here (but where?)
+    public String concatenateCodeType( CodeType id ) {
+        String codeSpace = id.getCodeSpace();
+        if ( codeSpace == null || "".equals( codeSpace ) ) {
+            return id.getCode();
+        }
+        return codeSpace + ":" + id.getCode();
     }
 
     @Override
@@ -248,5 +216,9 @@ public class Process {
         StringBuilder sb = new StringBuilder();
         sb.append( "ProcessIdentifier: " + this.processId + "\n" );
         return sb.toString();
+    }
+
+    WPSClient getWPSClient() {
+        return wpsclient;
     }
 }

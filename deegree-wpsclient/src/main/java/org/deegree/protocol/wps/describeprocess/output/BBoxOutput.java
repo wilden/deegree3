@@ -33,7 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.datatypes;
+package org.deegree.protocol.wps.describeprocess.output;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -45,30 +45,15 @@ package org.deegree.protocol.wps.execute.datatypes;
  * @version $Revision$, $Date$
  * 
  */
-public class ComplexAttributes {
+public class BBoxOutput implements GenericOutput {
 
-    private String mimeType;
+    private String defaultCrs;
 
-    private String encoding;
+    private String[] supportedCrs;
 
-    private String schema;
-
-    public ComplexAttributes( String mimeType, String encoding, String schema ) {
-        this.mimeType = mimeType;
-        this.encoding = encoding;
-        this.schema = schema;
-    }
-
-    public String getMimeType() {
-        return mimeType;
-    }
-
-    public String getEncoding() {
-        return encoding;
-    }
-
-    public String getSchema() {
-        return schema;
+    public BBoxOutput( String defaultCrs, String[] supportedCrs ) {
+        this.defaultCrs = defaultCrs;
+        this.supportedCrs = supportedCrs;
     }
 
 }

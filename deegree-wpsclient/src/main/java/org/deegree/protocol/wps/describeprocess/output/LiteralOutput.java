@@ -33,10 +33,9 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.output;
+package org.deegree.protocol.wps.describeprocess.output;
 
-import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.ComplexAttributes;
+import java.net.URL;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -48,37 +47,21 @@ import org.deegree.protocol.wps.ComplexAttributes;
  * @version $Revision$, $Date$
  * 
  */
-public class OutputDefinition {
+public class LiteralOutput implements GenericOutput {
 
-    private CodeType id;
+    private String dataType;
 
-    private String uom;
+    private URL dataTypeRef;
 
-    private ComplexAttributes complexAttributes;
+    private String defaultUom;
 
-    private boolean asRef;
+    private String[] supportedUoms;
 
-    public OutputDefinition( CodeType id, String uom, boolean asRef, String mimeType, String encoding, String schema ) {
-        this.id = id;
-        this.uom = uom;
-        this.asRef = asRef;
-        this.complexAttributes = new ComplexAttributes( mimeType, encoding, schema );
-    }
-
-    public CodeType getId() {
-        return id;
-    }
-
-    public String getUom() {
-        return uom;
-    }
-
-    public ComplexAttributes getComplexAttributes() {
-        return complexAttributes;
-    }
-
-    public boolean isReference() {
-        return asRef;
+    public LiteralOutput( String dataType, URL dataTypeRef, String defaultUom, String[] supportedUoms ) {
+        this.dataType = dataType;
+        this.dataTypeRef = dataTypeRef;
+        this.defaultUom = defaultUom;
+        this.supportedUoms = supportedUoms;
     }
 
 }

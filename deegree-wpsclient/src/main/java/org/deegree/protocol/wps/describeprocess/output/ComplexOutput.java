@@ -33,9 +33,8 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.output;
+package org.deegree.protocol.wps.describeprocess.output;
 
-import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.protocol.wps.ComplexAttributes;
 
 /**
@@ -48,37 +47,15 @@ import org.deegree.protocol.wps.ComplexAttributes;
  * @version $Revision$, $Date$
  * 
  */
-public class OutputDefinition {
+public class ComplexOutput implements GenericOutput {
 
-    private CodeType id;
+    private ComplexAttributes defaultFormat;
 
-    private String uom;
+    private ComplexAttributes[] supportedFormats;
 
-    private ComplexAttributes complexAttributes;
-
-    private boolean asRef;
-
-    public OutputDefinition( CodeType id, String uom, boolean asRef, String mimeType, String encoding, String schema ) {
-        this.id = id;
-        this.uom = uom;
-        this.asRef = asRef;
-        this.complexAttributes = new ComplexAttributes( mimeType, encoding, schema );
-    }
-
-    public CodeType getId() {
-        return id;
-    }
-
-    public String getUom() {
-        return uom;
-    }
-
-    public ComplexAttributes getComplexAttributes() {
-        return complexAttributes;
-    }
-
-    public boolean isReference() {
-        return asRef;
+    public ComplexOutput( ComplexAttributes defaultFormat, ComplexAttributes[] supportedFormats ) {
+        this.defaultFormat = defaultFormat;
+        this.supportedFormats = supportedFormats;
     }
 
 }

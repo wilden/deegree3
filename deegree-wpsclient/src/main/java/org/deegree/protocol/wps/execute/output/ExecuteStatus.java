@@ -60,4 +60,37 @@ public class ExecuteStatus {
         this.exceptionReport = exceptionReport;
     }
 
+    /**
+     * Returns the status message beloging to the respective process.
+     * 
+     * @return message
+     */
+    public String getStatusMessage() {
+        return statusMsg;
+    }
+
+    /**
+     * Returns what fraction of the process is finished, or null if this does not apply (the execution was synchronous).
+     * 
+     * @return the percent of the finished process
+     */
+    public Integer getPercentCompleted() {
+        return percent;
+    }
+
+    /**
+     * @return creation time of the process execution
+     */
+    public String getCreationTime() {
+        return creationTime;
+    }
+
+    /**
+     * 
+     * @return an exception message in case the execution went wrong, null otherwise
+     */
+    public String getExceptionReport() {
+        return exceptionReport;
+    }
+
 }

@@ -33,12 +33,13 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.describeprocess.output;
+package org.deegree.protocol.wps;
 
-import org.deegree.protocol.wps.ComplexAttributes;
+import java.net.URL;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * The <code>ValueWithRef</code> class encapsulates a value and a reference that are used as together throughout the
+ * describe process API.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * 
@@ -47,31 +48,33 @@ import org.deegree.protocol.wps.ComplexAttributes;
  * @version $Revision$, $Date$
  * 
  */
-public class ComplexOutput implements GenericOutput {
+public class ValueWithRef<T> {
 
-    private ComplexAttributes defaultFormat;
+    private T value;
 
-    private ComplexAttributes[] supportedFormats;
+    private URL ref;
 
-    public ComplexOutput( ComplexAttributes defaultFormat, ComplexAttributes[] supportedFormats ) {
-        this.defaultFormat = defaultFormat;
-        this.supportedFormats = supportedFormats;
+    public ValueWithRef( T value, URL ref ) {
+        this.value = value;
+        this.ref = ref;
     }
 
     /**
+     * Get the value associated with this instance.
      * 
-     * @return the default {@link ComplexAttributes} used
+     * @return the value
      */
-    public ComplexAttributes getDefaultFormat() {
-        return defaultFormat;
+    public T getValue() {
+        return value;
     }
 
     /**
+     * Get the reference associated with this instance.
      * 
-     * @return the supported array of {@link ComplexAttributes} used
+     * @return
      */
-    public ComplexAttributes[] getSupportedFormats() {
-        return supportedFormats;
+    public URL getRef() {
+        return ref;
     }
 
 }

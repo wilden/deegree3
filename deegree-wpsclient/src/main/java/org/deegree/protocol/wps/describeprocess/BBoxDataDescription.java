@@ -47,13 +47,29 @@ package org.deegree.protocol.wps.describeprocess;
  */
 public class BBoxDataDescription implements DataDescription {
 
-    private String defaultCRS;
+    private String defaultCrs;
 
-    private String[] supportedCRSs;
+    private String[] supportedCrs;
 
     public BBoxDataDescription( String defaultCRS, String[] supportedCRSs ) {
-        this.defaultCRS = defaultCRS;
-        this.supportedCRSs = supportedCRSs;
+        this.defaultCrs = defaultCRS;
+        this.supportedCrs = supportedCRSs;
+    }
+
+    /**
+     * 
+     * @return the default CRS used for this respective input.
+     */
+    public String getDefaultCRS() {
+        return defaultCrs;
+    }
+
+    /**
+     * 
+     * @return the supported CRSs that can be used for this respective input.
+     */
+    public String[] getSupportedCrs() {
+        return supportedCrs;
     }
 
 }

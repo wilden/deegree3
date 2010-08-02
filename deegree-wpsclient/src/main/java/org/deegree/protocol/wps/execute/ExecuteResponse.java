@@ -59,10 +59,20 @@ public class ExecuteResponse {
         this.outputs = outputs;
     }
 
+    /**
+     * Returns the status object of the finished (or just running) process.
+     * 
+     * @return a {@link ExecuteStatus} instance as process status
+     */
     public ExecuteStatus getStatus() {
         return status;
     }
 
+    /**
+     * Returns the output data of the process execution.
+     * 
+     * @return an array of {@link ExecutionOutput} instances, representing the outputs of the process execution
+     */
     public ExecuteOutput[] getOutputs() {
         return outputs;
     }

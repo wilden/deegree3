@@ -55,7 +55,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * TODO
+ * Encapsulates a process' properties ( id, input format, output format, etc.) and enables access to the Execute
+ * operation.
  * 
  * @author <a href="mailto:kiehle@lat-lon.de">Christian Kiehle</a>
  * @author <a href="mailto:walenciak@uni-heidelberg.de">Georg Walenciak</a>
@@ -133,6 +134,11 @@ public class Process {
         xpath.addNamespace( "xlink", "http://www.w3.org/1999/xlink" );
     }
 
+    /**
+     * Retrieve the Id of the process.
+     * 
+     * @return a {@link CodeType} instance, representing the id
+     */
     public CodeType getId() {
         return processId;
     }
@@ -155,18 +161,38 @@ public class Process {
         return false;
     }
 
+    /**
+     * Retrieve version type of the process.
+     * 
+     * @return version
+     */
     public String getVersion() {
         return null;
     }
 
+    /**
+     * Retrieve process title.
+     * 
+     * @return {@link LanguageString} instance, representing the process title
+     */
     public LanguageString getTitle() {
         return null;
     }
 
+    /**
+     * Retrieve process abstract.
+     * 
+     * @return {@link LanguageString} instance, representing the process abstract.
+     */
     public LanguageString getAbstract() {
         return null;
     }
 
+    /**
+     * Returns all the input formats for this process.
+     * 
+     * @return an array of {@link InputDescription} instances, representing the input formats
+     */
     public InputDescription[] getInputTypes() {
         if ( allowedInputs == null ) {
             doDescribeProcess();
@@ -175,6 +201,15 @@ public class Process {
         return collection.toArray( new InputDescription[collection.size()] );
     }
 
+    /**
+     * Returns the input format of the input specified by id.
+     * 
+     * @param paramId
+     *            id, cannot be null
+     * @param codeSpace
+     *            codespace of id, may be null
+     * @return a {@link InputDescription} instance, representing this particular input format
+     */
     public InputDescription getInputType( String paramId, String codeSpace ) {
         if ( allowedInputs == null ) {
             doDescribeProcess();
@@ -182,6 +217,11 @@ public class Process {
         return allowedInputs.get( new CodeType( paramId, codeSpace ) );
     }
 
+    /**
+     * Returns all output formats of this process.
+     * 
+     * @return an array of {@link OutputDescription} instances, representing the output formats
+     */
     public OutputDescription[] getOutputTypes() {
         if ( outputFormats == null ) {
             doDescribeProcess();
@@ -190,6 +230,15 @@ public class Process {
         return collection.toArray( new OutputDescription[collection.size()] );
     }
 
+    /**
+     * Returns the output format of the output specified by id.
+     * 
+     * @param paramId
+     *            id, cannot be null
+     * @param codeSpace
+     *            codespace of id, may be null
+     * @return a {@link OutputDescription} instance, representing the output format
+     */
     public OutputDescription getOutputType( String paramId, String codeSpace ) {
         if ( outputFormats == null ) {
             doDescribeProcess();
@@ -203,7 +252,7 @@ public class Process {
      * @return string representation of codetype: either codeSpace:code or code
      */
     // TODO this method feels that it doesn't belong here (but where?)
-    public String concatenateCodeType( CodeType id ) {
+    private String concatenateCodeType( CodeType id ) {
         String codeSpace = id.getCodeSpace();
         if ( codeSpace == null || "".equals( codeSpace ) ) {
             return id.getCode();

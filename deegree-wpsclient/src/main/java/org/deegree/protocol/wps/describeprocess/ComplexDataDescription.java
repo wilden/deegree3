@@ -60,4 +60,24 @@ public class ComplexDataDescription implements DataDescription {
         this.supportedFormats = supportedFormats;
     }
 
+    /**
+     * Returns a {@link ComplexAttributes} instance (that encapsulates encoding, mime type and schema) as default format
+     * for this input.
+     * 
+     * @return the default format used for this input.
+     */
+    public ComplexAttributes getDefaultFormat() {
+        return defaultFormat;
+    }
+
+    /**
+     * Returns an array of {@link ComplexAttributes} instances (that encapsulates encoding, mime type and schema) as
+     * supported formats for this input.
+     * 
+     * @return the supported format used for this input.
+     */
+    public ComplexAttributes[] getSupportedFormats() {
+        return supportedFormats;
+    }
+
 }

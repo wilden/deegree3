@@ -37,8 +37,8 @@ package org.deegree.protocol.wps.describeprocess;
 
 import java.net.URL;
 
-import org.deegree.commons.utils.Pair;
-import org.deegree.commons.utils.Triple;
+import org.deegree.protocol.wps.ValueWithRef;
+import org.deegree.services.jaxb.wps.Range;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -52,15 +52,11 @@ import org.deegree.commons.utils.Triple;
  */
 public class LiteralDataDescription implements DataDescription {
 
-    private String dataType;
+    private ValueWithRef<String> dataType;
 
-    private URL dataTypeRef;
+    private ValueWithRef<String> defaultUom;
 
-    private String defaultUom;
-
-    private String defaultUomRef;
-
-    private Pair<String, String>[] supportedUoms;
+    private ValueWithRef<String>[] supportedUoms;
 
     private String[] allowedValues;
 
@@ -68,30 +64,59 @@ public class LiteralDataDescription implements DataDescription {
      * Triple for (minValue, maxValue, spacing). Both minValue and maxValue are included in the interval. When the
      * interval is continuous spacing is set to: 1 (for integers), 0 (for floats)
      */
-    private Triple<String, String, String>[] range;
+    private Range[] range;
 
     private boolean anyValue;
 
-    private URL valueRef;
+    private ValueWithRef<URL> reference;
 
-    private URL valueRefForm;
-
-    public LiteralDataDescription( String dataType, URL dataTypeRef, String defaultUom, String defaultUomRef,
-                                   Pair<String, String>[] supportedUoms, String[] allowedValues,
-                                   Triple<String, String, String>[] range, boolean anyValue, URL reference,
-                                   URL referenceForm ) {
+    public LiteralDataDescription( ValueWithRef<String> dataType, ValueWithRef<String> defaultUom,
+                                   ValueWithRef[] supportedUoms, String[] allowedValues, Range[] range,
+                                   boolean anyValue, ValueWithRef<URL> reference ) {
         this.dataType = dataType;
-        this.dataTypeRef = dataTypeRef;
         this.defaultUom = defaultUom;
-        this.defaultUomRef = defaultUomRef;
         this.supportedUoms = supportedUoms;
         this.allowedValues = allowedValues;
         this.range = range;
         this.anyValue = anyValue;
-        this.valueRef = reference;
-        this.valueRefForm = referenceForm;
+        this.reference = reference;
     }
 
+    /**
+     * Returns a {@link ValueWithRef<String>} instance (that encapsulates a String and an {@link URL}), as data type for
+     * the literal input.
+     * 
+     * @return the data type of the literal input
+     */
+    public ValueWithRef<String> getDataType() {
+        return dataType;
+    }
+
+    /**
+     * Returns a {@link ValueWithRef} instance (that encapsulates a String and an {@link URL}), as default
+     * Unit-of-measure for the literal input.
+     * 
+     * @return default Unit-of-measure for the literal input
+     */
+    public ValueWithRef<String> getDefaultUom() {
+        return defaultUom;
+    }
+
+    /**
+     * Returns an array of {@link ValueWithRef} instances (that encapsulates a String and an {@link URL}), as default
+     * Unit-of-measure for the literal input.
+     * 
+     * @return an array of supported Unit-of-measure instance for the literal input
+     */
+    public ValueWithRef<String>[] getSupportedUoms() {
+        return supportedUoms;
+    }
+
+    /**
+     * Returns whether any value is accepted as input or not.
+     * 
+     * @return true, if any value is accepted as input. False otherwise.
+     */
     public boolean isAnyValue() {
         return anyValue;
     }

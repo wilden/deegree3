@@ -56,4 +56,20 @@ public class BBoxOutput implements GenericOutput {
         this.supportedCrs = supportedCrs;
     }
 
+    /**
+     * 
+     * @return the default CRS used
+     */
+    public String getDefaultCrs() {
+        return defaultCrs;
+    }
+
+    /**
+     * 
+     * @return the supported CRSs
+     */
+    public String[] getSupportedCrs() {
+        return supportedCrs;
+    }
+
 }

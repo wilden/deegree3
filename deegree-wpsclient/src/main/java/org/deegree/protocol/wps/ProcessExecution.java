@@ -41,7 +41,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -279,63 +278,56 @@ public class ProcessExecution {
      * 
      * @return {@link ExecuteResponse} instance that provides access to the output data.
      * @throws OWSException
+     * @throws IOException
+     * @throws XMLStreamException
      */
     public ExecuteResponse start()
-                            throws OWSException {
+                            throws OWSException, IOException, XMLStreamException {
 
         responseFormat = new ResponseFormat( rawOutput, false, false, false, outputDefs );
 
         ExecuteResponse response = null;
-        try {
-            // TODO what if server only supports Get?
-            URL url = process.getWPSClient().getExecuteURL( true );
+        // TODO what if server only supports Get?
+        URL url = process.getWPSClient().getExecuteURL( true );
 
-            URLConnection conn = url.openConnection();
-            conn.setDoOutput( true );
-            conn.setUseCaches( false );
-            conn.setRequestProperty( "Content-Type", "application/xml" );
+        URLConnection conn = url.openConnection();
+        conn.setDoOutput( true );
+        conn.setUseCaches( false );
+        conn.setRequestProperty( "Content-Type", "application/xml" );
 
-            XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
-            XMLStreamWriter writer = outFactory.createXMLStreamWriter( conn.getOutputStream() );
+        XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
+        XMLStreamWriter writer = outFactory.createXMLStreamWriter( conn.getOutputStream() );
 
-            // XMLStreamWriter writer = outFactory.createXMLStreamWriter( new FileOutputStream(
-            // File.createTempFile(
-            // "wpsClientIn",
-            // ".xml" ) ) );
+        // XMLStreamWriter writer = outFactory.createXMLStreamWriter( new FileOutputStream(
+        // File.createTempFile(
+        // "wpsClientIn",
+        // ".xml" ) ) );
 
-            ExecuteRequest executeRequest = new ExecuteRequest( process.getId(), inputs, responseFormat );
-            RequestWriter executer = new RequestWriter( writer );
-            executer.write100( executeRequest );
-            writer.flush();
-            writer.close();
+        ExecuteRequest executeRequest = new ExecuteRequest( process.getId(), inputs, responseFormat );
+        RequestWriter executer = new RequestWriter( writer );
+        executer.write100( executeRequest );
+        writer.flush();
+        writer.close();
 
-            XMLInputFactory inFactory = XMLInputFactory.newInstance();
-            XMLStreamReader reader = inFactory.createXMLStreamReader( conn.getInputStream() );
+        XMLInputFactory inFactory = XMLInputFactory.newInstance();
+        XMLStreamReader reader = inFactory.createXMLStreamReader( conn.getInputStream() );
 
-            reader.nextTag(); // so that it points to START_ELEMENT, hence prepared to be processed by XMLAdapter
+        reader.nextTag(); // so that it points to START_ELEMENT, hence prepared to be processed by XMLAdapter
 
-            if ( LOG.isDebugEnabled() ) {
-                File logOutputFile = File.createTempFile( "wpsClient", "Out.xml" );
-                OutputStream outStream = new FileOutputStream( logOutputFile );
-                XMLStreamWriter straightWriter = XMLOutputFactory.newInstance().createXMLStreamWriter( outStream );
-                XMLAdapter.writeElement( straightWriter, reader );
-                LOG.debug( "Service output can be found at " + logOutputFile.toString() );
-                straightWriter.close();
+        if ( LOG.isDebugEnabled() ) {
+            File logOutputFile = File.createTempFile( "wpsClient", "Out.xml" );
+            OutputStream outStream = new FileOutputStream( logOutputFile );
+            XMLStreamWriter straightWriter = XMLOutputFactory.newInstance().createXMLStreamWriter( outStream );
+            XMLAdapter.writeElement( straightWriter, reader );
+            LOG.debug( "Service output can be found at " + logOutputFile.toString() );
+            straightWriter.close();
 
-                reader = XMLInputFactory.newInstance().createXMLStreamReader( new FileInputStream( logOutputFile ) );
-            }
-
-            ResponseReader responseReader = new ResponseReader( reader );
-            response = responseReader.parse100();
-            reader.close();
-
-        } catch ( MalformedURLException e ) {
-            LOG.error( "Invalid URL found when connecting to WPS for Execute. " + e.getMessage() );
-        } catch ( XMLStreamException e ) {
-            LOG.error( "Error during Execute operation. " + e.getMessage() );
-        } catch ( IOException e ) {
-            LOG.error( "Error during Execute operation. " + e.getMessage() );
+            reader = XMLInputFactory.newInstance().createXMLStreamReader( new FileInputStream( logOutputFile ) );
         }
+
+        ResponseReader responseReader = new ResponseReader( reader );
+        response = responseReader.parse100();
+        reader.close();
 
         return response;
     }

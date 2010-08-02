@@ -120,6 +120,10 @@ public class XMLDataType implements DataType {
         return reader;
     }
 
+    /**
+     * 
+     * @return complex attributes (encoding, mime type, schema) associated with the xml data type
+     */
     public ComplexAttributes getComplexAttributes() {
         return complexAttribs;
     }

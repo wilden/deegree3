@@ -75,14 +75,31 @@ public class InputDescription {
         this.dataDescription = dataDescription;
     }
 
+    /**
+     * Returns the least number of occurrences possible for this input parameter in the process. Can be "0" (no
+     * occurrence possible), more, or null (meaning that it can appear no more than maxOccurs, if that is specified):
+     * 
+     * @return minimum occurrences of this parameter
+     */
     public String getMinOccurs() {
         return minOccurs;
     }
 
+    /**
+     * Returns the maximum number of occurrences possible for this input parameter in the process. Can be "unbounded"
+     * (can appear infinitely many times) or a smaller strictly positive integer value (given as string).
+     * 
+     * @return maximum number of occurrences of this parameter
+     */
     public String getMaxOccurs() {
         return maxOccurs;
     }
 
+    /**
+     * Returns the data format of this input.
+     * 
+     * @return
+     */
     public DataDescription getData() {
         return dataDescription;
     }

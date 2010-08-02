@@ -51,17 +51,17 @@ import javax.xml.namespace.QName;
 import org.apache.axiom.om.OMElement;
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
-import org.deegree.commons.utils.Pair;
-import org.deegree.commons.utils.Triple;
 import org.deegree.commons.xml.NamespaceContext;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.XPath;
 import org.deegree.protocol.wps.ComplexAttributes;
+import org.deegree.protocol.wps.ValueWithRef;
 import org.deegree.protocol.wps.describeprocess.output.BBoxOutput;
 import org.deegree.protocol.wps.describeprocess.output.ComplexOutput;
 import org.deegree.protocol.wps.describeprocess.output.GenericOutput;
 import org.deegree.protocol.wps.describeprocess.output.LiteralOutput;
 import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
+import org.deegree.services.jaxb.wps.Range;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -182,27 +182,52 @@ public class DescribeProcessExecution {
      * @return
      */
     private LiteralOutput parseLiteralOutput( OMElement omLiteral ) {
-        OMElement omDataType = omLiteral.getFirstChildWithName( new QName( null, "DataType" ) );
-        String dataType = omDataType.getText();
-        String dataTypeRefStr = omDataType.getAttributeValue( new QName( owsNS, "reference" ) );
-        URL dataTypeRef;
-        try {
-            dataTypeRef = new URL( dataTypeRefStr );
-        } catch ( MalformedURLException e ) {
-            dataTypeRef = null;
+        OMElement omDataType = omLiteral.getFirstChildWithName( new QName( owsNS, "DataType" ) );
+        ValueWithRef<String> dataType = null;
+        if ( omDataType != null ) {
+            String dataTypeStr = omDataType.getText();
+            String dataTypeRefStr = omDataType.getAttributeValue( new QName( owsNS, "reference" ) );
+            URL dataTypeRef;
+            try {
+                dataTypeRef = new URL( dataTypeRefStr );
+            } catch ( MalformedURLException e ) {
+                dataTypeRef = null;
+            }
+            dataType = new ValueWithRef<String>( dataTypeStr, dataTypeRef );
         }
 
-        XPath xpath = new XPath( "UOMs/Default/UOM", nsContext );
+        XPath xpath = new XPath( "UOMs/Default/ows:UOM", nsContext );
         OMElement omDefault = omResponse.getElement( omLiteral, xpath );
-        String defaultUom = omDefault.getText();
-        xpath = new XPath( "UOMs/Supported/UOM", nsContext );
-        List<OMElement> omSupported = omResponse.getElements( omLiteral, xpath );
-        String[] supportedUoms = new String[omSupported.size()];
-        for ( int i = 0; i < omSupported.size(); i++ ) {
-            supportedUoms[i] = omSupported.get( i ).getText();
+        ValueWithRef<String> defaultUom = null;
+        if ( omDefault != null ) {
+            String defaultUomStr = omDefault.getText();
+            String defaultUomRefStr = omDefault.getAttributeValue( new QName( owsNS, "reference" ) );
+            URL defaultUomRef = null;
+            try {
+                defaultUomRef = new URL( defaultUomRefStr );
+            } catch ( MalformedURLException e ) {
+                // defaultUomRef stays null
+            }
+            defaultUom = new ValueWithRef<String>( defaultUomStr, defaultUomRef );
         }
-
-        return new LiteralOutput( dataType, dataTypeRef, defaultUom, supportedUoms );
+        xpath = new XPath( "UOMs/Supported/ows:UOM", nsContext );
+        List<OMElement> omSupported = omResponse.getElements( omLiteral, xpath );
+        ValueWithRef<String>[] supportedUoms = null;
+        if ( omSupported != null ) {
+            supportedUoms = new ValueWithRef[omSupported.size()];
+            for ( int i = 0; i < omSupported.size(); i++ ) {
+                OMElement omSupp = omSupported.get( i );
+                String omSupportedRefStr = omSupp.getAttributeValue( new QName( owsNS, "reference" ) );
+                URL omSupportedRef = null;
+                try {
+                    omSupportedRef = new URL( omSupportedRefStr );
+                } catch ( MalformedURLException e ) {
+                    // omSupportedRef stays null
+                }
+                supportedUoms[i] = new ValueWithRef<String>( omSupp.getText(), omSupportedRef );
+            }
+        }
+        return new LiteralOutput( dataType, defaultUom, supportedUoms );
     }
 
     /**
@@ -213,8 +238,17 @@ public class DescribeProcessExecution {
         XPath xpath = new XPath( "Default/Format", nsContext );
         OMElement omDefault = omResponse.getElement( omComplex, xpath );
         String mimeType = omDefault.getFirstChildWithName( new QName( null, "MimeType" ) ).getText();
-        String encoding = omDefault.getFirstChildWithName( new QName( null, "Encoding" ) ).getText();
-        String schema = omDefault.getFirstChildWithName( new QName( null, "Schema" ) ).getText();
+        OMElement omEncoding = omDefault.getFirstChildWithName( new QName( null, "Encoding" ) );
+        String encoding = null;
+        if ( omEncoding != null ) {
+            encoding = omEncoding.getText();
+        }
+        OMElement omSchema = omDefault.getFirstChildWithName( new QName( null, "Schema" ) );
+        String schema = null;
+        if ( omSchema != null ) {
+            schema = omSchema.getText();
+        }
+
         ComplexAttributes defaultFormat = new ComplexAttributes( mimeType, encoding, schema );
 
         xpath = new XPath( "Supported/Format", nsContext );
@@ -223,11 +257,18 @@ public class DescribeProcessExecution {
         for ( int i = 0; i < omSupported.size(); i++ ) {
             OMElement omSupp = omSupported.get( i );
             mimeType = omSupp.getFirstChildWithName( new QName( null, "MimeType" ) ).getText();
-            encoding = omSupp.getFirstChildWithName( new QName( null, "Encoding" ) ).getText();
-            schema = omSupp.getFirstChildWithName( new QName( null, "Schema" ) ).getText();
+            omEncoding = omSupp.getFirstChildWithName( new QName( null, "Encoding" ) );
+            encoding = null;
+            if ( omEncoding != null ) {
+                encoding = omEncoding.getText();
+            }
+            omSchema = omSupp.getFirstChildWithName( new QName( null, "Schema" ) );
+            schema = null;
+            if ( omSchema != null ) {
+                schema = omSchema.getText();
+            }
             supportedFormats[i] = new ComplexAttributes( mimeType, encoding, schema );
         }
-
         return new ComplexOutput( defaultFormat, supportedFormats );
     }
 
@@ -279,7 +320,7 @@ public class DescribeProcessExecution {
      */
     private DataDescription parseLiteralData( OMElement input ) {
         OMElement omDataType = input.getFirstChildWithName( new QName( owsNS, "DataType" ) );
-        String dataType = omDataType.getText();
+        String dataTypeStr = omDataType.getText();
         String dataTypeRefStr = omDataType.getAttributeValue( new QName( owsNS, "reference" ) );
         URL dataTypeRef;
         try {
@@ -287,22 +328,39 @@ public class DescribeProcessExecution {
         } catch ( MalformedURLException e ) {
             dataTypeRef = null;
         }
+        ValueWithRef<String> dataType = new ValueWithRef<String>( dataTypeStr, dataTypeRef );
 
         XPath xpath = new XPath( "UOMs/Default/ows:UOM", nsContext );
         OMElement omDefaultUom = omResponse.getElement( input, xpath );
-        String defaultUom = omDefaultUom.getText();
-        String defaultUomRef = omDefaultUom.getAttributeValue( new QName( owsNS, "reference" ) );
+        String defaultUomRefStr = omDefaultUom.getAttributeValue( new QName( owsNS, "reference" ) );
+        URL defaultUomRef = null;
+        if ( defaultUomRefStr != null ) {
+            try {
+                defaultUomRef = new URL( defaultUomRefStr );
+            } catch ( MalformedURLException e ) {
+                // defaultUomRef stays null
+            }
+        }
+        ValueWithRef<String> defaultUom = new ValueWithRef<String>( omDefaultUom.getText(), defaultUomRef );
 
         xpath = new XPath( "UOMs/Supported/ows:UOM", nsContext );
         List<OMElement> omSupported = omResponse.getElements( input, xpath );
         // standard suppress warnings for casting declaration of array of generic type
-        @SuppressWarnings( { "cast", "unchecked" })
-        Pair<String, String>[] supportedUom = (Pair<String, String>[]) new Pair[omSupported.size()];
+        @SuppressWarnings( { "unchecked" })
+        ValueWithRef<String>[] supportedUom = new ValueWithRef[omSupported.size()];
         for ( int i = 0; i < omSupported.size(); i++ ) {
             OMElement omSupport = omSupported.get( i );
             String supported = omSupport.getText();
-            String supportedRef = omSupport.getAttributeValue( new QName( owsNS, "reference" ) );
-            supportedUom[i] = new Pair<String, String>( supported, supportedRef );
+            String supportedRefStr = omSupport.getAttributeValue( new QName( owsNS, "reference" ) );
+            URL supportedRef = null;
+            if ( supportedRefStr != null ) {
+                try {
+                    supportedRef = new URL( supportedRefStr );
+                } catch ( MalformedURLException e ) {
+                    // supportedRef stays null
+                }
+            }
+            supportedUom[i] = new ValueWithRef<String>( supported, supportedRef );
         }
 
         OMElement omAnyValue = input.getFirstChildWithName( new QName( owsNS, "AnyValue" ) );
@@ -310,10 +368,10 @@ public class DescribeProcessExecution {
 
         OMElement omAllowedValues = input.getFirstChildWithName( new QName( owsNS, "AllowedValues" ) );
         List<String> values = null;
-        List<Triple<String, String, String>> range = null;
+        List<Range> rangeList = null;
         if ( omAllowedValues != null ) {
             QName valueQName = new QName( owsNS, "Value" );
-            // safe
+            // safe cast
             @SuppressWarnings( { "cast", "unchecked" })
             Iterator<OMElement> iterator = (Iterator<OMElement>) omAllowedValues.getChildrenWithName( valueQName );
             values = new ArrayList<String>();
@@ -322,81 +380,65 @@ public class DescribeProcessExecution {
             }
 
             QName rangeQName = new QName( owsNS, "Range" );
-            // safe
+            // safe cast
             @SuppressWarnings( { "cast", "unchecked" })
             Iterator<OMElement> iterator2 = (Iterator<OMElement>) omAllowedValues.getChildrenWithName( rangeQName );
-            range = new ArrayList<Triple<String, String, String>>();
+            rangeList = new ArrayList<Range>();
             for ( ; iterator2.hasNext(); ) {
                 OMElement omRange = iterator2.next();
-                String minimum = omRange.getFirstChildWithName( new QName( owsNS, "MinimumValue" ) ).getText();
-                String maximum = omRange.getFirstChildWithName( new QName( owsNS, "MaximumValue" ) ).getText();
-                boolean areInteger = determineValueType( minimum, maximum );
+                Range range = new Range();
 
-                String spacing = omRange.getFirstChildWithName( new QName( owsNS, "Spacing" ) ).getText();
-                if ( spacing == null ) {
-                    if ( areInteger ) {
-                        spacing = "1";
-                    } else {
-                        spacing = "0";
-                    }
+                OMElement omMinimum = omRange.getFirstChildWithName( new QName( owsNS, "MinimumValue" ) );
+                if ( omMinimum != null ) {
+                    range.setMinimumValue( omMinimum.getText() );
+                }
+                OMElement omMaximum = omRange.getFirstChildWithName( new QName( owsNS, "MaximumValue" ) );
+                if ( omMaximum != null ) {
+                    range.setMaximumValue( omMaximum.getText() );
+                }
+                OMElement omSpacing = omRange.getFirstChildWithName( new QName( owsNS, "Spacing" ) );
+                if ( omSpacing != null ) {
+                    range.setSpacing( omSpacing.getText() );
                 }
                 String closure = omRange.getAttributeValue( new QName( owsNS, "rangeClosure" ) );
-                if ( "open".equals( closure ) && areInteger ) {
-                    minimum = String.valueOf( Integer.parseInt( minimum ) + 1 );
-                    maximum = String.valueOf( Integer.parseInt( minimum ) - 1 );
+                if ( closure != null ) {
+                    range.getRangeClosure().add( closure );
                 }
-                if ( "open-closed".equals( closure ) && areInteger ) {
-                    minimum = String.valueOf( Integer.parseInt( minimum ) + 1 );
-                }
-                if ( "closed-open".equals( closure ) && areInteger ) {
-                    maximum = String.valueOf( Integer.parseInt( minimum ) - 1 );
-                }
-                range.add( new Triple<String, String, String>( minimum, maximum, spacing ) );
+                rangeList.add( range );
             }
         }
 
         OMElement omValuesReference = input.getFirstChildWithName( new QName( owsNS, "ValuesReference" ) );
-        URL valuesRef = null;
-        URL valuesForm = null;
+        ValueWithRef<URL> valuesRef = null;
         if ( omValuesReference != null ) {
-            String valuesRefStr = omValuesReference.getAttributeValue( new QName( owsNS, "reference" ) );
-            try {
-                valuesRef = new URL( valuesRefStr );
-            } catch ( MalformedURLException e ) {
-                // valuesRef stays null
-            }
+            String valueRefStr = omValuesReference.getAttributeValue( new QName( owsNS, "reference" ) );
+            String valueFormStr = omValuesReference.getAttributeValue( new QName( null, "valuesForm" ) );
 
-            String valuesFormStr = omValuesReference.getAttributeValue( new QName( null, "valuesForm" ) );
+            URL valueRefUrl = null;
             try {
-                valuesForm = new URL( valuesFormStr );
+                valueRefUrl = new URL( valueRefStr );
             } catch ( MalformedURLException e ) {
-                // valuesRef stays null
+                // valueRefUrl stays null
             }
+            URL valueFormStrUrl = null;
+            try {
+                valueFormStrUrl = new URL( valueFormStr );
+            } catch ( MalformedURLException e ) {
+                // valueFormStrUrl stays null
+            }
+            valuesRef = new ValueWithRef<URL>( valueRefUrl, valueFormStrUrl );
         }
 
         String[] valuesArray = null;
         if ( values != null ) {
             valuesArray = values.toArray( new String[values.size()] );
         }
-        Triple<String, String, String>[] rangeArray = null;
-        if ( range != null ) {
-            rangeArray = range.toArray( new Triple[range.size()] );
+        Range[] rangeArray = null;
+        if ( rangeList != null ) {
+            rangeArray = rangeList.toArray( new Range[rangeList.size()] );
         }
-        return new LiteralDataDescription( dataType, dataTypeRef, defaultUomRef, defaultUomRef, supportedUom,
-                                           valuesArray, rangeArray, anyValue, valuesRef, valuesForm );
-    }
-
-    /**
-     * @param a
-     * @param b
-     * @return true if the values appear to be ints, false for floats
-     */
-    private boolean determineValueType( String a, String b ) {
-        // TODO is this check enough to ensure the values are integer or floats?
-        if ( !a.contains( "." ) && !b.contains( "." ) ) {
-            return true;
-        }
-        return false;
+        return new LiteralDataDescription( dataType, defaultUom, supportedUom, valuesArray, rangeArray, anyValue,
+                                           valuesRef );
     }
 
     /**
@@ -406,8 +448,17 @@ public class DescribeProcessExecution {
         XPath xpath = new XPath( "Default/Format", nsContext );
         OMElement omDefaultFormat = omResponse.getElement( input, xpath );
         String mimeType = omDefaultFormat.getFirstChildWithName( new QName( null, "MimeType" ) ).getText();
-        String encoding = omDefaultFormat.getFirstChildWithName( new QName( null, "Encoding" ) ).getText();
-        String schema = omDefaultFormat.getFirstChildWithName( new QName( null, "Schema" ) ).getText();
+
+        OMElement omEncoding = omDefaultFormat.getFirstChildWithName( new QName( null, "Encoding" ) );
+        String encoding = null;
+        if ( omEncoding != null ) {
+            encoding = omEncoding.getText();
+        }
+        OMElement omSchema = omDefaultFormat.getFirstChildWithName( new QName( null, "Schema" ) );
+        String schema = null;
+        if ( omSchema != null ) {
+            schema = omSchema.getText();
+        }
         ComplexAttributes defaultFormat = new ComplexAttributes( mimeType, encoding, schema );
 
         xpath = new XPath( "Supported/Format", nsContext );
@@ -416,8 +467,16 @@ public class DescribeProcessExecution {
         for ( int i = 0; i < omFormats.size(); i++ ) {
             OMElement omFormat = omFormats.get( i );
             mimeType = omFormat.getFirstChildWithName( new QName( null, "MimeType" ) ).getText();
-            encoding = omFormat.getFirstChildWithName( new QName( null, "Encoding" ) ).getText();
-            schema = omFormat.getFirstChildWithName( new QName( null, "Schema" ) ).getText();
+            omEncoding = omFormat.getFirstChildWithName( new QName( null, "Encoding" ) );
+            encoding = null;
+            if ( omEncoding != null ) {
+                encoding = omEncoding.getText();
+            }
+            omSchema = omFormat.getFirstChildWithName( new QName( null, "Schema" ) );
+            schema = null;
+            if ( omSchema != null ) {
+                schema = omSchema.getText();
+            }
             supported[i] = new ComplexAttributes( mimeType, encoding, schema );
         }
         return new ComplexDataDescription( defaultFormat, supported );

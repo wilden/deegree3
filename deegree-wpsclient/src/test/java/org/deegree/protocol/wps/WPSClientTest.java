@@ -36,17 +36,25 @@
 package org.deegree.protocol.wps;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.deegree.commons.xml.NamespaceContext;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.XPath;
+import org.deegree.protocol.wps.describeprocess.BBoxDataDescription;
+import org.deegree.protocol.wps.describeprocess.ComplexDataDescription;
 import org.deegree.protocol.wps.describeprocess.InputDescription;
 import org.deegree.protocol.wps.describeprocess.LiteralDataDescription;
+import org.deegree.protocol.wps.describeprocess.output.BBoxOutput;
+import org.deegree.protocol.wps.describeprocess.output.ComplexOutput;
+import org.deegree.protocol.wps.describeprocess.output.LiteralOutput;
+import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
 import org.deegree.protocol.wps.execute.ExecuteResponse;
 import org.deegree.protocol.wps.execute.datatypes.BoundingBoxDataType;
 import org.deegree.protocol.wps.execute.datatypes.LiteralDataType;
@@ -60,6 +68,7 @@ import org.junit.Test;
  * The <code></code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
+ * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
@@ -70,7 +79,10 @@ public class WPSClientTest {
 
     private static final File BINARY_INPUT = new File( WPSClientTest.class.getResource( "image.png" ).getPath() );
 
-    private static final String DEMO_SERVICE_URL = "http://deegree3-testing.deegree.org/deegree-wps-demo-3.0-pre6/services?service=WPS&version=1.0.0&request=GetCapabilities";
+    // private static final String DEMO_SERVICE_URL =
+    // "http://deegree3-testing.deegree.org/deegree-wps-demo-3.0-pre6/services?service=WPS&version=1.0.0&request=GetCapabilities";
+
+    private static final String DEMO_SERVICE_URL = "http://giv-wps.uni-muenster.de:8080/wps/WebProcessingService?Request=GetCapabilities&Service=WPS";
 
     @Before
     public void init() {
@@ -80,16 +92,118 @@ public class WPSClientTest {
     }
 
     @Test
-    public void testGetInputDescription()
+    public void testGetInputDescription_1()
                             throws MalformedURLException {
         URL processUrl = new URL( DEMO_SERVICE_URL );
         WPSClient wpsClient = new WPSClient( processUrl );
         Process p1 = wpsClient.getProcess( "Buffer", null );
         InputDescription literalInput = p1.getInputType( "BufferDistance", null );
-        LiteralDataDescription literalData = (LiteralDataDescription) literalInput.getData();
         Assert.assertEquals( "1", literalInput.getMinOccurs() );
         Assert.assertEquals( "1", literalInput.getMaxOccurs() );
+        LiteralDataDescription literalData = (LiteralDataDescription) literalInput.getData();
+        Assert.assertEquals( "double", literalData.getDataType().getValue() );
+        Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#double",
+                             literalData.getDataType().getRef().toExternalForm() );
+        Assert.assertEquals( "unity", literalData.getDefaultUom().getValue() );
+        Assert.assertEquals( "unity", literalData.getSupportedUoms()[0].getValue() );
         Assert.assertEquals( true, literalData.isAnyValue() );
+
+        OutputDescription output = p1.getOutputType( "BufferedGeometry", null );
+        ComplexOutput complexData = (ComplexOutput) output.getOutputData();
+        Assert.assertEquals( "UTF-8", complexData.getDefaultFormat().getEncoding() );
+        Assert.assertEquals( "text/xml", complexData.getDefaultFormat().getMimeType() );
+        Assert.assertEquals( "http://schemas.opengis.net/gml/3.1.1/base/gml.xsd",
+                             complexData.getDefaultFormat().getSchema() );
+        Assert.assertEquals( "UTF-8", complexData.getSupportedFormats()[0].getEncoding() );
+        Assert.assertEquals( "text/xml", complexData.getSupportedFormats()[0].getMimeType() );
+        Assert.assertEquals( "http://schemas.opengis.net/gml/3.1.1/base/gml.xsd",
+                             complexData.getSupportedFormats()[0].getSchema() );
+    }
+
+    @Test
+    public void testGetInputDescription_2()
+                            throws MalformedURLException {
+        URL processUrl = new URL( DEMO_SERVICE_URL );
+        WPSClient wpsClient = new WPSClient( processUrl );
+        Process p2 = wpsClient.getProcess( "Crosses", null );
+        InputDescription secondInput = p2.getInputType( "GMLInput2", null );
+        Assert.assertEquals( "1", secondInput.getMinOccurs() );
+        Assert.assertEquals( "1", secondInput.getMaxOccurs() );
+        ComplexDataDescription complexData = (ComplexDataDescription) secondInput.getData();
+        Assert.assertEquals( "text/xml", complexData.getDefaultFormat().getMimeType() );
+        Assert.assertEquals( "UTF-8", complexData.getDefaultFormat().getEncoding() );
+        Assert.assertEquals( "http://schemas.opengis.net/gml/3.1.1/base/gml.xsd",
+                             complexData.getDefaultFormat().getSchema() );
+        Assert.assertEquals( "text/xml", complexData.getSupportedFormats()[0].getMimeType() );
+        Assert.assertEquals( "UTF-8", complexData.getSupportedFormats()[0].getEncoding() );
+        Assert.assertEquals( "http://schemas.opengis.net/gml/3.1.1/base/gml.xsd",
+                             complexData.getSupportedFormats()[0].getSchema() );
+
+        OutputDescription output = p2.getOutputType( "Crosses", null );
+        LiteralOutput literalOut = (LiteralOutput) output.getOutputData();
+        Assert.assertEquals( "boolean", literalOut.getDataType().getValue() );
+        Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#boolean",
+                             literalOut.getDataType().getRef().toExternalForm() );
+    }
+
+    @Test
+    public void testGetInputDescription_3()
+                            throws MalformedURLException {
+        URL processUrl = new URL( DEMO_SERVICE_URL );
+        WPSClient wpsClient = new WPSClient( processUrl );
+        Process p2 = wpsClient.getProcess( "ParameterDemoProcess", null );
+
+        InputDescription firstInput = p2.getInputType( "LiteralInput", null );
+        LiteralDataDescription literalInput = (LiteralDataDescription) firstInput.getData();
+        Assert.assertEquals( "integer", literalInput.getDataType().getValue() );
+        Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#integer",
+                             literalInput.getDataType().getRef().toExternalForm() );
+        Assert.assertEquals( "seconds", literalInput.getDefaultUom().getValue() );
+        Assert.assertEquals( "seconds", literalInput.getSupportedUoms()[0].getValue() );
+        Assert.assertEquals( "minutes", literalInput.getSupportedUoms()[1].getValue() );
+
+        InputDescription secondInput = p2.getInputType( "BBOXInput", null );
+        Assert.assertEquals( "1", secondInput.getMinOccurs() );
+        Assert.assertEquals( "1", secondInput.getMaxOccurs() );
+        BBoxDataDescription bboxData = (BBoxDataDescription) secondInput.getData();
+        Assert.assertEquals( "EPSG:4326", bboxData.getDefaultCRS() );
+        Assert.assertEquals( "EPSG:4326", bboxData.getSupportedCrs()[0] );
+
+        InputDescription thirdInput = p2.getInputType( "XMLInput", null );
+        ComplexDataDescription xmlData = (ComplexDataDescription) thirdInput.getData();
+        Assert.assertEquals( "text/xml", xmlData.getDefaultFormat().getMimeType() );
+        Assert.assertEquals( "text/xml", xmlData.getSupportedFormats()[0].getMimeType() );
+
+        InputDescription fourthInput = p2.getInputType( "BinaryInput", null );
+        ComplexDataDescription binaryData = (ComplexDataDescription) fourthInput.getData();
+        Assert.assertEquals( "image/png", binaryData.getDefaultFormat().getMimeType() );
+        Assert.assertEquals( "base64", binaryData.getDefaultFormat().getEncoding() );
+        Assert.assertEquals( "image/png", binaryData.getSupportedFormats()[0].getMimeType() );
+        Assert.assertEquals( "base64", binaryData.getSupportedFormats()[0].getEncoding() );
+
+        OutputDescription firstOutput = p2.getOutputType( "LiteralOutput", null );
+        Assert.assertEquals( "A literal output parameter", firstOutput.getTitle().getString() );
+        LiteralOutput literalData = (LiteralOutput) firstOutput.getOutputData();
+        Assert.assertEquals( "integer", literalData.getDataType().getValue() );
+        Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#integer",
+                             literalData.getDataType().getRef().toExternalForm() );
+        Assert.assertEquals( "seconds", literalData.getDefaultUom().getValue() );
+        Assert.assertEquals( "seconds", literalData.getSupportedUoms()[0].getValue() );
+
+        OutputDescription secondOutput = p2.getOutputType( "BBOXOutput", null );
+        BBoxOutput bboxOutput = (BBoxOutput) secondOutput.getOutputData();
+        Assert.assertEquals( "EPSG:4326", bboxOutput.getDefaultCrs() );
+        Assert.assertEquals( "EPSG:4326", bboxOutput.getSupportedCrs()[0] );
+
+        OutputDescription thirdOutput = p2.getOutputType( "XMLOutput", null );
+        ComplexOutput xmlOutput = (ComplexOutput) thirdOutput.getOutputData();
+        Assert.assertEquals( "text/xml", xmlOutput.getDefaultFormat().getMimeType() );
+        Assert.assertEquals( "text/xml", xmlOutput.getSupportedFormats()[0].getMimeType() );
+
+        OutputDescription fourthOutput = p2.getOutputType( "BinaryOutput", null );
+        ComplexOutput binaryOutput = (ComplexOutput) fourthOutput.getOutputData();
+        Assert.assertEquals( "text/xml", xmlOutput.getDefaultFormat().getMimeType() );
+        Assert.assertEquals( "text/xml", xmlOutput.getSupportedFormats()[0].getMimeType() );
     }
 
     @Test
@@ -146,19 +260,11 @@ public class WPSClientTest {
 
         Assert.assertNotNull( response );
         // TODO test response
-        // XMLDataType data = (XMLDataType) response.getOutputs()[0].getDataType();
-        // XMLStreamReader reader = data.getAsXMLStream();
-        // XMLAdapter searchableXML = new XMLAdapter( reader );
-        // NamespaceContext nsContext = new NamespaceContext();
-        // nsContext.addNamespace( "wps", WPS_100_NS );
-        // nsContext.addNamespace( "gml", "http://www.opengis.net/gml" );
-        // XPath xpath = new XPath( "/wps:ComplexData/gml:Point/gml:pos/text()", nsContext );
-        // String pos = searchableXML.getRequiredNodeAsString( searchableXML.getRootElement(), xpath );
     }
 
     @Test
     public void testExecute3()
-                            throws MalformedURLException, OWSException {
+                            throws OWSException, IOException, XMLStreamException {
         URL processUrl = new URL( DEMO_SERVICE_URL );
         WPSClient wpsClient = new WPSClient( processUrl );
         Process proc = wpsClient.getProcess( "ParameterDemoProcess", null );

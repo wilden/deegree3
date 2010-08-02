@@ -35,7 +35,7 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.describeprocess.output;
 
-import java.net.URL;
+import org.deegree.protocol.wps.ValueWithRef;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -49,19 +49,41 @@ import java.net.URL;
  */
 public class LiteralOutput implements GenericOutput {
 
-    private String dataType;
+    private ValueWithRef<String> dataType;
 
-    private URL dataTypeRef;
+    private ValueWithRef<String> defaultUom;
 
-    private String defaultUom;
+    private ValueWithRef<String>[] supportedUoms;
 
-    private String[] supportedUoms;
-
-    public LiteralOutput( String dataType, URL dataTypeRef, String defaultUom, String[] supportedUoms ) {
+    public LiteralOutput( ValueWithRef<String> dataType, ValueWithRef<String> defaultUom,
+                          ValueWithRef<String>[] supportedUoms ) {
         this.dataType = dataType;
-        this.dataTypeRef = dataTypeRef;
         this.defaultUom = defaultUom;
         this.supportedUoms = supportedUoms;
+    }
+
+    /**
+     * 
+     * @return the data type as {@link ValueWithRef} for this literal
+     */
+    public ValueWithRef<String> getDataType() {
+        return dataType;
+    }
+
+    /**
+     * 
+     * @return the default unit-of-measure used, as {@link ValueWithRef}
+     */
+    public ValueWithRef<String> getDefaultUom() {
+        return defaultUom;
+    }
+
+    /**
+     * 
+     * @return the supported units-of-measure used, as an array of {@link ValueWithRef}
+     */
+    public ValueWithRef<String>[] getSupportedUoms() {
+        return supportedUoms;
     }
 
 }

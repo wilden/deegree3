@@ -67,4 +67,28 @@ public class OutputDescription {
         this.outputAbstract = outputAbstract;
         this.outputData = outputData;
     }
+
+    /**
+     * 
+     * @return title of the output
+     */
+    public LanguageString getTitle() {
+        return outputTitle;
+    }
+
+    /**
+     * 
+     * @return abstract of the output
+     */
+    public LanguageString getAbstract() {
+        return outputAbstract;
+    }
+
+    /**
+     * 
+     * @return output data formats belonging to the inquired process
+     */
+    public GenericOutput getOutputData() {
+        return outputData;
+    }
 }

@@ -62,10 +62,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * WPSClient provides an abstraction layer to access a Web Processing Service (WPS). It may be invoked from a command
- * line tool or from a web application
- * 
- * TODO Enhance Exception handling
+ * Entry point to the WPS Client API. Initialization through GetCapabilities URL of the service. Access to service
+ * metadata. Point to retrieve the registered processes and gain access to further execution operations.
  * 
  * @author <a href="mailto:walenciak@uni-heidelberg.de">Georg Walenciak</a>
  * @author <a href="mailto:kiehle@lat-lon.de">Christian Kiehle</a>
@@ -152,7 +150,8 @@ public class WPSClient {
         XPath xpath = new XPath( "/wps:Capabilities/ows:ServiceIdentification", nsContext );
         OMElement omServiceIdentification = capabilitesDoc.getElement( root, xpath );
         ServiceIdentificationType serviceIdentification = new ServiceIdentificationType();
-        // TODO currently, cannot set title, abstract
+        // serviceIdentification.getAbstract().add( e );
+
         metadata.setServiceIdentification( serviceIdentification );
         ServiceProviderType serviceProvider = new ServiceProviderType();
 
@@ -178,21 +177,21 @@ public class WPSClient {
         serviceContact.setAddress( address );
 
         xpath = new XPath( "ows:ContactInfo/ows:ContactInstructions", nsContext );
-        serviceContact.setContactInstructions( capabilitesDoc.getRequiredNodeAsString( omServiceContact, xpath ) );
+        serviceContact.setContactInstructions( capabilitesDoc.getNodeAsString( omServiceContact, xpath, null ) );
         xpath = new XPath( "ows:ContactInfo/ows:Phone/ows:Facsimile", nsContext );
         serviceContact.setFacsimile( capabilitesDoc.getRequiredNodeAsString( omServiceContact, xpath ) );
         xpath = new XPath( "ows:ContactInfo/ows:HoursOfService", nsContext );
-        serviceContact.setHoursOfService( capabilitesDoc.getRequiredNodeAsString( omServiceContact, xpath ) );
+        serviceContact.setHoursOfService( capabilitesDoc.getNodeAsString( omServiceContact, xpath, null ) );
         xpath = new XPath( "ows:IndividualName", nsContext );
         serviceContact.setIndividualName( capabilitesDoc.getRequiredNodeAsString( omServiceContact, xpath ) );
         xpath = new XPath( "ows:ContactInfo/ows:OnlineResource/@xlink:href", nsContext );
-        serviceContact.setOnlineResource( capabilitesDoc.getRequiredNodeAsString( omServiceContact, xpath ) );
+        serviceContact.setOnlineResource( capabilitesDoc.getNodeAsString( omServiceContact, xpath, null ) );
         xpath = new XPath( "ows:ContactInfo/ows:Phone/ows:Voice", nsContext );
         serviceContact.setPhone( capabilitesDoc.getRequiredNodeAsString( omServiceContact, xpath ) );
         xpath = new XPath( "ows:PositionName", nsContext );
         serviceContact.setPositionName( capabilitesDoc.getRequiredNodeAsString( omServiceContact, xpath ) );
         xpath = new XPath( "ows:Role", nsContext );
-        serviceContact.setRole( capabilitesDoc.getRequiredNodeAsString( omServiceContact, xpath ) );
+        serviceContact.setRole( capabilitesDoc.getNodeAsString( omServiceContact, xpath, null ) );
 
         serviceProvider.setServiceContact( serviceContact );
 
@@ -218,8 +217,11 @@ public class WPSClient {
 
     private LanguageString parseLanguageString( OMElement omElement, String name ) {
         OMElement omElem = omElement.getFirstChildWithName( new QName( owsNS, name ) );
-        String lang = omElem.getAttributeValue( new QName( xmlNS, "lang" ) );
-        return new LanguageString( omElem.getText(), lang );
+        if ( omElem != null ) {
+            String lang = omElem.getAttributeValue( new QName( xmlNS, "lang" ) );
+            return new LanguageString( omElem.getText(), lang );
+        }
+        return null;
     }
 
     /**
@@ -257,27 +259,35 @@ public class WPSClient {
             }
             url = new URL( href );
         } catch ( Throwable t ) {
-            String msg = "Error in WPS capabilities document. Cannot determine URL for operation '" + operation + "': "
-                         + t.getMessage();
-            // TODO: maybe go on and use the base URL from the GetCapabilities doc
-            throw new RuntimeException( msg );
+            String msg = "Cannot determine URL for operation '" + operation + "': " + t.getMessage();
+            LOG.warn( msg );
         }
         return url;
     }
 
+    /**
+     * Retrieve version of the service.
+     * 
+     * @return version
+     */
     public String getServiceVersion() {
         return "1.0.0";
     }
 
+    /**
+     * Retrieve service metadata from Capabilities document.
+     * 
+     * @return a {@link DeegreeServicesMetadataType} instance with the service metadata
+     */
     public DeegreeServicesMetadataType getMetadata() {
         return metadata;
     }
 
-    public URL getDescribeProcessURL( boolean post ) {
+    URL getDescribeProcessURL( boolean post ) {
         return describeProcessURLs[post ? 1 : 0];
     }
 
-    public URL getExecuteURL( boolean post ) {
+    URL getExecuteURL( boolean post ) {
         return executeURLs[post ? 1 : 0];
     }
 

@@ -259,7 +259,7 @@ public class WPSClient {
             }
             url = new URL( href );
         } catch ( Throwable t ) {
-            String msg = "Cannot determine URL for operation '" + operation + "': " + t.getMessage();
+            String msg = "URL for operation '" + operation + " was not found. ': " + t.getMessage();
             LOG.warn( msg );
         }
         return url;

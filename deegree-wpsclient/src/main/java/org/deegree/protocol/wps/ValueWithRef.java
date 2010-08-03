@@ -35,7 +35,7 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps;
 
-import java.net.URL;
+import java.net.URI;
 
 /**
  * The <code>ValueWithRef</code> class encapsulates a value and a reference that are used as together throughout the
@@ -52,9 +52,9 @@ public class ValueWithRef<T> {
 
     private T value;
 
-    private URL ref;
+    private URI ref;
 
-    public ValueWithRef( T value, URL ref ) {
+    public ValueWithRef( T value, URI ref ) {
         this.value = value;
         this.ref = ref;
     }
@@ -73,7 +73,7 @@ public class ValueWithRef<T> {
      * 
      * @return
      */
-    public URL getRef() {
+    public URI getRef() {
         return ref;
     }
 

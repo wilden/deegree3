@@ -83,7 +83,7 @@ public class RequestWriter {
 
     private static final String owsNS = "http://www.opengis.net/ows/1.1";
 
-    private static final String xsiNS = "http://www.w3.org/1999/xlink";
+    private static final String xsiNS = "http://www.w3.org/2001/XMLSchema-instance";
 
     private static XMLStreamWriter writer;
 
@@ -95,6 +95,10 @@ public class RequestWriter {
         try {
             writer.writeStartDocument();
             writer.writeStartElement( wpsPrefix, "Execute", wpsNS );
+            writer.writeAttribute( "service", "WPS" );
+            writer.writeAttribute( "version", request.getVersion() );
+            String schemaLocation = "http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsExecute_request.xsd";
+            writer.writeAttribute( "xsi", "http://www.w3.org/2001/XMLSchema-instance", "schemaLocation", schemaLocation );
 
             writer.writeNamespace( wpsPrefix, wpsNS );
             writer.writeNamespace( owsPrefix, owsNS );
@@ -243,8 +247,12 @@ public class RequestWriter {
                             int read = -1;
                             InputStream is = binaryInput.getDataStream();
                             while ( ( read = is.read( buffer ) ) != -1 ) {
-                                String encoded = Base64.encode( buffer, 0, read );
-                                writer.writeCharacters( encoded );
+                                if ( !"base64".equals( binaryInput.getAttributes().getEncoding() ) ) {
+                                    String encoded = Base64.encode( buffer, 0, read );
+                                    writer.writeCharacters( encoded );
+                                } else {
+                                    writer.writeCharacters( new String( buffer, "UTF-8" ) );
+                                }
                             }
                             writer.writeEndElement();
                         } catch ( IOException e ) {

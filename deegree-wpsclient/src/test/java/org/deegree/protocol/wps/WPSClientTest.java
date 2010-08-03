@@ -36,7 +36,9 @@
 package org.deegree.protocol.wps;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -56,6 +58,7 @@ import org.deegree.protocol.wps.describeprocess.output.ComplexOutput;
 import org.deegree.protocol.wps.describeprocess.output.LiteralOutput;
 import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
 import org.deegree.protocol.wps.execute.ExecuteResponse;
+import org.deegree.protocol.wps.execute.datatypes.BinaryDataType;
 import org.deegree.protocol.wps.execute.datatypes.BoundingBoxDataType;
 import org.deegree.protocol.wps.execute.datatypes.LiteralDataType;
 import org.deegree.protocol.wps.execute.datatypes.XMLDataType;
@@ -77,12 +80,17 @@ public class WPSClientTest {
 
     private static final File CURVE_FILE = new File( WPSClientTest.class.getResource( "curve.xml" ).getPath() );
 
+    private static final File POLYGON_FILE = new File( WPSClientTest.class.getResource( "Polygon.gml" ).getPath() );
+
+    private static final File POINT_FILE = new File( WPSClientTest.class.getResource( "Point_coord.gml" ).getPath() );
+
     private static final File BINARY_INPUT = new File( WPSClientTest.class.getResource( "image.png" ).getPath() );
 
-    // private static final String DEMO_SERVICE_URL =
-    // "http://deegree3-testing.deegree.org/deegree-wps-demo-3.0-pre6/services?service=WPS&version=1.0.0&request=GetCapabilities";
+    private static final File BINARY_INPUT_TIFF = new File( WPSClientTest.class.getResource( "image.tiff" ).getPath() );
 
-    private static final String DEMO_SERVICE_URL = "http://giv-wps.uni-muenster.de:8080/wps/WebProcessingService?Request=GetCapabilities&Service=WPS";
+    private static final String DEMO_SERVICE_URL = "http://deegree3-testing.deegree.org/deegree-wps-demo-3.0-pre6/services?service=WPS&version=1.0.0&request=GetCapabilities";
+
+    private static final String NORTH52_SERVICE_URL = "http://giv-wps.uni-muenster.de:8080/wps/WebProcessingService?Request=GetCapabilities&Service=WPS";
 
     @Before
     public void init() {
@@ -92,7 +100,7 @@ public class WPSClientTest {
     }
 
     @Test
-    public void testGetInputDescription_1()
+    public void testProcessDescription_1()
                             throws MalformedURLException {
         URL processUrl = new URL( DEMO_SERVICE_URL );
         WPSClient wpsClient = new WPSClient( processUrl );
@@ -102,8 +110,7 @@ public class WPSClientTest {
         Assert.assertEquals( "1", literalInput.getMaxOccurs() );
         LiteralDataDescription literalData = (LiteralDataDescription) literalInput.getData();
         Assert.assertEquals( "double", literalData.getDataType().getValue() );
-        Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#double",
-                             literalData.getDataType().getRef().toExternalForm() );
+        Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#double", literalData.getDataType().getRef().toString() );
         Assert.assertEquals( "unity", literalData.getDefaultUom().getValue() );
         Assert.assertEquals( "unity", literalData.getSupportedUoms()[0].getValue() );
         Assert.assertEquals( true, literalData.isAnyValue() );
@@ -121,7 +128,7 @@ public class WPSClientTest {
     }
 
     @Test
-    public void testGetInputDescription_2()
+    public void testProcessDescription_2()
                             throws MalformedURLException {
         URL processUrl = new URL( DEMO_SERVICE_URL );
         WPSClient wpsClient = new WPSClient( processUrl );
@@ -142,12 +149,11 @@ public class WPSClientTest {
         OutputDescription output = p2.getOutputType( "Crosses", null );
         LiteralOutput literalOut = (LiteralOutput) output.getOutputData();
         Assert.assertEquals( "boolean", literalOut.getDataType().getValue() );
-        Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#boolean",
-                             literalOut.getDataType().getRef().toExternalForm() );
+        Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#boolean", literalOut.getDataType().getRef().toString() );
     }
 
     @Test
-    public void testGetInputDescription_3()
+    public void testProcessDescription_3()
                             throws MalformedURLException {
         URL processUrl = new URL( DEMO_SERVICE_URL );
         WPSClient wpsClient = new WPSClient( processUrl );
@@ -157,7 +163,7 @@ public class WPSClientTest {
         LiteralDataDescription literalInput = (LiteralDataDescription) firstInput.getData();
         Assert.assertEquals( "integer", literalInput.getDataType().getValue() );
         Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#integer",
-                             literalInput.getDataType().getRef().toExternalForm() );
+                             literalInput.getDataType().getRef().toString() );
         Assert.assertEquals( "seconds", literalInput.getDefaultUom().getValue() );
         Assert.assertEquals( "seconds", literalInput.getSupportedUoms()[0].getValue() );
         Assert.assertEquals( "minutes", literalInput.getSupportedUoms()[1].getValue() );
@@ -185,8 +191,7 @@ public class WPSClientTest {
         Assert.assertEquals( "A literal output parameter", firstOutput.getTitle().getString() );
         LiteralOutput literalData = (LiteralOutput) firstOutput.getOutputData();
         Assert.assertEquals( "integer", literalData.getDataType().getValue() );
-        Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#integer",
-                             literalData.getDataType().getRef().toExternalForm() );
+        Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#integer", literalData.getDataType().getRef().toString() );
         Assert.assertEquals( "seconds", literalData.getDefaultUom().getValue() );
         Assert.assertEquals( "seconds", literalData.getSupportedUoms()[0].getValue() );
 
@@ -207,6 +212,30 @@ public class WPSClientTest {
     }
 
     @Test
+    public void testProcessDescription_4()
+                            throws OWSException, IOException, XMLStreamException {
+        URL processUrl = new URL( NORTH52_SERVICE_URL );
+        WPSClient wpsClient = new WPSClient( processUrl );
+        Process proc = wpsClient.getProcess( "buffer", null );
+        InputDescription inputLayer = proc.getInputType( "LAYER", null );
+        ComplexDataDescription layerData = (ComplexDataDescription) inputLayer.getData();
+        Assert.assertEquals( "http://geoserver.itc.nl:8080/wps/schemas/gml/2.1.2/gmlpacket.xsd",
+                             layerData.getSupportedFormats()[1].getSchema() );
+
+        InputDescription inputField = proc.getInputType( "FIELD", null );
+        LiteralDataDescription fieldData = (LiteralDataDescription) inputField.getData();
+        Assert.assertEquals( "xs:int", fieldData.getDataType().getRef().toString() );
+        Assert.assertEquals( "0", fieldData.getRanges()[0].getMinimumValue() );
+        Assert.assertEquals( "+Infinity", fieldData.getRanges()[0].getMaximumValue() );
+
+        InputDescription inputMethod = proc.getInputType( "METHOD", null );
+        Assert.assertEquals( "Distance", inputMethod.getAbstract().getString() );
+        LiteralDataDescription methodData = (LiteralDataDescription) inputMethod.getData();
+        Assert.assertEquals( "Fixed distance", methodData.getAllowedValues()[0] );
+        Assert.assertEquals( "Distance from table field", methodData.getAllowedValues()[1] );
+    }
+
+    @Test
     public void testGetProcess()
                             throws MalformedURLException {
         URL processUrl = new URL( DEMO_SERVICE_URL );
@@ -218,7 +247,7 @@ public class WPSClientTest {
     }
 
     @Test
-    public void testExecute1()
+    public void testExecute_1()
                             throws Exception {
         URL processUrl = new URL( DEMO_SERVICE_URL );
         WPSClient wpsClient = new WPSClient( processUrl );
@@ -244,7 +273,7 @@ public class WPSClientTest {
     }
 
     @Test
-    public void testExecute2()
+    public void testExecute_2()
                             throws Exception {
 
         URL processUrl = new URL( DEMO_SERVICE_URL );
@@ -263,7 +292,7 @@ public class WPSClientTest {
     }
 
     @Test
-    public void testExecute3()
+    public void testExecute_3()
                             throws OWSException, IOException, XMLStreamException {
         URL processUrl = new URL( DEMO_SERVICE_URL );
         WPSClient wpsClient = new WPSClient( processUrl );
@@ -273,7 +302,7 @@ public class WPSClientTest {
         execution.addLiteralInput( "LiteralInput", null, "0", "integer", "seconds" );
         execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0, 90, 180 }, "EPSG:4326", 2 );
         execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
-        execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), "image/png", "base64" );
+        execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), "image/png", null );
         ExecuteResponse response = execution.start();
 
         LiteralDataType out1 = (LiteralDataType) response.getOutputs()[0].getDataType();
@@ -286,4 +315,44 @@ public class WPSClientTest {
         Assert.assertEquals( "EPSG:4326", out2.getCrs() );
         Assert.assertEquals( 2, out2.getDim() );
     }
+
+    @Test
+    public void testExecute_4()
+                            throws OWSException, IOException, XMLStreamException {
+        URL processUrl = new URL( NORTH52_SERVICE_URL );
+        WPSClient wpsClient = new WPSClient( processUrl );
+        Process proc = wpsClient.getProcess( "sortraster", null );
+
+        ProcessExecution execution = proc.prepareExecution();
+        execution.addBinaryInput( "INPUT", null, BINARY_INPUT_TIFF.toURI().toURL(), "image/tiff", null );
+        ExecuteResponse response = execution.start();
+
+        BinaryDataType out1 = (BinaryDataType) response.getOutputs()[0].getDataType();
+        InputStream inStream = out1.getDataStream();
+        FileOutputStream fileStream = new FileOutputStream( File.createTempFile( "north52", ".tiff" ) );
+        byte[] ar = new byte[1024];
+        int readFlag = -1;
+        while ( ( readFlag = inStream.read( ar ) ) != -1 ) {
+            fileStream.write( ar );
+        }
+        fileStream.close();
+        inStream.close();
+    }
+
+    @Test
+    public void testExecute_5()
+                            throws OWSException, IOException, XMLStreamException {
+        URL processUrl = new URL( NORTH52_SERVICE_URL );
+        WPSClient wpsClient = new WPSClient( processUrl );
+        Process proc = wpsClient.getProcess( "ripleysk", null );
+
+        ProcessExecution execution = proc.prepareExecution();
+        execution.addXMLInput( "POINTS", null, POINT_FILE.toURI().toURL(), "text/xml", null, null );
+        execution.setRequestedOutput( "RESULT", null, null, false, null, null, null );
+        // execution.addXMLInput( "LAYER2", null, POINT_FILE.toURI().toURL(), "text/xml", null, null );
+        ExecuteResponse response = execution.start();
+
+        response.getOutputs()[0].getDataType();
+    }
+
 }

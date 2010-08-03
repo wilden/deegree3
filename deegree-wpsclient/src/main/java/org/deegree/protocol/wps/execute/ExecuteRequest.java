@@ -55,12 +55,16 @@ public class ExecuteRequest {
 
     private CodeType processId;
 
+    private String version;
+
     private List<ExecuteInput> inputList;
 
     private ResponseFormat responseFormat;
 
-    public ExecuteRequest( CodeType processId, List<ExecuteInput> inputList, ResponseFormat responseFormat ) {
+    public ExecuteRequest( CodeType processId, String version, List<ExecuteInput> inputList,
+                           ResponseFormat responseFormat ) {
         this.processId = processId;
+        this.version = version;
         this.inputList = inputList;
         this.responseFormat = responseFormat;
     }
@@ -70,6 +74,10 @@ public class ExecuteRequest {
      */
     public CodeType getId() {
         return processId;
+    }
+
+    public String getVersion() {
+        return version;
     }
 
     /**

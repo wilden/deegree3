@@ -303,7 +303,8 @@ public class ProcessExecution {
         // "wpsClientIn",
         // ".xml" ) ) );
 
-        ExecuteRequest executeRequest = new ExecuteRequest( process.getId(), inputs, responseFormat );
+        String version = process.getWPSClient().getServiceVersion();
+        ExecuteRequest executeRequest = new ExecuteRequest( process.getId(), version, inputs, responseFormat );
         RequestWriter executer = new RequestWriter( writer );
         executer.write100( executeRequest );
         writer.flush();

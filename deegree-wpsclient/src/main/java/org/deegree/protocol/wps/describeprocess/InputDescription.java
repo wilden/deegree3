@@ -76,6 +76,22 @@ public class InputDescription {
     }
 
     /**
+     * 
+     * @return the title for this input
+     */
+    public LanguageString getTitle() {
+        return inputTitle;
+    }
+
+    /**
+     * 
+     * @return the abstract entry for this input
+     */
+    public LanguageString getAbstract() {
+        return inputAbstract;
+    }
+
+    /**
      * Returns the least number of occurrences possible for this input parameter in the process. Can be "0" (no
      * occurrence possible), more, or null (meaning that it can appear no more than maxOccurs, if that is specified):
      * 

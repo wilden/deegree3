@@ -38,7 +38,8 @@ package org.deegree.protocol.wps.describeprocess;
 import static org.deegree.protocol.wps.WPSConstants.WPS_100_NS;
 import static org.deegree.protocol.wps.WPSConstants.WPS_PREFIX;
 
-import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -187,11 +188,11 @@ public class DescribeProcessExecution {
         if ( omDataType != null ) {
             String dataTypeStr = omDataType.getText();
             String dataTypeRefStr = omDataType.getAttributeValue( new QName( owsNS, "reference" ) );
-            URL dataTypeRef;
+            URI dataTypeRef = null;
             try {
-                dataTypeRef = new URL( dataTypeRefStr );
-            } catch ( MalformedURLException e ) {
-                dataTypeRef = null;
+                dataTypeRef = new URI( dataTypeRefStr );
+            } catch ( URISyntaxException e ) {
+                // dataTypeRef stays null
             }
             dataType = new ValueWithRef<String>( dataTypeStr, dataTypeRef );
         }
@@ -202,10 +203,10 @@ public class DescribeProcessExecution {
         if ( omDefault != null ) {
             String defaultUomStr = omDefault.getText();
             String defaultUomRefStr = omDefault.getAttributeValue( new QName( owsNS, "reference" ) );
-            URL defaultUomRef = null;
+            URI defaultUomRef = null;
             try {
-                defaultUomRef = new URL( defaultUomRefStr );
-            } catch ( MalformedURLException e ) {
+                defaultUomRef = new URI( defaultUomRefStr );
+            } catch ( URISyntaxException e ) {
                 // defaultUomRef stays null
             }
             defaultUom = new ValueWithRef<String>( defaultUomStr, defaultUomRef );
@@ -218,10 +219,10 @@ public class DescribeProcessExecution {
             for ( int i = 0; i < omSupported.size(); i++ ) {
                 OMElement omSupp = omSupported.get( i );
                 String omSupportedRefStr = omSupp.getAttributeValue( new QName( owsNS, "reference" ) );
-                URL omSupportedRef = null;
+                URI omSupportedRef = null;
                 try {
-                    omSupportedRef = new URL( omSupportedRefStr );
-                } catch ( MalformedURLException e ) {
+                    omSupportedRef = new URI( omSupportedRefStr );
+                } catch ( URISyntaxException e ) {
                     // omSupportedRef stays null
                 }
                 supportedUoms[i] = new ValueWithRef<String>( omSupp.getText(), omSupportedRef );
@@ -322,45 +323,45 @@ public class DescribeProcessExecution {
         OMElement omDataType = input.getFirstChildWithName( new QName( owsNS, "DataType" ) );
         String dataTypeStr = omDataType.getText();
         String dataTypeRefStr = omDataType.getAttributeValue( new QName( owsNS, "reference" ) );
-        URL dataTypeRef;
+        URI dataTypeRef = null;
         try {
-            dataTypeRef = new URL( dataTypeRefStr );
-        } catch ( MalformedURLException e ) {
-            dataTypeRef = null;
+            dataTypeRef = new URI( dataTypeRefStr );
+        } catch ( URISyntaxException e1 ) {
+            // dataTypeRef stays null
         }
         ValueWithRef<String> dataType = new ValueWithRef<String>( dataTypeStr, dataTypeRef );
 
         XPath xpath = new XPath( "UOMs/Default/ows:UOM", nsContext );
         OMElement omDefaultUom = omResponse.getElement( input, xpath );
-        String defaultUomRefStr = omDefaultUom.getAttributeValue( new QName( owsNS, "reference" ) );
-        URL defaultUomRef = null;
-        if ( defaultUomRefStr != null ) {
+        ValueWithRef<String> defaultUom = null;
+        if ( omDefaultUom != null ) {
+            String defaultUomRefStr = omDefaultUom.getAttributeValue( new QName( owsNS, "reference" ) );
+            URI defaultUomRef = null;
             try {
-                defaultUomRef = new URL( defaultUomRefStr );
-            } catch ( MalformedURLException e ) {
+                defaultUomRef = new URI( defaultUomRefStr );
+            } catch ( URISyntaxException e ) {
                 // defaultUomRef stays null
             }
+            defaultUom = new ValueWithRef<String>( omDefaultUom.getText(), defaultUomRef );
         }
-        ValueWithRef<String> defaultUom = new ValueWithRef<String>( omDefaultUom.getText(), defaultUomRef );
 
         xpath = new XPath( "UOMs/Supported/ows:UOM", nsContext );
         List<OMElement> omSupported = omResponse.getElements( input, xpath );
-        // standard suppress warnings for casting declaration of array of generic type
-        @SuppressWarnings( { "unchecked" })
-        ValueWithRef<String>[] supportedUom = new ValueWithRef[omSupported.size()];
-        for ( int i = 0; i < omSupported.size(); i++ ) {
-            OMElement omSupport = omSupported.get( i );
-            String supported = omSupport.getText();
-            String supportedRefStr = omSupport.getAttributeValue( new QName( owsNS, "reference" ) );
-            URL supportedRef = null;
-            if ( supportedRefStr != null ) {
+        ValueWithRef<String>[] supportedUom = null;
+        if ( omSupported != null ) {
+            supportedUom = new ValueWithRef[omSupported.size()];
+            for ( int i = 0; i < omSupported.size(); i++ ) {
+                OMElement omSupport = omSupported.get( i );
+                String supported = omSupport.getText();
+                String supportedRefStr = omSupport.getAttributeValue( new QName( owsNS, "reference" ) );
+                URI supportedRef = null;
                 try {
-                    supportedRef = new URL( supportedRefStr );
-                } catch ( MalformedURLException e ) {
+                    supportedRef = new URI( supportedRefStr );
+                } catch ( URISyntaxException e ) {
                     // supportedRef stays null
                 }
+                supportedUom[i] = new ValueWithRef<String>( supported, supportedRef );
             }
-            supportedUom[i] = new ValueWithRef<String>( supported, supportedRef );
         }
 
         OMElement omAnyValue = input.getFirstChildWithName( new QName( owsNS, "AnyValue" ) );
@@ -409,24 +410,24 @@ public class DescribeProcessExecution {
         }
 
         OMElement omValuesReference = input.getFirstChildWithName( new QName( owsNS, "ValuesReference" ) );
-        ValueWithRef<URL> valuesRef = null;
+        ValueWithRef<URI> valuesRef = null;
         if ( omValuesReference != null ) {
             String valueRefStr = omValuesReference.getAttributeValue( new QName( owsNS, "reference" ) );
             String valueFormStr = omValuesReference.getAttributeValue( new QName( null, "valuesForm" ) );
 
-            URL valueRefUrl = null;
+            URI valueRefUri = null;
             try {
-                valueRefUrl = new URL( valueRefStr );
-            } catch ( MalformedURLException e ) {
-                // valueRefUrl stays null
+                valueRefUri = new URI( valueRefStr );
+            } catch ( URISyntaxException e ) {
+                // valueRefUri stays null
             }
-            URL valueFormStrUrl = null;
+            URI valueFormStrUri = null;
             try {
-                valueFormStrUrl = new URL( valueFormStr );
-            } catch ( MalformedURLException e ) {
-                // valueFormStrUrl stays null
+                valueFormStrUri = new URI( valueFormStr );
+            } catch ( URISyntaxException e ) {
+                // valueFormStrUri stays null
             }
-            valuesRef = new ValueWithRef<URL>( valueRefUrl, valueFormStrUrl );
+            valuesRef = new ValueWithRef<URI>( valueRefUri, valueFormStrUri );
         }
 
         String[] valuesArray = null;

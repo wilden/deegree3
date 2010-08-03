@@ -35,6 +35,7 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.describeprocess;
 
+import java.net.URI;
 import java.net.URL;
 
 import org.deegree.protocol.wps.ValueWithRef;
@@ -68,11 +69,11 @@ public class LiteralDataDescription implements DataDescription {
 
     private boolean anyValue;
 
-    private ValueWithRef<URL> reference;
+    private ValueWithRef<URI> reference;
 
     public LiteralDataDescription( ValueWithRef<String> dataType, ValueWithRef<String> defaultUom,
                                    ValueWithRef[] supportedUoms, String[] allowedValues, Range[] range,
-                                   boolean anyValue, ValueWithRef<URL> reference ) {
+                                   boolean anyValue, ValueWithRef<URI> reference ) {
         this.dataType = dataType;
         this.defaultUom = defaultUom;
         this.supportedUoms = supportedUoms;
@@ -83,8 +84,24 @@ public class LiteralDataDescription implements DataDescription {
     }
 
     /**
-     * Returns a {@link ValueWithRef<String>} instance (that encapsulates a String and an {@link URL}), as data type for
-     * the literal input.
+     * 
+     * @return a string array with the concrete values the input can take
+     */
+    public String[] getAllowedValues() {
+        return allowedValues;
+    }
+
+    /**
+     * 
+     * @return an array of {@link Range} instances, each describing the interval in which the input values can be.
+     */
+    public Range[] getRanges() {
+        return range;
+    }
+
+    /**
+     * Returns a {@link ValueWithRef} instance (that encapsulates a String and an {@link URL}), as data type for the
+     * literal input.
      * 
      * @return the data type of the literal input
      */

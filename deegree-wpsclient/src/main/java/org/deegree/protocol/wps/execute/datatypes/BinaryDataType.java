@@ -86,6 +86,10 @@ public class BinaryDataType implements DataType {
         return url.openStream();
     }
 
+    public ComplexAttributes getAttributes() {
+        return complexAttributes;
+    }
+
     @Override
     public URL getWebAccessibleURL() {
         return isWebAccessible ? url : null;

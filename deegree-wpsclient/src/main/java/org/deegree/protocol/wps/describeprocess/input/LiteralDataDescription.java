@@ -33,7 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.describeprocess;
+package org.deegree.protocol.wps.describeprocess.input;
 
 import java.net.URI;
 import java.net.URL;

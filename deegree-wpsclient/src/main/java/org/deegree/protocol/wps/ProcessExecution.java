@@ -70,20 +70,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * Represents an execution context for a {@link Process}.
+ * 
+ * @see Process
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
 public class ProcessExecution {
 
     private static Logger LOG = LoggerFactory.getLogger( ProcessExecution.class );
 
-    private Process process;
+    private final WPSClient client;
+
+    private final Process process;
 
     private List<ExecuteInput> inputs;
 
@@ -93,25 +96,36 @@ public class ProcessExecution {
 
     private boolean rawOutput;
 
-    ProcessExecution( Process process ) {
+    /**
+     * Creates a new {@link ProcessExecution} instance.
+     * 
+     * @param client
+     *            associated WPS client instance, must not be <code>null</code>
+     * @param process
+     *            associated process instance, must not be <code>null</code>
+     */
+    ProcessExecution( WPSClient client, Process process ) {
+        this.client = client;
         this.process = process;
         inputs = new ArrayList<ExecuteInput>();
         outputDefs = new ArrayList<OutputDefinition>();
     }
 
     /**
-     * Add literal input data under the specified id.
+     * Adds a literal input parameter.
      * 
      * @param id
-     *            input id of the parameter
+     *            identifier of the input parameter, must not be <code>null</code>
      * @param codeSpace
-     *            codespace of the id, may be null
+     *            codespace of the parameter identifier, may be <code>null</code> (no codespace)
      * @param value
-     *            value of the literal input
+     *            value of the literal input, must not be <code>null</code>
      * @param type
-     *            data type in which the value should be considered
+     *            data type in which the value should be considered, may be <code>null</code> (this means it matches the
+     *            data type as defined by the process description)
      * @param uom
-     *            unit of measure of the value
+     *            unit of measure of the value, may be <code>null</code> (this means it matches the
+     *            data type as defined by the process description)
      */
     public void addLiteralInput( String id, String codeSpace, String value, String type, String uom ) {
         inputs.add( new ExecuteInput( new CodeType( id, codeSpace ), new LiteralDataType( value, type, uom ) ) );
@@ -121,9 +135,9 @@ public class ProcessExecution {
      * Add Bounding box input data under the specified id.
      * 
      * @param id
-     *            input id of the parameter
+     *            identifier of the input parameter, must not be <code>null</code>
      * @param codeSpace
-     *            codespace of the id, may be null
+     *            codespace of the parameter identifier, may be <code>null</code> (no codespace)
      * @param coordinates
      *            {@link double} array of coordinates: x0, y0, x1, x2, etc.
      * @param crs
@@ -139,9 +153,9 @@ public class ProcessExecution {
      * Add XML input data under the specified id as URL.
      * 
      * @param id
-     *            input id of the parameter
+     *            identifier of the input parameter, must not be <code>null</code>
      * @param codeSpace
-     *            codespace of the id, may be null
+     *            codespace of the parameter identifier, may be <code>null</code> (no codespace)
      * @param url
      *            {@link URL} to the xml data, must not be null
      * @param mimeType
@@ -160,9 +174,9 @@ public class ProcessExecution {
      * Add XML input data under the specified id as XML stream reader.
      * 
      * @param id
-     *            input id of the parameter
+     *            identifier of the input parameter, must not be <code>null</code>
      * @param codeSpace
-     *            codespace of the id, may be null
+     *            codespace of the parameter identifier, may be <code>null</code> (no codespace)
      * @param reader
      *            {@link XMLStreamReader} to the xml data, mustn't be null
      * @param mimeType
@@ -182,9 +196,9 @@ public class ProcessExecution {
      * Add binary input data under the specified id as URL.
      * 
      * @param id
-     *            input id of the parameter
+     *            identifier of the input parameter, must not be <code>null</code>
      * @param codeSpace
-     *            codespace of the id, may be null
+     *            codespace of the parameter identifier, may be <code>null</code> (no codespace)
      * @param url
      *            {@link URL} to the binary data, mustn't be null
      * @param mimeType
@@ -201,9 +215,9 @@ public class ProcessExecution {
      * Add binary input data under the specified id as input stream.
      * 
      * @param id
-     *            input id of the parameter
+     *            identifier of the input parameter, must not be <code>null</code>
      * @param codeSpace
-     *            codespace of the id, may be null
+     *            codespace of the parameter identifier, may be <code>null</code> (no codespace)
      * @param inputStream
      *            input stream to the binary data, mustn't be null
      * @param mimeType
@@ -221,10 +235,10 @@ public class ProcessExecution {
      * {@link #setRawOutput(String, String, String, String, String) } to specify the format in which the output should be
      * presented.
      * 
-     * @param outputId
-     *            id of the output parameter
+     * @param id
+     *            identifier of the output parameter, must not be <code>null</code>
      * @param codeSpace
-     *            codespace of the id, may be null
+     *            codespace of the parameter identifier, may be <code>null</code> (no codespace)
      * @param uom
      *            unit of measure, in case it is a Literal Output, otherwise null
      * @param asRef
@@ -235,9 +249,9 @@ public class ProcessExecution {
      *            encoding of data, may be null
      * @param schema
      */
-    public void setRequestedOutput( String outputId, String codeSpace, String uom, boolean asRef, String mimeType,
+    public void setRequestedOutput( String id, String codeSpace, String uom, boolean asRef, String mimeType,
                                     String encoding, String schema ) {
-        outputDefs.add( new OutputDefinition( new CodeType( outputId ), uom, asRef, mimeType, encoding, schema ) );
+        outputDefs.add( new OutputDefinition( new CodeType( id ), uom, asRef, mimeType, encoding, schema ) );
     }
 
     /**
@@ -245,10 +259,10 @@ public class ProcessExecution {
      * {@link #setRequestedOutput(String, String, String, boolean, String, String, String)} to specify the format in
      * which the output should be presented.
      * 
-     * @param outputId
-     *            id of the output parameter
+     * @param id
+     *            identifier of the output parameter, must not be <code>null</code>
      * @param codeSpace
-     *            codespace of the id, may be null
+     *            codespace of the parameter identifier, may be <code>null</code> (no codespace)
      * @param mimeType
      *            mimeType of the data, may be null
      * @param encoding
@@ -257,20 +271,13 @@ public class ProcessExecution {
      *            schema of data, in case it is an XML document
      * @throws Exception
      */
-    public void setRawOutput( String outputId, String codeSpace, String mimeType, String encoding, String schema )
+    public void setRawOutput( String id, String codeSpace, String mimeType, String encoding, String schema )
                             throws Exception {
-        outputDefs.add( new OutputDefinition( new CodeType( outputId ), null, false, mimeType, encoding, schema ) );
+        outputDefs.add( new OutputDefinition( new CodeType( id ), null, false, mimeType, encoding, schema ) );
         rawOutput = true;
         if ( outputDefs.size() > 1 ) {
             throw new Exception( "A raw response can be delivered only for one output parameter." );
         }
-    }
-
-    /**
-     * @param updateStatus
-     */
-    public void startAsync( boolean updateStatus ) {
-        throw new UnsupportedOperationException( "Async execution is not finished yet." );
     }
 
     /**
@@ -281,18 +288,19 @@ public class ProcessExecution {
      * @throws IOException
      * @throws XMLStreamException
      */
-    public ExecuteResponse start()
+    public ExecuteResponse execute()
                             throws OWSException, IOException, XMLStreamException {
 
         responseFormat = new ResponseFormat( rawOutput, false, false, false, outputDefs );
 
         ExecuteResponse response = null;
         // TODO what if server only supports Get?
-        URL url = process.getWPSClient().getExecuteURL( true );
+        URL url = client.getExecuteURL( true );
 
         URLConnection conn = url.openConnection();
         conn.setDoOutput( true );
         conn.setUseCaches( false );
+        // TODO does this need configurability?
         conn.setRequestProperty( "Content-Type", "application/xml" );
 
         XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
@@ -303,7 +311,7 @@ public class ProcessExecution {
         // "wpsClientIn",
         // ".xml" ) ) );
 
-        String version = process.getWPSClient().getServiceVersion();
+        String version = client.getServiceVersion();
         ExecuteRequest executeRequest = new ExecuteRequest( process.getId(), version, inputs, responseFormat );
         RequestWriter executer = new RequestWriter( writer );
         executer.write100( executeRequest );
@@ -331,5 +339,12 @@ public class ProcessExecution {
         reader.close();
 
         return response;
+    }
+
+    /**
+     * @param updateStatus
+     */
+    public void executeAsync( boolean updateStatus ) {
+        throw new UnsupportedOperationException( "Async execution is not implemented yet." );
     }
 }

@@ -33,7 +33,9 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.describeprocess;
+package org.deegree.protocol.wps.describeprocess.input;
+
+import org.deegree.protocol.wps.ComplexAttributes;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -45,31 +47,37 @@ package org.deegree.protocol.wps.describeprocess;
  * @version $Revision$, $Date$
  * 
  */
-public class BBoxDataDescription implements DataDescription {
+public class ComplexDataDescription implements DataDescription {
 
-    private String defaultCrs;
+    // private int maximumFileSize;
 
-    private String[] supportedCrs;
+    private ComplexAttributes defaultFormat;
 
-    public BBoxDataDescription( String defaultCRS, String[] supportedCRSs ) {
-        this.defaultCrs = defaultCRS;
-        this.supportedCrs = supportedCRSs;
+    private ComplexAttributes[] supportedFormats;
+
+    public ComplexDataDescription( ComplexAttributes defaultFormat, ComplexAttributes[] supportedFormats ) {
+        this.defaultFormat = defaultFormat;
+        this.supportedFormats = supportedFormats;
     }
 
     /**
+     * Returns a {@link ComplexAttributes} instance (that encapsulates encoding, mime type and schema) as default format
+     * for this input.
      * 
-     * @return the default CRS used for this respective input.
+     * @return the default format used for this input.
      */
-    public String getDefaultCRS() {
-        return defaultCrs;
+    public ComplexAttributes getDefaultFormat() {
+        return defaultFormat;
     }
 
     /**
+     * Returns an array of {@link ComplexAttributes} instances (that encapsulates encoding, mime type and schema) as
+     * supported formats for this input.
      * 
-     * @return the supported CRSs that can be used for this respective input.
+     * @return the supported format used for this input.
      */
-    public String[] getSupportedCrs() {
-        return supportedCrs;
+    public ComplexAttributes[] getSupportedFormats() {
+        return supportedFormats;
     }
 
 }

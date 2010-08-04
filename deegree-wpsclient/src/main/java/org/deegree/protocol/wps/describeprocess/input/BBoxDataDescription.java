@@ -33,9 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.describeprocess;
-
-import org.deegree.protocol.wps.ComplexAttributes;
+package org.deegree.protocol.wps.describeprocess.input;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -47,37 +45,31 @@ import org.deegree.protocol.wps.ComplexAttributes;
  * @version $Revision$, $Date$
  * 
  */
-public class ComplexDataDescription implements DataDescription {
+public class BBoxDataDescription implements DataDescription {
 
-    // private int maximumFileSize;
+    private String defaultCrs;
 
-    private ComplexAttributes defaultFormat;
+    private String[] supportedCrs;
 
-    private ComplexAttributes[] supportedFormats;
-
-    public ComplexDataDescription( ComplexAttributes defaultFormat, ComplexAttributes[] supportedFormats ) {
-        this.defaultFormat = defaultFormat;
-        this.supportedFormats = supportedFormats;
+    public BBoxDataDescription( String defaultCRS, String[] supportedCRSs ) {
+        this.defaultCrs = defaultCRS;
+        this.supportedCrs = supportedCRSs;
     }
 
     /**
-     * Returns a {@link ComplexAttributes} instance (that encapsulates encoding, mime type and schema) as default format
-     * for this input.
      * 
-     * @return the default format used for this input.
+     * @return the default CRS used for this respective input.
      */
-    public ComplexAttributes getDefaultFormat() {
-        return defaultFormat;
+    public String getDefaultCRS() {
+        return defaultCrs;
     }
 
     /**
-     * Returns an array of {@link ComplexAttributes} instances (that encapsulates encoding, mime type and schema) as
-     * supported formats for this input.
      * 
-     * @return the supported format used for this input.
+     * @return the supported CRSs that can be used for this respective input.
      */
-    public ComplexAttributes[] getSupportedFormats() {
-        return supportedFormats;
+    public String[] getSupportedCrs() {
+        return supportedCrs;
     }
 
 }

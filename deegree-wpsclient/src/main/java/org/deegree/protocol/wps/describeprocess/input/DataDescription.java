@@ -33,7 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.describeprocess;
+package org.deegree.protocol.wps.describeprocess.input;
 
 /**
  * The <code></code> class TODO add class documentation here.

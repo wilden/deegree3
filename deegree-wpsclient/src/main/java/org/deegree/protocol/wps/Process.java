@@ -35,56 +35,72 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps;
 
-import static org.deegree.protocol.wps.WPSConstants.WPS_100_NS;
-
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.Map;
 
-import org.apache.axiom.om.xpath.AXIOMXPath;
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
-import org.deegree.protocol.wps.describeprocess.DescribeProcessExecution;
-import org.deegree.protocol.wps.describeprocess.InputDescription;
+import org.deegree.protocol.wps.describeprocess.DescribeProcessResponse;
+import org.deegree.protocol.wps.describeprocess.input.InputDescription;
 import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
-import org.jaxen.JaxenException;
+import org.deegree.services.controller.ows.OWSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Encapsulates a process' properties ( id, input format, output format, etc.) and enables access to the Execute
- * operation.
+ * Encapsulates the properties of a process offered by a WPS instance (id, title, input format, output format, etc.) and
+ * provides access to a {@link ProcessExecution} context for executing it.
+ * 
+ * @see WPSClient
+ * @see ProcessExecution
  * 
  * @author <a href="mailto:kiehle@lat-lon.de">Christian Kiehle</a>
  * @author <a href="mailto:walenciak@uni-heidelberg.de">Georg Walenciak</a>
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
  */
 public class Process {
 
-    private static Logger LOG = LoggerFactory.getLogger( Process.class );
+    private static final Logger LOG = LoggerFactory.getLogger( Process.class );
 
-    private WPSClient wpsclient;
+    private final WPSClient wpsclient;
 
-    private String version;
+    private final String version;
 
-    private CodeType processId;
+    private final CodeType processId;
 
-    private LanguageString title;
+    private final LanguageString title;
 
-    private LanguageString processAbstract;
+    private final LanguageString processAbstract;
 
+    // populated by #doDescribeProcess()
     private Map<CodeType, InputDescription> allowedInputs;
 
+    // populated by #doDescribeProcess()
     private Map<CodeType, OutputDescription> outputFormats;
 
-    private boolean describeProcessPerformed = false;
+    private boolean describeProcessPerformed;
 
+    /**
+     * Creates a new {@link Process} instance.
+     * 
+     * @param wpsclient
+     *            associated client instance, must not be <code>null</code>
+     * @param version
+     *            process version, must not be <code>null</code>
+     * @param processId
+     *            process id, must not be <code>null</code>
+     * @param title
+     *            process title, must not be <code>null</code>
+     * @param processAbstract
+     *            process abstract, can be <code>null</code>
+     */
     Process( WPSClient wpsclient, String version, CodeType processId, LanguageString title,
              LanguageString processAbstract ) {
         this.wpsclient = wpsclient;
@@ -97,104 +113,75 @@ public class Process {
     /**
      * perform DescribeProcess
      */
-    private void doDescribeProcess() {
+    @SuppressWarnings("unused")
+    private void doDescribeProcess()
+                            throws IOException, OWSException {
+
         URL url = wpsclient.getDescribeProcessURL( false );
-        String finalURLStr;
-        try {
-            finalURLStr = url.toExternalForm() + "?service=WPS&version=" + URLEncoder.encode( version, "UTF-8" )
-                          + "&request=DescribeProcess&identifier="
-                          + URLEncoder.encode( concatenateCodeType( processId ), "UTF-8" );
-            URL finalURL = new URL( finalURLStr );
-            DescribeProcessExecution dpExecution = new DescribeProcessExecution( finalURL );
-            allowedInputs = dpExecution.parseInputs();
-            outputFormats = dpExecution.parseOutputs();
-        } catch ( UnsupportedEncodingException e ) {
-            e.printStackTrace();
-            throw new RuntimeException( "DescribeProcess request failed as the operation URL could not be encode. " );
-        } catch ( MalformedURLException e ) {
-            e.printStackTrace();
-            throw new RuntimeException( "DescribeProcess request failed as the operation URL could not be encode. " );
+
+        if ( processId.getCodeSpace() != null ) {
+            LOG.warn( "Performing DescribeProcess using GET, but process identifier ('" + processId
+                      + "') has a code space (which cannot be expressed). "
+                      + "Omitting the code space and hoping for the best..." );
         }
 
+        String finalURLStr = url.toExternalForm() + "?service=WPS&version=" + URLEncoder.encode( version, "UTF-8" )
+                             + "&request=DescribeProcess&identifier="
+                             + URLEncoder.encode( processId.getCode(), "UTF-8" );
+        URL finalURL = new URL( finalURLStr );
+        DescribeProcessResponse dpExecution = new DescribeProcessResponse( finalURL );
+        allowedInputs = dpExecution.parseInputs();
+        outputFormats = dpExecution.parseOutputs();
     }
 
     /**
-     * Create a {@link ProcessExecution} instance that will manage the execution of the process.
+     * Returns the identifier of the process.
      * 
-     * @return a {@link ProcessExecution} instance
-     */
-    public ProcessExecution prepareExecution() {
-        return new ProcessExecution( this );
-    }
-
-    private void addNsToXPath( AXIOMXPath xpath )
-                            throws JaxenException {
-        xpath.addNamespace( "wps", WPS_100_NS );
-        xpath.addNamespace( "ows", "http://www.opengis.net/ows/1.1" );
-        xpath.addNamespace( "xlink", "http://www.w3.org/1999/xlink" );
-    }
-
-    /**
-     * Retrieve the Id of the process.
-     * 
-     * @return a {@link CodeType} instance, representing the id
+     * @return the identifier, never <code>null</code>
      */
     public CodeType getId() {
         return processId;
     }
 
     /**
-     * Returns whether the process supports storing the response document (= asynchronous operation).
+     * Returns the version of the process.
      * 
-     * @return true, if the process supports storing the response document, false otherwise
-     */
-    public boolean getStoreSupported() {
-        return false;
-    }
-
-    /**
-     * Returns whether the process supports polling status information during asynchronous operation.
-     * 
-     * @return true, if the process supports polling status information, false otherwise
-     */
-    public boolean getStatusSupported() {
-        return false;
-    }
-
-    /**
-     * Retrieve version type of the process.
-     * 
-     * @return version
+     * @return the version, never <code>null</code>
      */
     public String getVersion() {
-        return null;
+        return version;
     }
 
     /**
-     * Retrieve process title.
+     * Returns the title of the process.
      * 
-     * @return {@link LanguageString} instance, representing the process title
+     * @return the title, never <code>null</code>
      */
     public LanguageString getTitle() {
-        return null;
+        return title;
     }
 
     /**
-     * Retrieve process abstract.
+     * Returns the abstract of the process.
      * 
-     * @return {@link LanguageString} instance, representing the process abstract.
+     * @return the abstract, can be <code>null</code> (if the process description does not define an abstract)
      */
     public LanguageString getAbstract() {
-        return null;
+        return processAbstract;
     }
 
     /**
      * Returns all the input formats for this process.
      * 
      * @return an array of {@link InputDescription} instances, representing the input formats
+     * @throws IOException
+     *             if a communication/network problem occured
+     * @throws OWSException
+     *             if the server replied with an exception
      */
-    public InputDescription[] getInputTypes() {
-        if ( allowedInputs == null ) {
+    public InputDescription[] getInputTypes()
+                            throws IOException, OWSException {
+        if ( !describeProcessPerformed ) {
             doDescribeProcess();
         }
         Collection<InputDescription> collection = allowedInputs.values();
@@ -209,9 +196,14 @@ public class Process {
      * @param codeSpace
      *            codespace of id, may be null
      * @return a {@link InputDescription} instance, representing this particular input format
+     * @throws IOException
+     *             if a communication/network problem occured
+     * @throws OWSException
+     *             if the server replied with an exception
      */
-    public InputDescription getInputType( String paramId, String codeSpace ) {
-        if ( allowedInputs == null ) {
+    public InputDescription getInputType( String paramId, String codeSpace )
+                            throws IOException, OWSException {
+        if ( !describeProcessPerformed ) {
             doDescribeProcess();
         }
         return allowedInputs.get( new CodeType( paramId, codeSpace ) );
@@ -221,9 +213,14 @@ public class Process {
      * Returns all output formats of this process.
      * 
      * @return an array of {@link OutputDescription} instances, representing the output formats
+     * @throws IOException
+     *             if a communication/network problem occured
+     * @throws OWSException
+     *             if the server replied with an exception
      */
-    public OutputDescription[] getOutputTypes() {
-        if ( outputFormats == null ) {
+    public OutputDescription[] getOutputTypes()
+                            throws IOException, OWSException {
+        if ( !describeProcessPerformed ) {
             doDescribeProcess();
         }
         Collection<OutputDescription> collection = outputFormats.values();
@@ -238,26 +235,46 @@ public class Process {
      * @param codeSpace
      *            codespace of id, may be null
      * @return a {@link OutputDescription} instance, representing the output format
+     * @throws IOException
+     *             if a communication/network problem occured
+     * @throws OWSException
+     *             if the server replied with an exception
      */
-    public OutputDescription getOutputType( String paramId, String codeSpace ) {
-        if ( outputFormats == null ) {
+    public OutputDescription getOutputType( String paramId, String codeSpace )
+                            throws OWSException, IOException {
+        if ( !describeProcessPerformed ) {
             doDescribeProcess();
         }
         return outputFormats.get( new CodeType( paramId, codeSpace ) );
     }
 
     /**
-     * @param id
-     *            a {@link CodeType}
-     * @return string representation of codetype: either codeSpace:code or code
+     * Returns whether the process supports storing the response document (= asynchronous operation).
+     * 
+     * @return true, if the process supports storing the response document, false otherwise
      */
-    // TODO this method feels that it doesn't belong here (but where?)
-    private String concatenateCodeType( CodeType id ) {
-        String codeSpace = id.getCodeSpace();
-        if ( codeSpace == null || "".equals( codeSpace ) ) {
-            return id.getCode();
-        }
-        return codeSpace + ":" + id.getCode();
+    public boolean getStoreSupported() {
+        // TBD
+        return false;
+    }
+
+    /**
+     * Returns whether the process supports polling status information during asynchronous operation.
+     * 
+     * @return true, if the process supports polling status information, false otherwise
+     */
+    public boolean getStatusSupported() {
+        // TBD
+        return false;
+    }
+
+    /**
+     * Prepares a new {@link ProcessExecution} context that allows to execute the process.
+     * 
+     * @return new process execution context, never <code>null</code>
+     */
+    public ProcessExecution prepareExecution() {
+        return new ProcessExecution( wpsclient, this );
     }
 
     @Override
@@ -265,9 +282,5 @@ public class Process {
         StringBuilder sb = new StringBuilder();
         sb.append( "ProcessIdentifier: " + this.processId + "\n" );
         return sb.toString();
-    }
-
-    WPSClient getWPSClient() {
-        return wpsclient;
     }
 }

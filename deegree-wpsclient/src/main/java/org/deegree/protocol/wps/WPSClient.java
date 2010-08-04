@@ -40,6 +40,7 @@ import static org.deegree.protocol.i18n.Messages.get;
 import static org.deegree.protocol.wps.WPSConstants.WPS_100_NS;
 import static org.deegree.protocol.wps.WPSConstants.WPS_PREFIX;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
@@ -53,6 +54,7 @@ import org.deegree.commons.tom.ows.LanguageString;
 import org.deegree.commons.xml.NamespaceContext;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.XPath;
+import org.deegree.services.controller.ows.OWSException;
 import org.deegree.services.jaxb.main.AddressType;
 import org.deegree.services.jaxb.main.DeegreeServicesMetadataType;
 import org.deegree.services.jaxb.main.ServiceContactType;
@@ -62,12 +64,51 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Entry point to the WPS Client API. Initialization through GetCapabilities URL of the service. Access to service
- * metadata. Point to retrieve the registered processes and gain access to further execution operations.
+ * Entry point to the WPS Client API.
+ * 
+ * <h4>Initialization</h4>
+ * 
+ * The initial step is to construct a new {@link WPSClient} instance by invoking the constructor with a URL to a WPS
+ * capabilities document. In most cases, this will be a GetCapabilities request (including necessary parameters) to a
+ * WPS service.
+ * 
+ * <pre>
+ * ...
+ *   URL processUrl = new URL( "http://...?service=WPS&version=1.0.0&request=GetCapabilities" );
+ *   WPSClient wpsClient = new WPSClient( processUrl );
+ * ...
+ * </pre>
+ * 
+ * <h4>Getting process information</h4>
+ * 
+ * The method {@link #getProcesses()} allows to find out about all processes offered by the service. Additionally (if
+ * one knows the id of a process beforehand, one can use {@link #getProcess(String, String)} to retrieve a specific
+ * process}. The {@link Process} class allows to execute a process and offers methods to access detail information such
+ * as title, abstract, input parameters and output parameters:
+ * 
+ * <pre>
+ * ...
+ *   Process buffer = wpsClient.getProcess ("Buffer", null);
+ *   System.out.println ("Buffer process abstract: " + buffer.getAbstract());
+ *   System.out.println ("Number of input parameters: " + buffer.getInputsTypes().length);
+ * ...
+ * </pre>
+ * 
+ * <h4>Executing a process</h4>
+ * 
+ * <h4>Retrieving service metadata</h4>
+ * 
+ * <h4>Implementation notes</h4>
+ * 
+ * The implementation is thread-safe.
+ * 
+ * @see Process
+ * @see ProcessExecution
  * 
  * @author <a href="mailto:walenciak@uni-heidelberg.de">Georg Walenciak</a>
  * @author <a href="mailto:kiehle@lat-lon.de">Christian Kiehle</a>
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
@@ -79,16 +120,16 @@ public class WPSClient {
     private DeegreeServicesMetadataType metadata;
 
     // [0]: Get, [1]: Post
-    private URL[] describeProcessURLs = new URL[2];
+    private final URL[] describeProcessURLs = new URL[2];
 
     // [0]: Get, [1]: Post
-    private URL[] executeURLs = new URL[2];
+    private final URL[] executeURLs = new URL[2];
 
-    private Map<CodeType, Process> processIdToProcess = new HashMap<CodeType, Process>();
+    private final Map<CodeType, Process> processIdToProcess = new HashMap<CodeType, Process>();
 
-    private XMLAdapter capabilitesDoc;
+    private final XMLAdapter capabilitesDoc;
 
-    private static NamespaceContext nsContext;
+    private static final NamespaceContext nsContext;
 
     private static final String owsPrefix = "ows";
 
@@ -106,13 +147,17 @@ public class WPSClient {
     }
 
     /**
-     * Public constructor to access a WPS instance based on its Capabilities document
+     * Initializes a new {@link WPSClient} instance.
      * 
      * @param capabilitiesURL
-     *            url to a WPS capabilities document, usually using a GetCapabilities request, must not be null
-     * @throws RuntimeException
+     *            url of a WPS capabilities document, usually this is a GetCapabilities request to a WPS service, must
+     *            not be <code>null</code>
+     * @throws IOException
+     *             if a communication/network problem occured
+     * @throws OWSException
+     *             if the server replied with an exception
      */
-    public WPSClient( URL capabilitiesURL ) throws RuntimeException {
+    public WPSClient( URL capabilitiesURL ) throws IOException, OWSException {
 
         try {
             this.capabilitesDoc = new XMLAdapter( capabilitiesURL );
@@ -142,15 +187,11 @@ public class WPSClient {
         extractMetadata( root );
     }
 
-    /**
-     * @param root
-     */
     private void extractMetadata( OMElement root ) {
+
         metadata = new DeegreeServicesMetadataType();
         XPath xpath = new XPath( "/wps:Capabilities/ows:ServiceIdentification", nsContext );
-        OMElement omServiceIdentification = capabilitesDoc.getElement( root, xpath );
         ServiceIdentificationType serviceIdentification = new ServiceIdentificationType();
-        // serviceIdentification.getAbstract().add( e );
 
         metadata.setServiceIdentification( serviceIdentification );
         ServiceProviderType serviceProvider = new ServiceProviderType();
@@ -194,13 +235,9 @@ public class WPSClient {
         serviceContact.setRole( capabilitesDoc.getNodeAsString( omServiceContact, xpath, null ) );
 
         serviceProvider.setServiceContact( serviceContact );
-
         metadata.setServiceProvider( serviceProvider );
     }
 
-    /**
-     * @param root
-     */
     private void extractProcesses( OMElement root ) {
         XPath xpath = new XPath( "/wps:Capabilities/wps:ProcessOfferings/wps:Process", nsContext );
         List<OMElement> omProcesses = capabilitesDoc.getElements( root, xpath );
@@ -271,6 +308,7 @@ public class WPSClient {
      * @return version
      */
     public String getServiceVersion() {
+        // currently, this is always "1.0.0" (as the client only supports this version)
         return "1.0.0";
     }
 

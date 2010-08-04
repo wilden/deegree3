@@ -38,6 +38,7 @@ package org.deegree.protocol.wps.describeprocess;
 import static org.deegree.protocol.wps.WPSConstants.WPS_100_NS;
 import static org.deegree.protocol.wps.WPSConstants.WPS_PREFIX;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -57,24 +58,28 @@ import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.XPath;
 import org.deegree.protocol.wps.ComplexAttributes;
 import org.deegree.protocol.wps.ValueWithRef;
+import org.deegree.protocol.wps.describeprocess.input.BBoxDataDescription;
+import org.deegree.protocol.wps.describeprocess.input.ComplexDataDescription;
+import org.deegree.protocol.wps.describeprocess.input.DataDescription;
+import org.deegree.protocol.wps.describeprocess.input.InputDescription;
+import org.deegree.protocol.wps.describeprocess.input.LiteralDataDescription;
 import org.deegree.protocol.wps.describeprocess.output.BBoxOutput;
 import org.deegree.protocol.wps.describeprocess.output.ComplexOutput;
 import org.deegree.protocol.wps.describeprocess.output.GenericOutput;
 import org.deegree.protocol.wps.describeprocess.output.LiteralOutput;
 import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
+import org.deegree.services.controller.ows.OWSException;
 import org.deegree.services.jaxb.wps.Range;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * Encapsulates the information returned by a <code>DescribeProcess</code> request.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
-public class DescribeProcessExecution {
+public class DescribeProcessResponse {
 
     private XMLAdapter omResponse;
 
@@ -92,7 +97,7 @@ public class DescribeProcessExecution {
         nsContext.addNamespace( owsPrefix, owsNS );
     }
 
-    public DescribeProcessExecution( URL requestURL ) {
+    public DescribeProcessResponse( URL requestURL ) throws IOException, OWSException {
         omResponse = new XMLAdapter( requestURL );
     }
 

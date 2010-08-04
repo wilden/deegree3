@@ -37,7 +37,6 @@ package org.deegree.protocol.wps;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 
@@ -47,10 +46,10 @@ import javax.xml.stream.XMLStreamReader;
 import org.deegree.commons.xml.NamespaceContext;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.XPath;
-import org.deegree.protocol.wps.describeprocess.BBoxDataDescription;
-import org.deegree.protocol.wps.describeprocess.ComplexDataDescription;
-import org.deegree.protocol.wps.describeprocess.InputDescription;
-import org.deegree.protocol.wps.describeprocess.LiteralDataDescription;
+import org.deegree.protocol.wps.describeprocess.input.BBoxDataDescription;
+import org.deegree.protocol.wps.describeprocess.input.ComplexDataDescription;
+import org.deegree.protocol.wps.describeprocess.input.InputDescription;
+import org.deegree.protocol.wps.describeprocess.input.LiteralDataDescription;
 import org.deegree.protocol.wps.describeprocess.output.BBoxOutput;
 import org.deegree.protocol.wps.describeprocess.output.ComplexOutput;
 import org.deegree.protocol.wps.describeprocess.output.LiteralOutput;
@@ -98,7 +97,7 @@ public class WPSClientTest {
 
     @Test
     public void testProcessDescription_1()
-                            throws MalformedURLException {
+                            throws OWSException, IOException {
         URL processUrl = new URL( DEMO_SERVICE_URL );
         WPSClient wpsClient = new WPSClient( processUrl );
         Process p1 = wpsClient.getProcess( "Buffer", null );
@@ -126,7 +125,7 @@ public class WPSClientTest {
 
     @Test
     public void testProcessDescription_2()
-                            throws MalformedURLException {
+                            throws OWSException, IOException {
         URL processUrl = new URL( DEMO_SERVICE_URL );
         WPSClient wpsClient = new WPSClient( processUrl );
         Process p2 = wpsClient.getProcess( "Crosses", null );
@@ -151,7 +150,7 @@ public class WPSClientTest {
 
     @Test
     public void testProcessDescription_3()
-                            throws MalformedURLException {
+                            throws OWSException, IOException {
         URL processUrl = new URL( DEMO_SERVICE_URL );
         WPSClient wpsClient = new WPSClient( processUrl );
         Process p2 = wpsClient.getProcess( "ParameterDemoProcess", null );
@@ -210,7 +209,7 @@ public class WPSClientTest {
 
     @Test
     public void testProcessDescription_4()
-                            throws OWSException, IOException, XMLStreamException {
+                            throws OWSException, IOException {
         URL processUrl = new URL( NORTH52_SERVICE_URL );
         WPSClient wpsClient = new WPSClient( processUrl );
         Process proc = wpsClient.getProcess( "buffer", null );
@@ -234,7 +233,7 @@ public class WPSClientTest {
 
     @Test
     public void testGetProcess()
-                            throws MalformedURLException {
+                            throws OWSException, IOException {
         URL processUrl = new URL( DEMO_SERVICE_URL );
         WPSClient wpsClient = new WPSClient( processUrl );
         Process p1 = wpsClient.getProcess( "Buffer", null );
@@ -253,7 +252,7 @@ public class WPSClientTest {
         ProcessExecution execution = proc.prepareExecution();
         execution.addXMLInput( "GMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
         execution.setRequestedOutput( "Centroid", null, null, true, null, null, null );
-        ExecuteResponse response = execution.start();
+        ExecuteResponse response = execution.execute();
 
         XMLDataType data = (XMLDataType) response.getOutputs()[0].getDataType();
         XMLStreamReader reader = data.getAsXMLStream();
@@ -282,7 +281,7 @@ public class WPSClientTest {
         execution.addLiteralInput( "BufferDistance", null, "0.1", "double", "unity" );
         execution.addXMLInput( "GMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
         execution.setRequestedOutput( "BufferedGeometry", null, null, false, null, null, null );
-        ExecuteResponse response = execution.start();
+        ExecuteResponse response = execution.execute();
 
         Assert.assertNotNull( response );
         // TODO test response
@@ -300,7 +299,7 @@ public class WPSClientTest {
         execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0, 90, 180 }, "EPSG:4326", 2 );
         execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
         execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), "image/png", null );
-        ExecuteResponse response = execution.start();
+        ExecuteResponse response = execution.execute();
 
         LiteralDataType out1 = (LiteralDataType) response.getOutputs()[0].getDataType();
         Assert.assertEquals( "0", out1.getValue() );

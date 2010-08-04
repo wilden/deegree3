@@ -64,8 +64,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * API-level client for the <a href="http://www.opengeospatial.org/standards/wps">WebProcessingService (WPS) 1.0.0</a>
- * protocol.
+ * API-level client for accessing services that implement the <a
+ * href="http://www.opengeospatial.org/standards/wps">WebProcessingService (WPS) 1.0.0</a> protocol.
  * 
  * <h4>Initialization</h4> In the initial step, one constructs a new {@link WPSClient} instance by invoking the
  * constructor with a URL to a WPS capabilities document. In most cases, this will be a GetCapabilities request
@@ -101,6 +101,25 @@ import org.slf4j.LoggerFactory;
  * <h4>Executing a process</h4> For executing a request, the method {@link Process#prepareExecution()} is used to create
  * an {@link ProcessExecution} context. This context provides methods for providing the input parameters, controlling
  * the desired output parameters and performing the execution.
+ * 
+ * <pre>
+ * ...
+ *   Process buffer = wpsClient.getProcess ("Buffer", null);
+ *
+ *   // get execution context
+ *   ProcessExecution execution = buffer.prepareExecution();
+ *   
+ *   // add input parameters
+ *   execution.addLiteralInput( "BufferDistance", null, "0.1", "double", "unity" );
+ *   execution.addXMLInput( "GMLInput", null, gmlFileUrl, "text/xml", null, null );
+ *   
+ *   // perform execution
+ *   ExecuteResponse response = execution.execute();
+ *   
+ *   // retrieve outputs
+ *   
+ * ...
+ * </pre>
  * 
  * <h4>Implementation notes</h4>
  * <ul>

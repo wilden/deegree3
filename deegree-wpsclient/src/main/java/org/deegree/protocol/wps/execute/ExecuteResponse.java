@@ -60,7 +60,7 @@ public class ExecuteResponse {
     }
 
     /**
-     * Returns the status object of the finished (or just running) process.
+     * Returns the status object of the finished (or still running) process.
      * 
      * @return a {@link ExecuteStatus} instance as process status
      */

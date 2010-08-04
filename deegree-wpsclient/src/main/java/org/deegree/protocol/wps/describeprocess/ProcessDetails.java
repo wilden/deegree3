@@ -38,10 +38,8 @@ package org.deegree.protocol.wps.describeprocess;
 import static org.deegree.protocol.wps.WPSConstants.WPS_100_NS;
 import static org.deegree.protocol.wps.WPSConstants.WPS_PREFIX;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -56,8 +54,6 @@ import org.deegree.commons.tom.ows.LanguageString;
 import org.deegree.commons.xml.NamespaceContext;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.XPath;
-import org.deegree.protocol.wps.ComplexAttributes;
-import org.deegree.protocol.wps.ValueWithRef;
 import org.deegree.protocol.wps.describeprocess.input.BBoxDataDescription;
 import org.deegree.protocol.wps.describeprocess.input.ComplexDataDescription;
 import org.deegree.protocol.wps.describeprocess.input.DataDescription;
@@ -68,7 +64,6 @@ import org.deegree.protocol.wps.describeprocess.output.ComplexOutput;
 import org.deegree.protocol.wps.describeprocess.output.GenericOutput;
 import org.deegree.protocol.wps.describeprocess.output.LiteralOutput;
 import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
-import org.deegree.services.controller.ows.OWSException;
 import org.deegree.services.jaxb.wps.Range;
 
 /**
@@ -79,9 +74,7 @@ import org.deegree.services.jaxb.wps.Range;
  * 
  * @version $Revision$, $Date$
  */
-public class DescribeProcessResponse {
-
-    private XMLAdapter omResponse;
+public class ProcessDetails {
 
     private static final String owsPrefix = "ows";
 
@@ -91,20 +84,46 @@ public class DescribeProcessResponse {
 
     private static NamespaceContext nsContext;
 
+    private final Map<CodeType, InputDescription> inputs;
+
+    private final Map<CodeType, OutputDescription> outputs;
+
+    private final XMLAdapter omResponse;
+
     static {
         nsContext = new NamespaceContext();
         nsContext.addNamespace( WPS_PREFIX, WPS_100_NS );
         nsContext.addNamespace( owsPrefix, owsNS );
     }
 
-    public DescribeProcessResponse( URL requestURL ) throws IOException, OWSException {
-        omResponse = new XMLAdapter( requestURL );
+    public ProcessDetails( XMLAdapter describeResponse ) {
+        this.omResponse = describeResponse;
+        this.inputs = parseInputs();
+        this.outputs = parseOutputs();
+    }
+
+    /**
+     * Returns the input parameter descriptions for the process.
+     * 
+     * @return the input parameter descriptions, never <code>null</code>
+     */
+    public Map<CodeType, InputDescription> getInputs() {
+        return inputs;
+    }
+
+    /**
+     * Returns the output parameter descriptions for the process.
+     * 
+     * @return the output parameter descriptions, never <code>null</code>
+     */
+    public Map<CodeType, OutputDescription> getOutputs() {
+        return outputs;
     }
 
     /**
      * @return
      */
-    public Map<CodeType, InputDescription> parseInputs() {
+    private Map<CodeType, InputDescription> parseInputs() {
         XPath xpath = new XPath( "/wps:ProcessDescriptions/ProcessDescription/DataInputs/Input", nsContext );
         List<OMElement> inputs = omResponse.getElements( omResponse.getRootElement(), xpath );
         Map<CodeType, InputDescription> idToInputType = new HashMap<CodeType, InputDescription>();
@@ -525,5 +544,15 @@ public class DescribeProcessResponse {
             return new CodeType( omId.getText(), codeSpace );
         }
         return new CodeType( omId.getText() );
+    }
+
+    public boolean getStoreSupported() {
+        // TODO
+        return false;
+    }
+
+    public boolean getStatusSupported() {
+        // TODO
+        return false;
     }
 }

@@ -207,29 +207,29 @@ public class WPSClientTest {
         Assert.assertEquals( "text/xml", xmlOutput.getSupportedFormats()[0].getMimeType() );
     }
 
-    @Test
-    public void testProcessDescription_4()
-                            throws OWSException, IOException {
-        URL processUrl = new URL( NORTH52_SERVICE_URL );
-        WPSClient wpsClient = new WPSClient( processUrl );
-        Process proc = wpsClient.getProcess( "buffer", null );
-        InputDescription inputLayer = proc.getInputType( "LAYER", null );
-        ComplexDataDescription layerData = (ComplexDataDescription) inputLayer.getData();
-        Assert.assertEquals( "http://geoserver.itc.nl:8080/wps/schemas/gml/2.1.2/gmlpacket.xsd",
-                             layerData.getSupportedFormats()[1].getSchema() );
-
-        InputDescription inputField = proc.getInputType( "FIELD", null );
-        LiteralDataDescription fieldData = (LiteralDataDescription) inputField.getData();
-        Assert.assertEquals( "xs:int", fieldData.getDataType().getRef().toString() );
-        Assert.assertEquals( "0", fieldData.getRanges()[0].getMinimumValue() );
-        Assert.assertEquals( "+Infinity", fieldData.getRanges()[0].getMaximumValue() );
-
-        InputDescription inputMethod = proc.getInputType( "METHOD", null );
-        Assert.assertEquals( "Distance", inputMethod.getAbstract().getString() );
-        LiteralDataDescription methodData = (LiteralDataDescription) inputMethod.getData();
-        Assert.assertEquals( "Fixed distance", methodData.getAllowedValues()[0] );
-        Assert.assertEquals( "Distance from table field", methodData.getAllowedValues()[1] );
-    }
+//    @Test
+//    public void testProcessDescription_4()
+//                            throws OWSException, IOException {
+//        URL processUrl = new URL( NORTH52_SERVICE_URL );
+//        WPSClient wpsClient = new WPSClient( processUrl );
+//        Process proc = wpsClient.getProcess( "buffer", null );
+//        InputDescription inputLayer = proc.getInputType( "LAYER", null );
+//        ComplexDataDescription layerData = (ComplexDataDescription) inputLayer.getData();
+//        Assert.assertEquals( "http://geoserver.itc.nl:8080/wps/schemas/gml/2.1.2/gmlpacket.xsd",
+//                             layerData.getSupportedFormats()[1].getSchema() );
+//
+//        InputDescription inputField = proc.getInputType( "FIELD", null );
+//        LiteralDataDescription fieldData = (LiteralDataDescription) inputField.getData();
+//        Assert.assertEquals( "xs:int", fieldData.getDataType().getRef().toString() );
+//        Assert.assertEquals( "0", fieldData.getRanges()[0].getMinimumValue() );
+//        Assert.assertEquals( "+Infinity", fieldData.getRanges()[0].getMaximumValue() );
+//
+//        InputDescription inputMethod = proc.getInputType( "METHOD", null );
+//        Assert.assertEquals( "Distance", inputMethod.getAbstract().getString() );
+//        LiteralDataDescription methodData = (LiteralDataDescription) inputMethod.getData();
+//        Assert.assertEquals( "Fixed distance", methodData.getAllowedValues()[0] );
+//        Assert.assertEquals( "Distance from table field", methodData.getAllowedValues()[1] );
+//    }
 
     @Test
     public void testGetProcess()
@@ -296,7 +296,7 @@ public class WPSClientTest {
 
         ProcessExecution execution = proc.prepareExecution();
         execution.addLiteralInput( "LiteralInput", null, "0", "integer", "seconds" );
-        execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0, 90, 180 }, "EPSG:4326", 2 );
+        execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
         execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
         execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), "image/png", null );
         ExecuteResponse response = execution.execute();
@@ -307,11 +307,11 @@ public class WPSClientTest {
         Assert.assertEquals( "seconds", out1.getUom() );
 
         BoundingBoxDataType out2 = (BoundingBoxDataType) response.getOutputs()[1].getDataType();
-        Assert.assertTrue( Arrays.equals( new double[] { 0.0, 0.0, 90.0, 180.0 }, out2.getCoordinates() ) );
+        Assert.assertTrue( Arrays.equals( new double[] { 0.0, 0.0 }, out2.getLower() ) );
+        Assert.assertTrue( Arrays.equals( new double[] { 90.0, 180.0 }, out2.getUpper() ) );
         Assert.assertEquals( "EPSG:4326", out2.getCrs() );
-        Assert.assertEquals( 2, out2.getDim() );
+        Assert.assertEquals( 2, out2.getDimension() );
     }
-
     // @Test
     // public void testExecute_4()
     // throws OWSException, IOException, XMLStreamException {

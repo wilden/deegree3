@@ -39,11 +39,11 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Collection;
-import java.util.Map;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
-import org.deegree.protocol.wps.describeprocess.DescribeProcessResponse;
+import org.deegree.commons.xml.XMLAdapter;
+import org.deegree.protocol.wps.describeprocess.ProcessDetails;
 import org.deegree.protocol.wps.describeprocess.input.InputDescription;
 import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
 import org.deegree.services.controller.ows.OWSException;
@@ -79,13 +79,7 @@ public class Process {
 
     private final LanguageString processAbstract;
 
-    // populated by #doDescribeProcess()
-    private Map<CodeType, InputDescription> allowedInputs;
-
-    // populated by #doDescribeProcess()
-    private Map<CodeType, OutputDescription> outputFormats;
-
-    private boolean describeProcessPerformed;
+    private ProcessDetails processDetails;
 
     /**
      * Creates a new {@link Process} instance.
@@ -108,30 +102,6 @@ public class Process {
         this.processId = processId;
         this.title = title;
         this.processAbstract = processAbstract;
-    }
-
-    /**
-     * perform DescribeProcess
-     */
-    @SuppressWarnings("unused")
-    private void doDescribeProcess()
-                            throws IOException, OWSException {
-
-        URL url = wpsclient.getDescribeProcessURL( false );
-
-        if ( processId.getCodeSpace() != null ) {
-            LOG.warn( "Performing DescribeProcess using GET, but process identifier ('" + processId
-                      + "') has a code space (which cannot be expressed). "
-                      + "Omitting the code space and hoping for the best..." );
-        }
-
-        String finalURLStr = url.toExternalForm() + "?service=WPS&version=" + URLEncoder.encode( version, "UTF-8" )
-                             + "&request=DescribeProcess&identifier="
-                             + URLEncoder.encode( processId.getCode(), "UTF-8" );
-        URL finalURL = new URL( finalURLStr );
-        DescribeProcessResponse dpExecution = new DescribeProcessResponse( finalURL );
-        allowedInputs = dpExecution.parseInputs();
-        outputFormats = dpExecution.parseOutputs();
     }
 
     /**
@@ -171,9 +141,9 @@ public class Process {
     }
 
     /**
-     * Returns all the input formats for this process.
+     * Returns the descriptions for all input parameters of the process.
      * 
-     * @return an array of {@link InputDescription} instances, representing the input formats
+     * @return the descriptions for all input parameters, can be empty, but never <code>null</code>
      * @throws IOException
      *             if a communication/network problem occured
      * @throws OWSException
@@ -181,38 +151,33 @@ public class Process {
      */
     public InputDescription[] getInputTypes()
                             throws IOException, OWSException {
-        if ( !describeProcessPerformed ) {
-            doDescribeProcess();
-        }
-        Collection<InputDescription> collection = allowedInputs.values();
+        Collection<InputDescription> collection = getProcessDetails().getInputs().values();
         return collection.toArray( new InputDescription[collection.size()] );
     }
 
     /**
-     * Returns the input format of the input specified by id.
+     * Returns the description for the input parameter with the specified identifier.
      * 
-     * @param paramId
-     *            id, cannot be null
-     * @param codeSpace
-     *            codespace of id, may be null
-     * @return a {@link InputDescription} instance, representing this particular input format
+     * @param id
+     *            parameter identifier, never <code>null</code>
+     * @param idCodeSpace
+     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers that don't use a code
+     *            space)
+     * @return input parameter description, can be <code>null</code> (if no such parameter exists)
      * @throws IOException
      *             if a communication/network problem occured
      * @throws OWSException
      *             if the server replied with an exception
      */
-    public InputDescription getInputType( String paramId, String codeSpace )
+    public InputDescription getInputType( String id, String idCodeSpace )
                             throws IOException, OWSException {
-        if ( !describeProcessPerformed ) {
-            doDescribeProcess();
-        }
-        return allowedInputs.get( new CodeType( paramId, codeSpace ) );
+        return getProcessDetails().getInputs().get( new CodeType( id, idCodeSpace ) );
     }
 
     /**
-     * Returns all output formats of this process.
+     * Returns the descriptions for all output parameters of the process.
      * 
-     * @return an array of {@link OutputDescription} instances, representing the output formats
+     * @return the descriptions for all output parameters, can be empty, but never <code>null</code>
      * @throws IOException
      *             if a communication/network problem occured
      * @throws OWSException
@@ -220,52 +185,55 @@ public class Process {
      */
     public OutputDescription[] getOutputTypes()
                             throws IOException, OWSException {
-        if ( !describeProcessPerformed ) {
-            doDescribeProcess();
-        }
-        Collection<OutputDescription> collection = outputFormats.values();
+        Collection<OutputDescription> collection = getProcessDetails().getOutputs().values();
         return collection.toArray( new OutputDescription[collection.size()] );
     }
 
     /**
-     * Returns the output format of the output specified by id.
+     * Returns the description for the output parameter with the specified identifier.
      * 
-     * @param paramId
-     *            id, cannot be null
-     * @param codeSpace
-     *            codespace of id, may be null
-     * @return a {@link OutputDescription} instance, representing the output format
+     * @param id
+     *            parameter identifier, never <code>null</code>
+     * @param idCodeSpace
+     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers that don't use a code
+     *            space)
+     * @return output parameter description, can be <code>null</code> (if no such parameter exists)
      * @throws IOException
      *             if a communication/network problem occured
      * @throws OWSException
      *             if the server replied with an exception
      */
-    public OutputDescription getOutputType( String paramId, String codeSpace )
+    public OutputDescription getOutputType( String id, String idCodeSpace )
                             throws OWSException, IOException {
-        if ( !describeProcessPerformed ) {
-            doDescribeProcess();
-        }
-        return outputFormats.get( new CodeType( paramId, codeSpace ) );
+        return getProcessDetails().getOutputs().get( new CodeType( id, idCodeSpace ) );
     }
 
     /**
-     * Returns whether the process supports storing the response document (= asynchronous operation).
+     * Returns whether the process supports storing of the response document (=asynchronous execution).
      * 
      * @return true, if the process supports storing the response document, false otherwise
+     * @throws IOException
+     *             if a communication/network problem occured
+     * @throws OWSException
+     *             if the server replied with an exception
      */
-    public boolean getStoreSupported() {
-        // TBD
-        return false;
+    public boolean getStoreSupported()
+                            throws OWSException, IOException {
+        return getProcessDetails().getStoreSupported();
     }
 
     /**
-     * Returns whether the process supports polling status information during asynchronous operation.
+     * Returns whether the process supports polling of status information during asynchronous execution.
      * 
      * @return true, if the process supports polling status information, false otherwise
+     * @throws IOException
+     *             if a communication/network problem occured
+     * @throws OWSException
+     *             if the server replied with an exception
      */
-    public boolean getStatusSupported() {
-        // TBD
-        return false;
+    public boolean getStatusSupported()
+                            throws OWSException, IOException {
+        return getProcessDetails().getStatusSupported();
     }
 
     /**
@@ -282,5 +250,36 @@ public class Process {
         StringBuilder sb = new StringBuilder();
         sb.append( "ProcessIdentifier: " + this.processId + "\n" );
         return sb.toString();
+    }
+
+    /**
+     * Returns the (cached) {@link ProcessDetails} for this process.
+     * 
+     * @return process details, never <code>null</code>
+     * @throws IOException
+     *             if a communication/network problem occured
+     * @throws OWSException
+     *             if the server replied with an exception
+     */
+    private ProcessDetails getProcessDetails()
+                            throws IOException, OWSException {
+
+        if ( processDetails == null ) {
+            URL url = wpsclient.getDescribeProcessURL( false );
+
+            if ( processId.getCodeSpace() != null ) {
+                LOG.warn( "Performing DescribeProcess using GET, but process identifier ('" + processId
+                          + "') has a code space (which cannot be expressed). "
+                          + "Omitting the code space and hoping for the best..." );
+            }
+
+            String finalURLStr = url.toExternalForm() + "?service=WPS&version=" + URLEncoder.encode( version, "UTF-8" )
+                                 + "&request=DescribeProcess&identifier="
+                                 + URLEncoder.encode( processId.getCode(), "UTF-8" );
+            URL finalURL = new URL( finalURLStr );
+            XMLAdapter describeProcessResponse = new XMLAdapter( finalURL );
+            processDetails = new ProcessDetails( describeProcessResponse );
+        }
+        return processDetails;
     }
 }

@@ -41,35 +41,39 @@ import java.net.URL;
  * The <code></code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
 public class BoundingBoxDataType implements DataType {
 
-    private double[] coordinates;
+    private double[] lower;
+
+    private double[] upper;
 
     private String crs;
 
     private int dim;
 
-    public BoundingBoxDataType( double[] coordinates, String crs, int dim ) {
-        this.coordinates = coordinates;
+    public BoundingBoxDataType( double[] lower, double[] upper, String crs ) {
+        this.lower = lower;
+        this.upper = upper;
+        this.dim = lower.length;
         this.crs = crs;
-        this.dim = dim;
     }
 
-    /**
-     * Get coordinates of bounding box
-     * 
-     * @return coordinates, as a double array: x0, y0, x1, y1, etc.
-     */
-    public double[] getCoordinates() {
-        return coordinates;
+    public double[] getLower() {
+        return lower;
     }
 
+    public double[] getUpper() {
+        return upper;
+    }
+
+    public int getDimension () {
+        return dim;
+    }
+    
     /**
      * Get coordinate system of the bounding box
      * 
@@ -79,17 +83,9 @@ public class BoundingBoxDataType implements DataType {
         return crs;
     }
 
-    /**
-     * Get dimension of the bounding box
-     * 
-     * @return dimension as string
-     */
-    public int getDim() {
-        return dim;
-    }
-
     @Override
     public URL getWebAccessibleURL() {
+        // TODO Auto-generated method stub
         return null;
     }
 }

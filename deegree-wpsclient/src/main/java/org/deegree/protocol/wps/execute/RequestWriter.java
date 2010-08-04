@@ -46,7 +46,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.axiom.om.util.Base64;
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.XMLAdapter;
-import org.deegree.protocol.wps.ComplexAttributes;
+import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
 import org.deegree.protocol.wps.execute.datatypes.BinaryDataType;
 import org.deegree.protocol.wps.execute.datatypes.BoundingBoxDataType;
 import org.deegree.protocol.wps.execute.datatypes.DataType;
@@ -275,27 +275,18 @@ public class RequestWriter {
                     } else if ( dataType instanceof BoundingBoxDataType ) {
                         BoundingBoxDataType bboxInput = (BoundingBoxDataType) dataType;
                         writer.writeStartElement( wpsPrefix, "BoundingBoxData", wpsNS );
-
-                        double[] coords = bboxInput.getCoordinates();
-                        int dim = 2;
-                        if ( bboxInput.getDim() > 0 ) {
-                            dim = bboxInput.getDim();
-                            writer.writeAttribute( "dimensions", String.valueOf( dim ) );
-                        }
+                        writer.writeAttribute( "dimensions", String.valueOf( bboxInput.getDimension() ) );
                         if ( bboxInput.getCrs() != null ) {
                             writer.writeAttribute( "crs", bboxInput.getCrs() );
                         }
                         writer.writeStartElement( owsPrefix, "LowerCorner", owsNS );
-                        for ( int j = 0; j < dim; j++ ) {
-                            writer.writeCharacters( String.valueOf( coords[j] ) + " " );
-                        }
+                        writePoint( writer, bboxInput.getLower() );
                         writer.writeEndElement();
 
                         writer.writeStartElement( owsPrefix, "UpperCorner", owsNS );
-                        for ( int j = dim; j < 2 * dim; j++ ) {
-                            writer.writeCharacters( String.valueOf( coords[j] ) + " " );
-                        }
+                        writePoint( writer, bboxInput.getUpper() );
                         writer.writeEndElement();
+
                         writer.writeEndElement(); // BoundingBox
                     }
                     writer.writeEndElement(); // Data
@@ -304,5 +295,17 @@ public class RequestWriter {
             }
             writer.writeEndElement(); // DataInputs
         }
+    }
+
+    private void writePoint( XMLStreamWriter writer, double[] coords )
+                            throws XMLStreamException {
+        String s = "";
+        for ( int i = 0; i < coords.length; i++ ) {
+            s += coords[i];
+            if ( i != coords.length - 1 ) {
+                s += " ";
+            }
+        }
+        writer.writeCharacters( s );
     }
 }

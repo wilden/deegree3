@@ -65,7 +65,7 @@ import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.stax.StAXParsingHelper;
-import org.deegree.protocol.wps.ComplexAttributes;
+import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
 import org.deegree.protocol.wps.execute.datatypes.BinaryDataType;
 import org.deegree.protocol.wps.execute.datatypes.BoundingBoxDataType;
 import org.deegree.protocol.wps.execute.datatypes.DataType;
@@ -434,27 +434,24 @@ public class ResponseReader {
      */
     private BoundingBoxDataType parseBBoxData()
                             throws XMLStreamException {
-        int dim = 2;
-        String dimStr = reader.getAttributeValue( null, "dimensions" );
-        if ( dimStr != null ) {
-            dim = Integer.parseInt( dimStr );
-        }
+
         String crs = reader.getAttributeValue( null, "crs" );
 
         StAXParsingHelper.nextElement( reader ); // <LowerCorner>
         String[] coordStr = reader.getElementText().split( "\\s" );
-        double[] coords = new double[2 * dim];
-        for ( int i = 0; i < dim; i++ ) {
-            coords[i] = Double.parseDouble( coordStr[i] );
+        double[] lower = new double[coordStr.length];
+        for ( int i = 0; i < lower.length; i++ ) {
+            lower[i] = Double.parseDouble( coordStr[i] );
         }
 
         StAXParsingHelper.nextElement( reader ); // <UpperCorner>
         coordStr = reader.getElementText().split( "\\s" );
-        for ( int i = dim; i < 2 * dim; i++ ) {
-            coords[i] = Double.parseDouble( coordStr[i - dim] );
+        double[] upper = new double[coordStr.length];
+        for ( int i = 0; i < upper.length; i++ ) {
+            upper[i] = Double.parseDouble( coordStr[i] );
         }
         StAXParsingHelper.nextElement( reader );
-        return new BoundingBoxDataType( coords, crs, dim );
+        return new BoundingBoxDataType( lower, upper, crs);
     }
 
     /**

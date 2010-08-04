@@ -64,13 +64,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Entry point to the WPS Client API.
+ * API-level client for the <a href="http://www.opengeospatial.org/standards/wps">WebProcessingService (WPS) 1.0.0</a>
+ * protocol.
  * 
- * <h4>Initialization</h4>
- * 
- * The initial step is to construct a new {@link WPSClient} instance by invoking the constructor with a URL to a WPS
- * capabilities document. In most cases, this will be a GetCapabilities request (including necessary parameters) to a
- * WPS service.
+ * <h4>Initialization</h4> In the initial step, one constructs a new {@link WPSClient} instance by invoking the
+ * constructor with a URL to a WPS capabilities document. In most cases, this will be a GetCapabilities request
+ * (including necessary parameters) to a WPS service.
  * 
  * <pre>
  * ...
@@ -79,12 +78,17 @@ import org.slf4j.LoggerFactory;
  * ...
  * </pre>
  * 
- * <h4>Getting process information</h4>
+ * Afterwards, the {@link WPSClient} instance is bound to the specified service and allows to access announced service
+ * metadata, process information as well as the execution of processes.
  * 
- * The method {@link #getProcesses()} allows to find out about all processes offered by the service. Additionally (if
- * one knows the id of a process beforehand, one can use {@link #getProcess(String, String)} to retrieve a specific
- * process}. The {@link Process} class allows to execute a process and offers methods to access detail information such
- * as title, abstract, input parameters and output parameters:
+ * <h4>Accessing service metadata</h4> The method {@link #getMetadata()} allows to access the metadata announced by the
+ * service, such as title, abstract, provider etc.
+ * 
+ * <h4>Getting process information</h4> The method {@link #getProcesses()} allows to find out about all processes
+ * offered by the service. Additionally (if one knows the identifier of a process beforehand, one can use
+ * {@link #getProcess(String, String)} to retrieve a specific process}. The {@link Process} class allows to execute a
+ * process and offers methods to access detail information such as title, abstract, input parameters and output
+ * parameters:
  * 
  * <pre>
  * ...
@@ -94,13 +98,25 @@ import org.slf4j.LoggerFactory;
  * ...
  * </pre>
  * 
- * <h4>Executing a process</h4>
- * 
- * <h4>Retrieving service metadata</h4>
+ * <h4>Executing a process</h4> For executing a request, the method {@link Process#prepareExecution()} is used to create
+ * an {@link ProcessExecution} context. This context provides methods for providing the input parameters, controlling
+ * the desired output parameters and performing the execution.
  * 
  * <h4>Implementation notes</h4>
- * 
- * The implementation is thread-safe.
+ * <ul>
+ * <li>Supported protocol versions: WPS 1.0.0</li>
+ * <li>The implementation is thread-safe, a single {@link WPSClient} instance can be shared among multiple threads.</li>
+ * </ul>
+ * TODOs
+ * <ul>
+ * <li>Implement asynchronous execution.</li>
+ * <li>Implement input parameter passing by reference.</li>
+ * <li>Implement input parameter passing by POST-references.</li>
+ * <li>Handle exceptions reports that are generated for <code>GetCapabilities</code> and <code>DescribeProcess</code>
+ * requests.</li>
+ * <li>Clean up exception handling.</li>
+ * <li>Enable/document a way to set connection parameters (timeout, proxy settings, ...)</li>
+ * </ul>
  * 
  * @see Process
  * @see ProcessExecution
@@ -261,10 +277,6 @@ public class WPSClient {
         return null;
     }
 
-    /**
-     * @param omProcess
-     * @return
-     */
     private CodeType parseId( OMElement omProcess ) {
         OMElement omId = omProcess.getFirstChildWithName( new QName( owsNS, "Identifier" ) );
         String codeSpace = omId.getAttributeValue( new QName( null, "codeSpace" ) );
@@ -303,9 +315,9 @@ public class WPSClient {
     }
 
     /**
-     * Retrieve version of the service.
+     * Returns the WPS protocol version in use.
      * 
-     * @return version
+     * @return the WPS protocol version in use, never <code>null</code>
      */
     public String getServiceVersion() {
         // currently, this is always "1.0.0" (as the client only supports this version)
@@ -313,45 +325,64 @@ public class WPSClient {
     }
 
     /**
-     * Retrieve service metadata from Capabilities document.
+     * Returns the metadata of the service.
      * 
-     * @return a {@link DeegreeServicesMetadataType} instance with the service metadata
+     * @return the metadata of the service, never <code>null</code>
      */
     public DeegreeServicesMetadataType getMetadata() {
         return metadata;
     }
 
-    URL getDescribeProcessURL( boolean post ) {
-        return describeProcessURLs[post ? 1 : 0];
-    }
-
-    URL getExecuteURL( boolean post ) {
-        return executeURLs[post ? 1 : 0];
-    }
-
     /**
-     * Retrieve all Processes.
+     * Returns all processes offered by the service.
      * 
-     * @return an {@link Process} array
+     * @return all processes offered by the service, may be empty, but never <code>null</code>
      */
     public Process[] getProcesses() {
         return processIdToProcess.values().toArray( new Process[processIdToProcess.size()] );
     }
 
     /**
-     * Retrieve Process by providing its id (and codespace, if needed).
+     * Returns the specified process instance.
      * 
      * @param id
-     *            id as String
-     * @param codeSpace
-     *            codespace as String, may be null
-     * @return {@link Process} instance containing all relevant process information.
+     *            process identifier, never <code>null</code>
+     * @param idCodeSpace
+     *            codespace of the process identifier, may be <code>null</code> (for identifiers that don't use a code
+     *            space)
+     * @return process instance, can be <code>null</code> (if no process with the specified identifier and code space is
+     *         offered by the services)
      */
-    public Process getProcess( String id, String codeSpace ) {
-        if ( !processIdToProcess.containsKey( new CodeType( id, codeSpace ) ) ) {
+    public Process getProcess( String id, String idCodeSpace ) {
+        if ( !processIdToProcess.containsKey( new CodeType( id, idCodeSpace ) ) ) {
             throw new RuntimeException( "WPS has no registered process with id " + id );
         }
-        return processIdToProcess.get( new CodeType( id, codeSpace ) );
+        return processIdToProcess.get( new CodeType( id, idCodeSpace ) );
     }
 
+    /**
+     * Returns the URL announced by the service for issuing <code>DescribeProcess</code> requests.
+     * 
+     * @param post
+     *            if set to true, the URL for POST requests will be returned, otherwise the URL for GET requests will be
+     *            returned
+     * @return the <code>DescribeProcess</code> URL, may be <code>null</code> (if the server doesn't provide a binding
+     *         for the specified request method)
+     */
+    URL getDescribeProcessURL( boolean post ) {
+        return describeProcessURLs[post ? 1 : 0];
+    }
+
+    /**
+     * Returns the URL announced by the service for issuing <code>Execute</code> requests.
+     * 
+     * @param post
+     *            if set to true, the URL for POST requests will be returned, otherwise the URL for GET requests will be
+     *            returned
+     * @return the <code>Execute</code> URL, may be <code>null</code> (if the server doesn't provide a binding for the
+     *         specified request method)
+     */
+    URL getExecuteURL( boolean post ) {
+        return executeURLs[post ? 1 : 0];
+    }
 }

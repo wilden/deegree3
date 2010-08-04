@@ -38,7 +38,7 @@ package org.deegree.protocol.wps.describeprocess.input;
 import java.net.URI;
 import java.net.URL;
 
-import org.deegree.protocol.wps.ValueWithRef;
+import org.deegree.protocol.wps.describeprocess.ValueWithRef;
 import org.deegree.services.jaxb.wps.Range;
 
 /**

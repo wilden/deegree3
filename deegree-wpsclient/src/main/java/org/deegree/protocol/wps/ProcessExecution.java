@@ -71,6 +71,9 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Represents an execution context for a {@link Process}.
+ * <p>
+ * NOTE: This class is not thread-safe.
+ * </p>
  * 
  * @see Process
  * 
@@ -116,48 +119,49 @@ public class ProcessExecution {
      * 
      * @param id
      *            identifier of the input parameter, must not be <code>null</code>
-     * @param codeSpace
-     *            codespace of the parameter identifier, may be <code>null</code> (no codespace)
+     * @param idCodeSpace
+     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
      * @param value
      *            value of the literal input, must not be <code>null</code>
      * @param type
      *            data type in which the value should be considered, may be <code>null</code> (this means it matches the
      *            data type as defined by the process description)
      * @param uom
-     *            unit of measure of the value, may be <code>null</code> (this means it matches the
-     *            data type as defined by the process description)
+     *            unit of measure of the value, may be <code>null</code> (this means it matches the data type as defined
+     *            by the process description)
      */
-    public void addLiteralInput( String id, String codeSpace, String value, String type, String uom ) {
-        inputs.add( new ExecuteInput( new CodeType( id, codeSpace ), new LiteralDataType( value, type, uom ) ) );
+    public void addLiteralInput( String id, String idCodeSpace, String value, String type, String uom ) {
+        inputs.add( new ExecuteInput( new CodeType( id, idCodeSpace ), new LiteralDataType( value, type, uom ) ) );
     }
 
     /**
-     * Add Bounding box input data under the specified id.
+     * Adds a bounding box input parameter.
      * 
      * @param id
      *            identifier of the input parameter, must not be <code>null</code>
-     * @param codeSpace
-     *            codespace of the parameter identifier, may be <code>null</code> (no codespace)
-     * @param coordinates
-     *            {@link double} array of coordinates: x0, y0, x1, x2, etc.
+     * @param idCodeSpace
+     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
+     * @param lower
+     *            coordinates of the lower point, must not be <code>null</code>
+     * @param upper
+     *            coordinates of the upper point, must not be <code>null</code> and length must match lower point
      * @param crs
-     *            coordinates system of the bbox, as string, may be null
-     * @param dim
-     *            dimension of the bbox, e.g. 2 for plane coordinates
+     *            coordinate system, may be <code>null</code> (indicates that the default crs from the parameter
+     *            description applies)
      */
-    public void addBBoxInput( String id, String codeSpace, double[] coordinates, String crs, int dim ) {
-        inputs.add( new ExecuteInput( new CodeType( id, codeSpace ), new BoundingBoxDataType( coordinates, crs, dim ) ) );
+    public void addBBoxInput( String id, String idCodeSpace, double[] lower, double[] upper, String crs ) {
+        inputs.add( new ExecuteInput( new CodeType( id, idCodeSpace ), new BoundingBoxDataType( lower, upper, crs ) ) );
     }
 
     /**
-     * Add XML input data under the specified id as URL.
+     * Adds a complex input parameter that contains XML.
      * 
      * @param id
      *            identifier of the input parameter, must not be <code>null</code>
-     * @param codeSpace
-     *            codespace of the parameter identifier, may be <code>null</code> (no codespace)
+     * @param idCodeSpace
+     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
      * @param url
-     *            {@link URL} to the xml data, must not be null
+     *            {@link URL} to the xml data, must not be <code>null</code>
      * @param mimeType
      *            mime type of the xml data, may be null
      * @param encoding
@@ -165,18 +169,18 @@ public class ProcessExecution {
      * @param schema
      *            schema of the xml fragment, may be null
      */
-    public void addXMLInput( String id, String codeSpace, URL url, String mimeType, String encoding, String schema ) {
+    public void addXMLInput( String id, String idCodeSpace, URL url, String mimeType, String encoding, String schema ) {
         XMLDataType xmlData = new XMLDataType( url, false, mimeType, encoding, schema );
-        inputs.add( new ExecuteInput( new CodeType( id, codeSpace ), xmlData ) );
+        inputs.add( new ExecuteInput( new CodeType( id, idCodeSpace ), xmlData ) );
     }
 
     /**
-     * Add XML input data under the specified id as XML stream reader.
+     * Adds a complex input parameter that contains XML.
      * 
      * @param id
      *            identifier of the input parameter, must not be <code>null</code>
-     * @param codeSpace
-     *            codespace of the parameter identifier, may be <code>null</code> (no codespace)
+     * @param idCodeSpace
+     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
      * @param reader
      *            {@link XMLStreamReader} to the xml data, mustn't be null
      * @param mimeType
@@ -186,10 +190,10 @@ public class ProcessExecution {
      * @param schema
      *            schema of the xml fragment, may be null
      */
-    public void addXMLInput( String id, String codeSpace, XMLStreamReader reader, String mimeType, String encoding,
+    public void addXMLInput( String id, String idCodeSpace, XMLStreamReader reader, String mimeType, String encoding,
                              String schema ) {
         XMLDataType xmlDataType = new XMLDataType( reader, mimeType, encoding, schema );
-        inputs.add( new ExecuteInput( new CodeType( id, codeSpace ), xmlDataType ) );
+        inputs.add( new ExecuteInput( new CodeType( id, idCodeSpace ), xmlDataType ) );
     }
 
     /**
@@ -197,8 +201,8 @@ public class ProcessExecution {
      * 
      * @param id
      *            identifier of the input parameter, must not be <code>null</code>
-     * @param codeSpace
-     *            codespace of the parameter identifier, may be <code>null</code> (no codespace)
+     * @param idCodeSpace
+     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
      * @param url
      *            {@link URL} to the binary data, mustn't be null
      * @param mimeType
@@ -206,9 +210,9 @@ public class ProcessExecution {
      * @param encoding
      *            encoding of the binary data, may be null
      */
-    public void addBinaryInput( String id, String codeSpace, URL url, String mimeType, String encoding ) {
+    public void addBinaryInput( String id, String idCodeSpace, URL url, String mimeType, String encoding ) {
         BinaryDataType binaryData = new BinaryDataType( url, false, mimeType, encoding );
-        inputs.add( new ExecuteInput( new CodeType( id, codeSpace ), binaryData ) );
+        inputs.add( new ExecuteInput( new CodeType( id, idCodeSpace ), binaryData ) );
     }
 
     /**
@@ -216,8 +220,8 @@ public class ProcessExecution {
      * 
      * @param id
      *            identifier of the input parameter, must not be <code>null</code>
-     * @param codeSpace
-     *            codespace of the parameter identifier, may be <code>null</code> (no codespace)
+     * @param idCodeSpace
+     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
      * @param inputStream
      *            input stream to the binary data, mustn't be null
      * @param mimeType
@@ -225,9 +229,9 @@ public class ProcessExecution {
      * @param encoding
      *            encoding of the binary data, may be null
      */
-    public void addBinaryInput( String id, String codeSpace, InputStream inputStream, String mimeType, String encoding ) {
+    public void addBinaryInput( String id, String idCodeSpace, InputStream inputStream, String mimeType, String encoding ) {
         BinaryDataType binaryData = new BinaryDataType( inputStream, mimeType, encoding );
-        inputs.add( new ExecuteInput( new CodeType( id, codeSpace ), binaryData ) );
+        inputs.add( new ExecuteInput( new CodeType( id, idCodeSpace ), binaryData ) );
     }
 
     /**
@@ -237,8 +241,8 @@ public class ProcessExecution {
      * 
      * @param id
      *            identifier of the output parameter, must not be <code>null</code>
-     * @param codeSpace
-     *            codespace of the parameter identifier, may be <code>null</code> (no codespace)
+     * @param idCodeSpace
+     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
      * @param uom
      *            unit of measure, in case it is a Literal Output, otherwise null
      * @param asRef
@@ -249,7 +253,7 @@ public class ProcessExecution {
      *            encoding of data, may be null
      * @param schema
      */
-    public void setRequestedOutput( String id, String codeSpace, String uom, boolean asRef, String mimeType,
+    public void setRequestedOutput( String id, String idCodeSpace, String uom, boolean asRef, String mimeType,
                                     String encoding, String schema ) {
         outputDefs.add( new OutputDefinition( new CodeType( id ), uom, asRef, mimeType, encoding, schema ) );
     }
@@ -261,8 +265,8 @@ public class ProcessExecution {
      * 
      * @param id
      *            identifier of the output parameter, must not be <code>null</code>
-     * @param codeSpace
-     *            codespace of the parameter identifier, may be <code>null</code> (no codespace)
+     * @param idCodeSpace
+     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
      * @param mimeType
      *            mimeType of the data, may be null
      * @param encoding
@@ -271,7 +275,7 @@ public class ProcessExecution {
      *            schema of data, in case it is an XML document
      * @throws Exception
      */
-    public void setRawOutput( String id, String codeSpace, String mimeType, String encoding, String schema )
+    public void setRawOutput( String id, String idCodeSpace, String mimeType, String encoding, String schema )
                             throws Exception {
         outputDefs.add( new OutputDefinition( new CodeType( id ), null, false, mimeType, encoding, schema ) );
         rawOutput = true;
@@ -281,11 +285,13 @@ public class ProcessExecution {
     }
 
     /**
-     * Perform the execute request synchronously.
+     * Executes the process.
      * 
-     * @return {@link ExecuteResponse} instance that provides access to the output data.
-     * @throws OWSException
+     * @return execution response, never <code>null</code>
      * @throws IOException
+     *             if a communication/network problem occured
+     * @throws OWSException
+     *             if the server replied with an exception
      * @throws XMLStreamException
      */
     public ExecuteResponse execute()
@@ -328,7 +334,7 @@ public class ProcessExecution {
             OutputStream outStream = new FileOutputStream( logOutputFile );
             XMLStreamWriter straightWriter = XMLOutputFactory.newInstance().createXMLStreamWriter( outStream );
             XMLAdapter.writeElement( straightWriter, reader );
-            LOG.debug( "Service output can be found at " + logOutputFile.toString() );
+            LOG.debug( "WPS response can be found at " + logOutputFile.toString() );
             straightWriter.close();
 
             reader = XMLInputFactory.newInstance().createXMLStreamReader( new FileInputStream( logOutputFile ) );
@@ -342,9 +348,18 @@ public class ProcessExecution {
     }
 
     /**
-     * @param updateStatus
+     * Executes the process asynchronously.
+     * <p>
+     * This method issues the <code>Execute</code> request against the server and returns immediately.
+     * </p>
+     * 
+     * @throws IOException
+     *             if a communication/network problem occured
+     * @throws OWSException
+     *             if the server replied with an exception
      */
-    public void executeAsync( boolean updateStatus ) {
+    public void executeAsync()
+                            throws IOException, OWSException {
         throw new UnsupportedOperationException( "Async execution is not implemented yet." );
     }
 }

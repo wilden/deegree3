@@ -35,7 +35,7 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.describeprocess.input;
 
-import org.deegree.protocol.wps.ComplexAttributes;
+import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
 
 /**
  * The <code></code> class TODO add class documentation here.

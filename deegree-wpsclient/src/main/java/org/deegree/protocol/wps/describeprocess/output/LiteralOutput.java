@@ -35,7 +35,7 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.describeprocess.output;
 
-import org.deegree.protocol.wps.ValueWithRef;
+import org.deegree.protocol.wps.describeprocess.ValueWithRef;
 
 /**
  * The <code></code> class TODO add class documentation here.

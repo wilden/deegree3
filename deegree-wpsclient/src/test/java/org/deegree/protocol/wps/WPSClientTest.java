@@ -36,9 +36,7 @@
 package org.deegree.protocol.wps;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -58,7 +56,6 @@ import org.deegree.protocol.wps.describeprocess.output.ComplexOutput;
 import org.deegree.protocol.wps.describeprocess.output.LiteralOutput;
 import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
 import org.deegree.protocol.wps.execute.ExecuteResponse;
-import org.deegree.protocol.wps.execute.datatypes.BinaryDataType;
 import org.deegree.protocol.wps.execute.datatypes.BoundingBoxDataType;
 import org.deegree.protocol.wps.execute.datatypes.LiteralDataType;
 import org.deegree.protocol.wps.execute.datatypes.XMLDataType;
@@ -316,43 +313,43 @@ public class WPSClientTest {
         Assert.assertEquals( 2, out2.getDim() );
     }
 
-    @Test
-    public void testExecute_4()
-                            throws OWSException, IOException, XMLStreamException {
-        URL processUrl = new URL( NORTH52_SERVICE_URL );
-        WPSClient wpsClient = new WPSClient( processUrl );
-        Process proc = wpsClient.getProcess( "sortraster", null );
-
-        ProcessExecution execution = proc.prepareExecution();
-        execution.addBinaryInput( "INPUT", null, BINARY_INPUT_TIFF.toURI().toURL(), "image/tiff", null );
-        ExecuteResponse response = execution.start();
-
-        BinaryDataType out1 = (BinaryDataType) response.getOutputs()[0].getDataType();
-        InputStream inStream = out1.getDataStream();
-        FileOutputStream fileStream = new FileOutputStream( File.createTempFile( "north52", ".tiff" ) );
-        byte[] ar = new byte[1024];
-        int readFlag = -1;
-        while ( ( readFlag = inStream.read( ar ) ) != -1 ) {
-            fileStream.write( ar );
-        }
-        fileStream.close();
-        inStream.close();
-    }
-
-    @Test
-    public void testExecute_5()
-                            throws OWSException, IOException, XMLStreamException {
-        URL processUrl = new URL( NORTH52_SERVICE_URL );
-        WPSClient wpsClient = new WPSClient( processUrl );
-        Process proc = wpsClient.getProcess( "ripleysk", null );
-
-        ProcessExecution execution = proc.prepareExecution();
-        execution.addXMLInput( "POINTS", null, POINT_FILE.toURI().toURL(), "text/xml", null, null );
-        execution.setRequestedOutput( "RESULT", null, null, false, null, null, null );
-        // execution.addXMLInput( "LAYER2", null, POINT_FILE.toURI().toURL(), "text/xml", null, null );
-        ExecuteResponse response = execution.start();
-
-        response.getOutputs()[0].getDataType();
-    }
+    // @Test
+    // public void testExecute_4()
+    // throws OWSException, IOException, XMLStreamException {
+    // URL processUrl = new URL( NORTH52_SERVICE_URL );
+    // WPSClient wpsClient = new WPSClient( processUrl );
+    // Process proc = wpsClient.getProcess( "sortraster", null );
+    //
+    // ProcessExecution execution = proc.prepareExecution();
+    // execution.addBinaryInput( "INPUT", null, BINARY_INPUT_TIFF.toURI().toURL(), "image/tiff", null );
+    // ExecuteResponse response = execution.start();
+    //
+    // BinaryDataType out1 = (BinaryDataType) response.getOutputs()[0].getDataType();
+    // InputStream inStream = out1.getDataStream();
+    // FileOutputStream fileStream = new FileOutputStream( File.createTempFile( "north52", ".tiff" ) );
+    // byte[] ar = new byte[1024];
+    // int readFlag = -1;
+    // while ( ( readFlag = inStream.read( ar ) ) != -1 ) {
+    // fileStream.write( ar );
+    // }
+    // fileStream.close();
+    // inStream.close();
+    // }
+    //
+    // @Test
+    // public void testExecute_5()
+    // throws OWSException, IOException, XMLStreamException {
+    // URL processUrl = new URL( NORTH52_SERVICE_URL );
+    // WPSClient wpsClient = new WPSClient( processUrl );
+    // Process proc = wpsClient.getProcess( "ripleysk", null );
+    //
+    // ProcessExecution execution = proc.prepareExecution();
+    // execution.addXMLInput( "POINTS", null, POINT_FILE.toURI().toURL(), "text/xml", null, null );
+    // execution.setRequestedOutput( "RESULT", null, null, false, null, null, null );
+    // // execution.addXMLInput( "LAYER2", null, POINT_FILE.toURI().toURL(), "text/xml", null, null );
+    // ExecuteResponse response = execution.start();
+    //
+    // response.getOutputs()[0].getDataType();
+    // }
 
 }

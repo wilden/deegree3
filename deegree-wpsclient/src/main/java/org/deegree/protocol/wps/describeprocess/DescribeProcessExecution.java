@@ -189,10 +189,12 @@ public class DescribeProcessExecution {
             String dataTypeStr = omDataType.getText();
             String dataTypeRefStr = omDataType.getAttributeValue( new QName( owsNS, "reference" ) );
             URI dataTypeRef = null;
-            try {
-                dataTypeRef = new URI( dataTypeRefStr );
-            } catch ( URISyntaxException e ) {
-                // dataTypeRef stays null
+            if ( dataTypeRefStr != null ) {
+                try {
+                    dataTypeRef = new URI( dataTypeRefStr );
+                } catch ( URISyntaxException e ) {
+                    // dataTypeRef stays null
+                }
             }
             dataType = new ValueWithRef<String>( dataTypeStr, dataTypeRef );
         }
@@ -204,10 +206,12 @@ public class DescribeProcessExecution {
             String defaultUomStr = omDefault.getText();
             String defaultUomRefStr = omDefault.getAttributeValue( new QName( owsNS, "reference" ) );
             URI defaultUomRef = null;
-            try {
-                defaultUomRef = new URI( defaultUomRefStr );
-            } catch ( URISyntaxException e ) {
-                // defaultUomRef stays null
+            if ( defaultUomRefStr != null ) {
+                try {
+                    defaultUomRef = new URI( defaultUomRefStr );
+                } catch ( URISyntaxException e ) {
+                    // defaultUomRef stays null
+                }
             }
             defaultUom = new ValueWithRef<String>( defaultUomStr, defaultUomRef );
         }
@@ -218,14 +222,16 @@ public class DescribeProcessExecution {
             supportedUoms = new ValueWithRef[omSupported.size()];
             for ( int i = 0; i < omSupported.size(); i++ ) {
                 OMElement omSupp = omSupported.get( i );
-                String omSupportedRefStr = omSupp.getAttributeValue( new QName( owsNS, "reference" ) );
-                URI omSupportedRef = null;
-                try {
-                    omSupportedRef = new URI( omSupportedRefStr );
-                } catch ( URISyntaxException e ) {
-                    // omSupportedRef stays null
+                String supportedRefStr = omSupp.getAttributeValue( new QName( owsNS, "reference" ) );
+                URI supportedRef = null;
+                if ( supportedRefStr != null ) {
+                    try {
+                        supportedRef = new URI( supportedRefStr );
+                    } catch ( URISyntaxException e ) {
+                        // omSupportedRef stays null
+                    }
                 }
-                supportedUoms[i] = new ValueWithRef<String>( omSupp.getText(), omSupportedRef );
+                supportedUoms[i] = new ValueWithRef<String>( omSupp.getText(), supportedRef );
             }
         }
         return new LiteralOutput( dataType, defaultUom, supportedUoms );
@@ -337,10 +343,12 @@ public class DescribeProcessExecution {
         if ( omDefaultUom != null ) {
             String defaultUomRefStr = omDefaultUom.getAttributeValue( new QName( owsNS, "reference" ) );
             URI defaultUomRef = null;
-            try {
-                defaultUomRef = new URI( defaultUomRefStr );
-            } catch ( URISyntaxException e ) {
-                // defaultUomRef stays null
+            if ( defaultUomRefStr != null ) {
+                try {
+                    defaultUomRef = new URI( defaultUomRefStr );
+                } catch ( URISyntaxException e ) {
+                    // defaultUomRef stays null
+                }
             }
             defaultUom = new ValueWithRef<String>( omDefaultUom.getText(), defaultUomRef );
         }
@@ -355,10 +363,12 @@ public class DescribeProcessExecution {
                 String supported = omSupport.getText();
                 String supportedRefStr = omSupport.getAttributeValue( new QName( owsNS, "reference" ) );
                 URI supportedRef = null;
-                try {
-                    supportedRef = new URI( supportedRefStr );
-                } catch ( URISyntaxException e ) {
-                    // supportedRef stays null
+                if ( supportedRefStr != null ) {
+                    try {
+                        supportedRef = new URI( supportedRefStr );
+                    } catch ( URISyntaxException e ) {
+                        // supportedRef stays null
+                    }
                 }
                 supportedUom[i] = new ValueWithRef<String>( supported, supportedRef );
             }
@@ -416,16 +426,20 @@ public class DescribeProcessExecution {
             String valueFormStr = omValuesReference.getAttributeValue( new QName( null, "valuesForm" ) );
 
             URI valueRefUri = null;
-            try {
-                valueRefUri = new URI( valueRefStr );
-            } catch ( URISyntaxException e ) {
-                // valueRefUri stays null
+            if ( valueRefStr != null ) {
+                try {
+                    valueRefUri = new URI( valueRefStr );
+                } catch ( URISyntaxException e ) {
+                    // valueRefUri stays null
+                }
             }
             URI valueFormStrUri = null;
-            try {
-                valueFormStrUri = new URI( valueFormStr );
-            } catch ( URISyntaxException e ) {
-                // valueFormStrUri stays null
+            if ( valueFormStr != null ) {
+                try {
+                    valueFormStrUri = new URI( valueFormStr );
+                } catch ( URISyntaxException e ) {
+                    // valueFormStrUri stays null
+                }
             }
             valuesRef = new ValueWithRef<URI>( valueRefUri, valueFormStrUri );
         }

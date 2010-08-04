@@ -35,6 +35,9 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.describeprocess.input;
 
+import org.deegree.commons.tom.ows.CodeType;
+import org.deegree.commons.tom.ows.LanguageString;
+
 /**
  * The <code></code> class TODO add class documentation here.
  * 
@@ -45,13 +48,15 @@ package org.deegree.protocol.wps.describeprocess.input;
  * @version $Revision$, $Date$
  * 
  */
-public class BBoxInputType implements InputType {
+public class BBoxInputType extends InputType {
 
     private String defaultCrs;
 
     private String[] supportedCrs;
 
-    public BBoxInputType( String defaultCRS, String[] supportedCRSs ) {
+    public BBoxInputType( CodeType id, LanguageString inputTitle, LanguageString inputAbstract, String minOccurs,
+                          String maxOccurs, String defaultCRS, String[] supportedCRSs ) {
+        super( id, inputTitle, inputAbstract, minOccurs, maxOccurs );
         this.defaultCrs = defaultCRS;
         this.supportedCrs = supportedCRSs;
     }

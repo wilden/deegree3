@@ -35,6 +35,8 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.describeprocess.input;
 
+import org.deegree.commons.tom.ows.CodeType;
+import org.deegree.commons.tom.ows.LanguageString;
 import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
 
 /**
@@ -47,7 +49,7 @@ import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
  * @version $Revision$, $Date$
  * 
  */
-public class ComplexInputType implements InputType {
+public class ComplexInputType extends InputType {
 
     // private int maximumFileSize;
 
@@ -55,7 +57,9 @@ public class ComplexInputType implements InputType {
 
     private ComplexAttributes[] supportedFormats;
 
-    public ComplexInputType( ComplexAttributes defaultFormat, ComplexAttributes[] supportedFormats ) {
+    public ComplexInputType( CodeType id, LanguageString inputTitle, LanguageString inputAbstract, String minOccurs,
+                             String maxOccurs, ComplexAttributes defaultFormat, ComplexAttributes[] supportedFormats ) {
+        super( id, inputTitle, inputAbstract, minOccurs, maxOccurs );
         this.defaultFormat = defaultFormat;
         this.supportedFormats = supportedFormats;
     }

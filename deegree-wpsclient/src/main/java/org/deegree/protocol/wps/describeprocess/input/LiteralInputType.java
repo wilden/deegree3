@@ -38,6 +38,8 @@ package org.deegree.protocol.wps.describeprocess.input;
 import java.net.URI;
 import java.net.URL;
 
+import org.deegree.commons.tom.ows.CodeType;
+import org.deegree.commons.tom.ows.LanguageString;
 import org.deegree.protocol.wps.describeprocess.ValueWithRef;
 import org.deegree.services.jaxb.wps.Range;
 
@@ -51,7 +53,7 @@ import org.deegree.services.jaxb.wps.Range;
  * @version $Revision$, $Date$
  * 
  */
-public class LiteralInputType implements InputType {
+public class LiteralInputType extends InputType {
 
     private ValueWithRef<String> dataType;
 
@@ -71,9 +73,11 @@ public class LiteralInputType implements InputType {
 
     private ValueWithRef<URI> reference;
 
-    public LiteralInputType( ValueWithRef<String> dataType, ValueWithRef<String> defaultUom,
-                                   ValueWithRef[] supportedUoms, String[] allowedValues, Range[] range,
-                                   boolean anyValue, ValueWithRef<URI> reference ) {
+    public LiteralInputType( CodeType id, LanguageString inputTitle, LanguageString inputAbstract, String minOccurs,
+                             String maxOccurs, ValueWithRef<String> dataType, ValueWithRef<String> defaultUom,
+                             ValueWithRef[] supportedUoms, String[] allowedValues, Range[] range, boolean anyValue,
+                             ValueWithRef<URI> reference ) {
+        super (id, inputTitle, inputAbstract, minOccurs, maxOccurs);
         this.dataType = dataType;
         this.defaultUom = defaultUom;
         this.supportedUoms = supportedUoms;

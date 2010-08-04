@@ -35,8 +35,12 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.describeprocess.input;
 
+import org.deegree.commons.tom.ows.CodeType;
+import org.deegree.commons.tom.ows.LanguageString;
+
 /**
- * The <code></code> class TODO add class documentation here.
+ * The <code>InputDescription</code> class represents the input properties of a process parameter. It is filled out from
+ * a DescribeProcess response.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * 
@@ -45,6 +49,60 @@ package org.deegree.protocol.wps.describeprocess.input;
  * @version $Revision$, $Date$
  * 
  */
-public interface InputType {
-    // marker interface
+public abstract class InputType {
+
+    private CodeType id;
+
+    private LanguageString inputTitle;
+
+    private LanguageString inputAbstract;
+
+    private String minOccurs;
+
+    private String maxOccurs;
+
+    protected InputType( CodeType id, LanguageString inputTitle, LanguageString inputAbstract, String minOccurs,
+                                String maxOccurs ) {
+        this.id = id;
+        this.inputTitle = inputTitle;
+        this.inputAbstract = inputAbstract;
+        this.minOccurs = minOccurs;
+        this.maxOccurs = maxOccurs;
+    }
+
+    /**
+     * 
+     * @return the title for this input
+     */
+    public LanguageString getTitle() {
+        return inputTitle;
+    }
+
+    /**
+     * 
+     * @return the abstract entry for this input
+     */
+    public LanguageString getAbstract() {
+        return inputAbstract;
+    }
+
+    /**
+     * Returns the least number of occurrences possible for this input parameter in the process. Can be "0" (no
+     * occurrence possible), more, or null (meaning that it can appear no more than maxOccurs, if that is specified):
+     * 
+     * @return minimum occurrences of this parameter
+     */
+    public String getMinOccurs() {
+        return minOccurs;
+    }
+
+    /**
+     * Returns the maximum number of occurrences possible for this input parameter in the process. Can be "unbounded"
+     * (can appear infinitely many times) or a smaller strictly positive integer value (given as string).
+     * 
+     * @return maximum number of occurrences of this parameter
+     */
+    public String getMaxOccurs() {
+        return maxOccurs;
+    }
 }

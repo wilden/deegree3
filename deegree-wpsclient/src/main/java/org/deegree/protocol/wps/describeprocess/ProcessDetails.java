@@ -57,13 +57,12 @@ import org.deegree.commons.xml.XPath;
 import org.deegree.protocol.wps.describeprocess.input.BBoxInputType;
 import org.deegree.protocol.wps.describeprocess.input.ComplexInputType;
 import org.deegree.protocol.wps.describeprocess.input.InputType;
-import org.deegree.protocol.wps.describeprocess.input.InputDescription;
 import org.deegree.protocol.wps.describeprocess.input.LiteralInputType;
 import org.deegree.protocol.wps.describeprocess.output.BBoxOutputType;
 import org.deegree.protocol.wps.describeprocess.output.ComplexOutputType;
-import org.deegree.protocol.wps.describeprocess.output.OutputType;
 import org.deegree.protocol.wps.describeprocess.output.LiteralOutputType;
 import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
+import org.deegree.protocol.wps.describeprocess.output.OutputType;
 import org.deegree.services.jaxb.wps.Range;
 
 /**
@@ -87,7 +86,7 @@ public class ProcessDetails {
 
     private final XMLAdapter omResponse;
 
-    private final Map<CodeType, InputDescription> inputs;
+    private final Map<CodeType, InputType> inputs;
 
     private final Map<CodeType, OutputDescription> outputs;
 
@@ -118,7 +117,7 @@ public class ProcessDetails {
      * 
      * @return the input parameter descriptions, never <code>null</code>
      */
-    public Map<CodeType, InputDescription> getInputs() {
+    public Map<CodeType, InputType> getInputs() {
         return inputs;
     }
 
@@ -131,10 +130,10 @@ public class ProcessDetails {
         return outputs;
     }
 
-    private Map<CodeType, InputDescription> parseInputs() {
+    private Map<CodeType, InputType> parseInputs() {
         XPath xpath = new XPath( "/wps:ProcessDescriptions/ProcessDescription/DataInputs/Input", nsContext );
         List<OMElement> inputs = omResponse.getElements( omResponse.getRootElement(), xpath );
-        Map<CodeType, InputDescription> idToInputType = new HashMap<CodeType, InputDescription>();
+        Map<CodeType, InputType> idToInputType = new HashMap<CodeType, InputType>();
         for ( OMElement input : inputs ) {
             String minOccurs = input.getAttribute( new QName( null, "minOccurs" ) ).getAttributeValue();
             String maxOccurs = input.getAttribute( new QName( null, "minOccurs" ) ).getAttributeValue();
@@ -142,9 +141,7 @@ public class ProcessDetails {
             CodeType id = parseId( input );
             LanguageString inputTitle = parseLanguageString( input, "Title" );
             LanguageString inputAbstract = parseLanguageString( input, "Abstract" );
-            InputType data = parseData( input );
-            InputDescription inputDescrips = new InputDescription( id, inputTitle, inputAbstract, minOccurs, maxOccurs,
-                                                                   data );
+            InputType inputDescrips = parseData( input, id, inputTitle, inputAbstract, minOccurs, maxOccurs );
             idToInputType.put( id, inputDescrips );
         }
         return idToInputType;
@@ -293,28 +290,30 @@ public class ProcessDetails {
         return new ComplexOutputType( defaultFormat, supportedFormats );
     }
 
-    private InputType parseData( OMElement input ) {
+    private InputType parseData( OMElement input, CodeType id, LanguageString inputTitle,
+                                        LanguageString inputAbstract, String minOccurs, String maxOccurs ) {
         InputType inputData = null;
 
         OMElement complexData = input.getFirstChildWithName( new QName( null, "ComplexData" ) );
         if ( complexData != null ) {
-            inputData = parseComplexData( complexData );
+            inputData = parseComplexData( complexData, id, inputTitle, inputAbstract, minOccurs, maxOccurs );
         }
 
         OMElement literalData = input.getFirstChildWithName( new QName( null, "LiteralData" ) );
         if ( literalData != null ) {
-            inputData = parseLiteralData( literalData );
+            inputData = parseLiteralData( literalData, id, inputTitle, inputAbstract, minOccurs, maxOccurs );
         }
 
         OMElement bboxData = input.getFirstChildWithName( new QName( null, "BoundingBoxData" ) );
         if ( bboxData != null ) {
-            inputData = parseBBoxData( bboxData );
+            inputData = parseBBoxData( bboxData, id, inputTitle, inputAbstract, minOccurs, maxOccurs );
         }
 
         return inputData;
     }
 
-    private InputType parseBBoxData( OMElement input ) {
+    private BBoxInputType parseBBoxData( OMElement input, CodeType id, LanguageString inputTitle,
+                                     LanguageString inputAbstract, String minOccurs, String maxOccurs ) {
         XPath xpath = new XPath( "Default/CRS", nsContext );
         String defaultCRS = omResponse.getElement( input, xpath ).getText();
         xpath = new XPath( "Supported/CRS", nsContext );
@@ -324,10 +323,11 @@ public class ProcessDetails {
             supportedCRSs[i] = omSupported.get( i ).getText();
         }
 
-        return new BBoxInputType( defaultCRS, supportedCRSs );
+        return new BBoxInputType(id, inputTitle, inputAbstract, minOccurs, maxOccurs, defaultCRS, supportedCRSs );
     }
 
-    private InputType parseLiteralData( OMElement input ) {
+    private LiteralInputType parseLiteralData( OMElement input, CodeType id, LanguageString inputTitle,
+                                        LanguageString inputAbstract, String minOccurs, String maxOccurs ) {
         OMElement omDataType = input.getFirstChildWithName( new QName( owsNS, "DataType" ) );
         String dataTypeStr = omDataType.getText();
         String dataTypeRefStr = omDataType.getAttributeValue( new QName( owsNS, "reference" ) );
@@ -454,11 +454,12 @@ public class ProcessDetails {
         if ( rangeList != null ) {
             rangeArray = rangeList.toArray( new Range[rangeList.size()] );
         }
-        return new LiteralInputType( dataType, defaultUom, supportedUom, valuesArray, rangeArray, anyValue,
-                                           valuesRef );
+        return new LiteralInputType( id, inputTitle, inputAbstract, minOccurs, maxOccurs, dataType, defaultUom,
+                                     supportedUom, valuesArray, rangeArray, anyValue, valuesRef );
     }
 
-    private InputType parseComplexData( OMElement input ) {
+    private InputType parseComplexData( OMElement input, CodeType id, LanguageString inputTitle,
+                                               LanguageString inputAbstract, String minOccurs, String maxOccurs ) {
         XPath xpath = new XPath( "Default/Format", nsContext );
         OMElement omDefaultFormat = omResponse.getElement( input, xpath );
         String mimeType = omDefaultFormat.getFirstChildWithName( new QName( null, "MimeType" ) ).getText();
@@ -493,7 +494,7 @@ public class ProcessDetails {
             }
             supported[i] = new ComplexAttributes( mimeType, encoding, schema );
         }
-        return new ComplexInputType( defaultFormat, supported );
+        return new ComplexInputType( id, inputTitle, inputAbstract, minOccurs, maxOccurs, defaultFormat, supported );
     }
 
     private LanguageString parseLanguageString( OMElement omElement, String name ) {

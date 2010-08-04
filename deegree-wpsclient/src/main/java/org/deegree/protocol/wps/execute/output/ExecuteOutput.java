@@ -59,6 +59,10 @@ public class ExecuteOutput {
         this.dataType = dataType;
     }
 
+    public CodeType getId() {
+        return id;
+    }
+
     /**
      * 
      * @return the a {@link DataType} instance of the output

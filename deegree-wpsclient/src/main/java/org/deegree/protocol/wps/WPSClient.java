@@ -86,9 +86,9 @@ import org.slf4j.LoggerFactory;
  * ...
  * </pre>
  * 
- * <h4>Executing a process</h4> For executing a request, the method {@link Process#prepareExecution()} is used to create
- * an {@link ProcessExecution} context. This context provides methods for providing the input parameters, controlling
- * the desired output parameters and performing the execution.
+ * <h4>Executing a process</h4> When executing a request, the method {@link Process#prepareExecution()} must be used to
+ * create a {@link ProcessExecution} context first. This context provides methods for providing the input parameters,
+ * controlling the desired output parameters and performing the execution.
  * 
  * <pre>
  * ...
@@ -102,10 +102,33 @@ import org.slf4j.LoggerFactory;
  *   execution.addXMLInput( "GMLInput", null, gmlFileUrl, "text/xml", null, null );
  *   
  *   // perform execution
- *   ExecuteResponse response = execution.execute();
+ *   ExecuteOutputs outputs = execution.execute();
  *   
- *   // retrieve outputs
+ *   // access individual output values
+ *   XMLOutput bufferedGeometryXML = outputs.getXML ("BufferedGeometry", null);
+ *   XMLStreamReader xmlStream = bufferedGeometry.getAsXMLStream();
+ * ...
+ * </pre>
+ * 
+ * <h4>Executing a process asynchronously</h4> TODO
+ * 
+ * <pre>
+ * ...
+ *   Process buffer = wpsClient.getProcess ("Buffer", null);
+ * 
+ *   // get execution context
+ *   ProcessExecution execution = buffer.prepareExecution();
  *   
+ *   // add input parameters
+ *   execution.addLiteralInput( "BufferDistance", null, "0.1", "double", "unity" );
+ *   execution.addXMLInput( "GMLInput", null, gmlFileUrl, "text/xml", null, null );
+ *   
+ *   // perform execution
+ *   ExecuteOutputs outputs = execution.execute();
+ *   
+ *   // access individual output values
+ *   XMLOutput bufferedGeometryXML = outputs.getXML ("BufferedGeometry", null);
+ *   XMLStreamReader xmlStream = bufferedGeometry.getAsXMLStream();
  * ...
  * </pre>
  * 
@@ -148,7 +171,7 @@ public class WPSClient {
 
     // [0]: GET, [1]: POST
     private final URL[] executeURLs = new URL[2];
-    
+
     // using LinkedHashMap because it keeps insertion order
     private final Map<CodeType, Process> processIdToProcess = new LinkedHashMap<CodeType, Process>();
 

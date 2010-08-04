@@ -54,10 +54,11 @@ import org.deegree.protocol.wps.describeprocess.output.BBoxOutput;
 import org.deegree.protocol.wps.describeprocess.output.ComplexOutput;
 import org.deegree.protocol.wps.describeprocess.output.LiteralOutput;
 import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
-import org.deegree.protocol.wps.execute.ExecutionResult;
 import org.deegree.protocol.wps.execute.datatypes.BoundingBoxDataType;
 import org.deegree.protocol.wps.execute.datatypes.LiteralDataType;
 import org.deegree.protocol.wps.execute.datatypes.XMLDataType;
+import org.deegree.protocol.wps.execute.output.ExecuteOutput;
+import org.deegree.protocol.wps.execute.output.ExecuteOutputs;
 import org.deegree.services.controller.ows.OWSException;
 import org.deegree.services.jaxb.main.ServiceIdentificationType;
 import org.junit.Assert;
@@ -107,7 +108,7 @@ public class WPSClientTest {
         Assert.assertEquals( serviceId.getTitle().size(), 1 );
         Assert.assertEquals( serviceId.getTitle().get( 0 ), "deegree 3 WPS" );
         Assert.assertEquals( serviceId.getAbstract().size(), 1 );
-        Assert.assertEquals( serviceId.getAbstract().get( 0 ), "deegree 3 WPS implementation" );        
+        Assert.assertEquals( serviceId.getAbstract().get( 0 ), "deegree 3 WPS implementation" );
     }
 
     @Test
@@ -267,9 +268,9 @@ public class WPSClientTest {
         ProcessExecution execution = proc.prepareExecution();
         execution.addXMLInput( "GMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
         execution.addOutput( "Centroid", null, null, true, null, null, null );
-        ExecutionResult response = execution.execute();
+        ExecuteOutputs response = execution.execute();
 
-        XMLDataType data = (XMLDataType) response.getOutputs()[0].getDataType();
+        XMLDataType data = (XMLDataType) response.getAll()[0].getDataType();
         XMLStreamReader reader = data.getAsXMLStream();
         XMLAdapter searchableXML = new XMLAdapter( reader );
         NamespaceContext nsContext = new NamespaceContext();
@@ -296,7 +297,7 @@ public class WPSClientTest {
         execution.addLiteralInput( "BufferDistance", null, "0.1", "double", "unity" );
         execution.addXMLInput( "GMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
         execution.addOutput( "BufferedGeometry", null, null, false, null, null, null );
-        ExecutionResult response = execution.execute();
+        ExecuteOutputs response = execution.execute();
         Assert.assertNotNull( response );
         // TODO test response
     }
@@ -313,14 +314,16 @@ public class WPSClientTest {
         execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
         execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
         execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), "image/png", null );
-        ExecutionResult response = execution.execute();
+        ExecuteOutputs outputs = execution.execute();
 
-        LiteralDataType out1 = (LiteralDataType) response.getOutputs()[0].getDataType();
+        ExecuteOutput bufferedGeometry = outputs.get( "BufferedGeometry", null );
+
+        LiteralDataType out1 = (LiteralDataType) outputs.getAll()[0].getDataType();
         Assert.assertEquals( "0", out1.getValue() );
         Assert.assertEquals( "integer", out1.getDataType() );
         Assert.assertEquals( "seconds", out1.getUom() );
 
-        BoundingBoxDataType out2 = (BoundingBoxDataType) response.getOutputs()[1].getDataType();
+        BoundingBoxDataType out2 = (BoundingBoxDataType) outputs.getAll()[1].getDataType();
         Assert.assertTrue( Arrays.equals( new double[] { 0.0, 0.0 }, out2.getLower() ) );
         Assert.assertTrue( Arrays.equals( new double[] { 90.0, 180.0 }, out2.getUpper() ) );
         Assert.assertEquals( "EPSG:4326", out2.getCrs() );

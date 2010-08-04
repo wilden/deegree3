@@ -54,17 +54,21 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.XMLAdapter;
+import org.deegree.protocol.wps.execute.ExceptionReport;
 import org.deegree.protocol.wps.execute.ExecuteWriter;
-import org.deegree.protocol.wps.execute.ExecutionResult;
+import org.deegree.protocol.wps.execute.ExecutionResults;
 import org.deegree.protocol.wps.execute.ResponseReader;
 import org.deegree.protocol.wps.execute.datatypes.BinaryDataType;
 import org.deegree.protocol.wps.execute.datatypes.BoundingBoxDataType;
 import org.deegree.protocol.wps.execute.datatypes.LiteralDataType;
 import org.deegree.protocol.wps.execute.datatypes.XMLDataType;
 import org.deegree.protocol.wps.execute.input.ExecuteInput;
+import org.deegree.protocol.wps.execute.output.ExecutionStatus;
 import org.deegree.protocol.wps.execute.output.OutputDefinition;
+import org.deegree.protocol.wps.execute.output.ExecuteOutputs;
 import org.deegree.protocol.wps.execute.output.ResponseFormat;
 import org.deegree.services.controller.ows.OWSException;
+import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,6 +101,10 @@ public class ProcessExecution {
     private ResponseFormat responseFormat;
 
     private boolean rawOutput;
+
+    private ExecutionStatus status;
+
+    private ExecuteOutputs processOutputs;
 
     /**
      * Creates a new {@link ProcessExecution} instance.
@@ -306,21 +314,21 @@ public class ProcessExecution {
     }
 
     /**
-     * Executes the process.
+     * Executes the process and returns the outputs.
      * 
-     * @return execution result, never <code>null</code>
+     * @return process outputs, never <code>null</code>
      * @throws IOException
      *             if a communication/network problem occured
      * @throws OWSException
      *             if the server replied with an exception
      * @throws XMLStreamException
      */
-    public ExecutionResult execute()
+    public ExecuteOutputs execute()
                             throws OWSException, IOException, XMLStreamException {
 
         responseFormat = new ResponseFormat( rawOutput, false, false, false, outputDefs );
 
-        ExecutionResult response = null;
+        ExecutionResults response = null;
         // TODO what if server only supports Get?
         URL url = client.getExecuteURL( true );
 
@@ -363,7 +371,10 @@ public class ProcessExecution {
         response = responseReader.parse100();
         reader.close();
 
-        return response;
+        status = response.getStatus();
+        processOutputs = new ExecuteOutputs( response.getOutputs() );
+
+        return processOutputs;
     }
 
     /**
@@ -372,14 +383,86 @@ public class ProcessExecution {
      * This method issues the <code>Execute</code> request against the server and returns immediately.
      * </p>
      * 
-     * @return execution result, never <code>null</code>
      * @throws IOException
      *             if a communication/network problem occured
      * @throws OWSException
      *             if the server replied with an exception
      */
-    public ExecutionResult executeAsync()
+    public void startAsync()
                             throws IOException, OWSException {
         throw new UnsupportedOperationException( "Async execution is not implemented yet." );
+    }
+
+    /**
+     * Returns the outputs of the process execution.
+     * 
+     * @return the outputs of the process execution, or <code>null</code> if the current state is not
+     *         {@link ExecutionState#SUCCEEDED}
+     */
+    public ExecuteOutputs getOutputs() {
+        return processOutputs;
+    }
+
+    /**
+     * Returns the current state of the execution.
+     * 
+     * @return state of the execution, or <code>null</code> if the execution has not been started yet
+     */
+    public ExecutionState getState() {
+        if ( status == null ) {
+            return null;
+        }
+        return status.getState();
+    }
+
+    /**
+     * Returns the status message.
+     * 
+     * @return status message, or <code>null</code> if the execution has not been started yet or no status message
+     *         available
+     */
+    public String getStatusMessage() {
+        if ( status == null ) {
+            return null;
+        }
+        return status.getStatusMessage();
+    }
+
+    /**
+     * Returns the percentage of the process that has been completed.
+     * 
+     * @return the completed percentage of the process, or <code>null</code> if the execution has not been started yet
+     *         or no completion percentage provided by the process
+     */
+    public Integer getPercentCompleted() {
+        if ( status == null ) {
+            return null;
+        }
+        return status.getPercentCompleted();
+    }
+
+    /**
+     * @return creation time of the process execution, never <code>null</code>
+     */
+    public String getCreationTime() {
+        if ( status == null ) {
+            return null;
+        }
+        return status.getCreationTime();
+    }
+
+    /**
+     * Returns the exception report.
+     * <p>
+     * NOTE: An exception report is only available if state is {@link ExecutionState#FAILED}.
+     * </p>
+     * 
+     * @return an exception message in case the execution failed, <code>null</code> otherwise
+     */
+    public ExceptionReport getExceptionReport() {
+        if ( status == null ) {
+            return null;
+        }
+        return status.getExceptionReport();
     }
 }

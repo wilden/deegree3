@@ -33,51 +33,54 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.describeprocess.input;
+package org.deegree.protocol.wps.execute.input;
 
-import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
+import org.deegree.commons.tom.ows.CodeType;
 
 /**
  * The <code></code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
-public class ComplexDataDescription implements DataDescription {
+public class BoundingBoxInput extends ExecutionInput {
 
-    // private int maximumFileSize;
+    private double[] lower;
 
-    private ComplexAttributes defaultFormat;
+    private double[] upper;
 
-    private ComplexAttributes[] supportedFormats;
+    private String crs;
 
-    public ComplexDataDescription( ComplexAttributes defaultFormat, ComplexAttributes[] supportedFormats ) {
-        this.defaultFormat = defaultFormat;
-        this.supportedFormats = supportedFormats;
+    private int dim;
+
+    public BoundingBoxInput( CodeType id, double[] lower, double[] upper, String crs ) {
+        super (id);
+        this.lower = lower;
+        this.upper = upper;
+        this.dim = lower.length;
+        this.crs = crs;
     }
 
+    public double[] getLower() {
+        return lower;
+    }
+
+    public double[] getUpper() {
+        return upper;
+    }
+
+    public int getDimension () {
+        return dim;
+    }
+    
     /**
-     * Returns a {@link ComplexAttributes} instance (that encapsulates encoding, mime type and schema) as default format
-     * for this input.
+     * Get coordinate system of the bounding box
      * 
-     * @return the default format used for this input.
+     * @return crs as String
      */
-    public ComplexAttributes getDefaultFormat() {
-        return defaultFormat;
+    public String getCrs() {
+        return crs;
     }
-
-    /**
-     * Returns an array of {@link ComplexAttributes} instances (that encapsulates encoding, mime type and schema) as
-     * supported formats for this input.
-     * 
-     * @return the supported format used for this input.
-     */
-    public ComplexAttributes[] getSupportedFormats() {
-        return supportedFormats;
-    }
-
 }

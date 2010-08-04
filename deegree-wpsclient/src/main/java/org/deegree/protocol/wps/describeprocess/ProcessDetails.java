@@ -54,11 +54,11 @@ import org.deegree.commons.tom.ows.LanguageString;
 import org.deegree.commons.xml.NamespaceContext;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.XPath;
-import org.deegree.protocol.wps.describeprocess.input.BBoxDataDescription;
-import org.deegree.protocol.wps.describeprocess.input.ComplexDataDescription;
-import org.deegree.protocol.wps.describeprocess.input.DataDescription;
+import org.deegree.protocol.wps.describeprocess.input.BBoxInputType;
+import org.deegree.protocol.wps.describeprocess.input.ComplexInputType;
+import org.deegree.protocol.wps.describeprocess.input.InputType;
 import org.deegree.protocol.wps.describeprocess.input.InputDescription;
-import org.deegree.protocol.wps.describeprocess.input.LiteralDataDescription;
+import org.deegree.protocol.wps.describeprocess.input.LiteralInputType;
 import org.deegree.protocol.wps.describeprocess.output.BBoxOutputType;
 import org.deegree.protocol.wps.describeprocess.output.ComplexOutputType;
 import org.deegree.protocol.wps.describeprocess.output.OutputType;
@@ -142,7 +142,7 @@ public class ProcessDetails {
             CodeType id = parseId( input );
             LanguageString inputTitle = parseLanguageString( input, "Title" );
             LanguageString inputAbstract = parseLanguageString( input, "Abstract" );
-            DataDescription data = parseData( input );
+            InputType data = parseData( input );
             InputDescription inputDescrips = new InputDescription( id, inputTitle, inputAbstract, minOccurs, maxOccurs,
                                                                    data );
             idToInputType.put( id, inputDescrips );
@@ -293,8 +293,8 @@ public class ProcessDetails {
         return new ComplexOutputType( defaultFormat, supportedFormats );
     }
 
-    private DataDescription parseData( OMElement input ) {
-        DataDescription inputData = null;
+    private InputType parseData( OMElement input ) {
+        InputType inputData = null;
 
         OMElement complexData = input.getFirstChildWithName( new QName( null, "ComplexData" ) );
         if ( complexData != null ) {
@@ -314,7 +314,7 @@ public class ProcessDetails {
         return inputData;
     }
 
-    private DataDescription parseBBoxData( OMElement input ) {
+    private InputType parseBBoxData( OMElement input ) {
         XPath xpath = new XPath( "Default/CRS", nsContext );
         String defaultCRS = omResponse.getElement( input, xpath ).getText();
         xpath = new XPath( "Supported/CRS", nsContext );
@@ -324,10 +324,10 @@ public class ProcessDetails {
             supportedCRSs[i] = omSupported.get( i ).getText();
         }
 
-        return new BBoxDataDescription( defaultCRS, supportedCRSs );
+        return new BBoxInputType( defaultCRS, supportedCRSs );
     }
 
-    private DataDescription parseLiteralData( OMElement input ) {
+    private InputType parseLiteralData( OMElement input ) {
         OMElement omDataType = input.getFirstChildWithName( new QName( owsNS, "DataType" ) );
         String dataTypeStr = omDataType.getText();
         String dataTypeRefStr = omDataType.getAttributeValue( new QName( owsNS, "reference" ) );
@@ -454,11 +454,11 @@ public class ProcessDetails {
         if ( rangeList != null ) {
             rangeArray = rangeList.toArray( new Range[rangeList.size()] );
         }
-        return new LiteralDataDescription( dataType, defaultUom, supportedUom, valuesArray, rangeArray, anyValue,
+        return new LiteralInputType( dataType, defaultUom, supportedUom, valuesArray, rangeArray, anyValue,
                                            valuesRef );
     }
 
-    private DataDescription parseComplexData( OMElement input ) {
+    private InputType parseComplexData( OMElement input ) {
         XPath xpath = new XPath( "Default/Format", nsContext );
         OMElement omDefaultFormat = omResponse.getElement( input, xpath );
         String mimeType = omDefaultFormat.getFirstChildWithName( new QName( null, "MimeType" ) ).getText();
@@ -493,7 +493,7 @@ public class ProcessDetails {
             }
             supported[i] = new ComplexAttributes( mimeType, encoding, schema );
         }
-        return new ComplexDataDescription( defaultFormat, supported );
+        return new ComplexInputType( defaultFormat, supported );
     }
 
     private LanguageString parseLanguageString( OMElement omElement, String name ) {

@@ -33,9 +33,8 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.output;
+package org.deegree.protocol.wps.execute;
 
-import org.deegree.protocol.wps.execute.ExceptionReport;
 import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
 
 /**

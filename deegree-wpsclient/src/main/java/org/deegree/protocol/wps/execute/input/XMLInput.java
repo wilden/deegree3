@@ -33,7 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.datatypes;
+package org.deegree.protocol.wps.execute.input;
 
 import java.io.IOException;
 import java.net.URL;
@@ -43,6 +43,7 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.stax.StAXParsingHelper;
 import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
 import org.slf4j.Logger;
@@ -58,11 +59,11 @@ import org.slf4j.LoggerFactory;
  * @version $Revision$, $Date$
  * 
  */
-public class XMLDataType implements DataType {
+public class XMLInput extends ExecutionInput {
 
-    private static Logger LOG = LoggerFactory.getLogger( XMLDataType.class );
+    private static Logger LOG = LoggerFactory.getLogger( XMLInput.class );
 
-    private ComplexAttributes complexAttribs;
+    private final ComplexAttributes complexAttribs;
 
     private URL url;
 
@@ -70,9 +71,10 @@ public class XMLDataType implements DataType {
 
     private boolean isWebAccessible;
 
-    public XMLDataType( URL url, boolean isWebAcessible, String mimeType, String encoding, String schema ) {
+    public XMLInput( CodeType id, URL url, boolean isWebAcessible, String mimeType, String encoding, String schema ) {
+        super( id );
         this.url = url;
-        this.isWebAccessible = true;
+        this.isWebAccessible = isWebAcessible;
         this.complexAttribs = new ComplexAttributes( mimeType, null, schema );
     }
 
@@ -84,7 +86,8 @@ public class XMLDataType implements DataType {
      * @param encoding
      * @param schema
      */
-    public XMLDataType( XMLStreamReader reader, String mimeType, String encoding, String schema ) {
+    public XMLInput( CodeType id, XMLStreamReader reader, String mimeType, String encoding, String schema ) {
+        super( id );
         if ( reader.getEventType() != XMLStreamConstants.START_ELEMENT ) {
             String msg = "The given XML stream does not point to a START_ELEMENT event.";
             throw new IllegalArgumentException( msg );
@@ -128,7 +131,6 @@ public class XMLDataType implements DataType {
         return complexAttribs;
     }
 
-    @Override
     public URL getWebAccessibleURL() {
         return isWebAccessible ? url : null;
     }

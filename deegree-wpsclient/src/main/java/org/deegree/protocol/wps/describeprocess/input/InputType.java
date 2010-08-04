@@ -33,59 +33,18 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.datatypes;
-
-import java.net.URL;
+package org.deegree.protocol.wps.describeprocess.input;
 
 /**
  * The <code></code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
+ * 
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
+ * 
  */
-public class BoundingBoxDataType implements DataType {
-
-    private double[] lower;
-
-    private double[] upper;
-
-    private String crs;
-
-    private int dim;
-
-    public BoundingBoxDataType( double[] lower, double[] upper, String crs ) {
-        this.lower = lower;
-        this.upper = upper;
-        this.dim = lower.length;
-        this.crs = crs;
-    }
-
-    public double[] getLower() {
-        return lower;
-    }
-
-    public double[] getUpper() {
-        return upper;
-    }
-
-    public int getDimension () {
-        return dim;
-    }
-    
-    /**
-     * Get coordinate system of the bounding box
-     * 
-     * @return crs as String
-     */
-    public String getCrs() {
-        return crs;
-    }
-
-    @Override
-    public URL getWebAccessibleURL() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+public interface InputType {
+    // marker interface
 }

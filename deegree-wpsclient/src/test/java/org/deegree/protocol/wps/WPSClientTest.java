@@ -46,17 +46,17 @@ import javax.xml.stream.XMLStreamReader;
 import org.deegree.commons.xml.NamespaceContext;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.XPath;
-import org.deegree.protocol.wps.describeprocess.input.BBoxDataDescription;
-import org.deegree.protocol.wps.describeprocess.input.ComplexDataDescription;
+import org.deegree.protocol.wps.describeprocess.input.BBoxInputType;
+import org.deegree.protocol.wps.describeprocess.input.ComplexInputType;
 import org.deegree.protocol.wps.describeprocess.input.InputDescription;
-import org.deegree.protocol.wps.describeprocess.input.LiteralDataDescription;
+import org.deegree.protocol.wps.describeprocess.input.LiteralInputType;
 import org.deegree.protocol.wps.describeprocess.output.BBoxOutputType;
 import org.deegree.protocol.wps.describeprocess.output.ComplexOutputType;
 import org.deegree.protocol.wps.describeprocess.output.LiteralOutputType;
 import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
+import org.deegree.protocol.wps.execute.ExecuteOutputs;
 import org.deegree.protocol.wps.execute.output.BBoxOutput;
 import org.deegree.protocol.wps.execute.output.ComplexOutput;
-import org.deegree.protocol.wps.execute.output.ExecuteOutputs;
 import org.deegree.protocol.wps.execute.output.LiteralOutput;
 import org.deegree.services.controller.ows.OWSException;
 import org.deegree.services.jaxb.main.ServiceIdentificationType;
@@ -119,7 +119,7 @@ public class WPSClientTest {
         InputDescription literalInput = p1.getInputType( "BufferDistance", null );
         Assert.assertEquals( "1", literalInput.getMinOccurs() );
         Assert.assertEquals( "1", literalInput.getMaxOccurs() );
-        LiteralDataDescription literalData = (LiteralDataDescription) literalInput.getData();
+        LiteralInputType literalData = (LiteralInputType) literalInput.getData();
         Assert.assertEquals( "double", literalData.getDataType().getValue() );
         Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#double", literalData.getDataType().getRef().toString() );
         Assert.assertEquals( "unity", literalData.getDefaultUom().getValue() );
@@ -147,7 +147,7 @@ public class WPSClientTest {
         InputDescription secondInput = p2.getInputType( "GMLInput2", null );
         Assert.assertEquals( "1", secondInput.getMinOccurs() );
         Assert.assertEquals( "1", secondInput.getMaxOccurs() );
-        ComplexDataDescription complexData = (ComplexDataDescription) secondInput.getData();
+        ComplexInputType complexData = (ComplexInputType) secondInput.getData();
         Assert.assertEquals( "text/xml", complexData.getDefaultFormat().getMimeType() );
         Assert.assertEquals( "UTF-8", complexData.getDefaultFormat().getEncoding() );
         Assert.assertEquals( "http://schemas.opengis.net/gml/3.1.1/base/gml.xsd",
@@ -171,7 +171,7 @@ public class WPSClientTest {
         Process p2 = wpsClient.getProcess( "ParameterDemoProcess", null );
 
         InputDescription firstInput = p2.getInputType( "LiteralInput", null );
-        LiteralDataDescription literalInput = (LiteralDataDescription) firstInput.getData();
+        LiteralInputType literalInput = (LiteralInputType) firstInput.getData();
         Assert.assertEquals( "integer", literalInput.getDataType().getValue() );
         Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#integer",
                              literalInput.getDataType().getRef().toString() );
@@ -182,17 +182,17 @@ public class WPSClientTest {
         InputDescription secondInput = p2.getInputType( "BBOXInput", null );
         Assert.assertEquals( "1", secondInput.getMinOccurs() );
         Assert.assertEquals( "1", secondInput.getMaxOccurs() );
-        BBoxDataDescription bboxData = (BBoxDataDescription) secondInput.getData();
+        BBoxInputType bboxData = (BBoxInputType) secondInput.getData();
         Assert.assertEquals( "EPSG:4326", bboxData.getDefaultCRS() );
         Assert.assertEquals( "EPSG:4326", bboxData.getSupportedCrs()[0] );
 
         InputDescription thirdInput = p2.getInputType( "XMLInput", null );
-        ComplexDataDescription xmlData = (ComplexDataDescription) thirdInput.getData();
+        ComplexInputType xmlData = (ComplexInputType) thirdInput.getData();
         Assert.assertEquals( "text/xml", xmlData.getDefaultFormat().getMimeType() );
         Assert.assertEquals( "text/xml", xmlData.getSupportedFormats()[0].getMimeType() );
 
         InputDescription fourthInput = p2.getInputType( "BinaryInput", null );
-        ComplexDataDescription binaryData = (ComplexDataDescription) fourthInput.getData();
+        ComplexInputType binaryData = (ComplexInputType) fourthInput.getData();
         Assert.assertEquals( "image/png", binaryData.getDefaultFormat().getMimeType() );
         Assert.assertEquals( "base64", binaryData.getDefaultFormat().getEncoding() );
         Assert.assertEquals( "image/png", binaryData.getSupportedFormats()[0].getMimeType() );

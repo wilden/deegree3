@@ -33,18 +33,39 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.describeprocess.input;
+package org.deegree.protocol.wps.execute.input;
+
+import java.net.URL;
+
+import org.deegree.commons.tom.ows.CodeType;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * Abstract base class for input parameters provided for a process execution.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
-public interface DataDescription {
-    // marker interface
+public abstract class ExecutionInput {
+
+    private CodeType id;
+
+    protected ExecutionInput( CodeType id ) {
+        this.id = id;
+    }
+
+    /**
+     * Returns the parameter identifier.
+     * 
+     * @return the parameter identifier, never <code>null</code>
+     */
+    public CodeType getId() {
+        return id;
+    }
+    
+    public URL getWebAccessibleURL() {
+        return null;
+    }
 }

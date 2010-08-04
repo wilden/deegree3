@@ -33,21 +33,19 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.datatypes;
+package org.deegree.protocol.wps.execute.input;
 
-import java.net.URL;
+import org.deegree.commons.tom.ows.CodeType;
 
 /**
  * The <code></code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
-public class LiteralDataType implements DataType {
+public class LiteralInput extends ExecutionInput {
 
     private String value;
 
@@ -57,41 +55,37 @@ public class LiteralDataType implements DataType {
     // optional
     private String uom;
 
-    public LiteralDataType( String value, String dataType, String uom ) {
+    public LiteralInput( CodeType id, String value, String dataType, String uom ) {
+        super( id );
         this.value = value;
         this.dataType = dataType;
         this.uom = uom;
     }
 
     /**
-     * Get value of literal instance
+     * Returns the value.
      * 
-     * @return the value as String
+     * @return the value, never <code>null</code>
      */
     public String getValue() {
         return value;
     }
 
     /**
-     * Get data type of literal instance
+     * Returns the data type.
      * 
-     * @return datatype as String
+     * @return the data type, may be <code>null</code> (unspecified)
      */
     public String getDataType() {
         return dataType;
     }
 
     /**
-     * Get unit-of-measure of literal instance
+     * Returns the unit-of-measure.
      * 
-     * @return uom as String
+     * @return the unit-of-measure, may be <code>null</code> (unspecified)
      */
     public String getUom() {
         return uom;
-    }
-
-    @Override
-    public URL getWebAccessibleURL() {
-        return null;
     }
 }

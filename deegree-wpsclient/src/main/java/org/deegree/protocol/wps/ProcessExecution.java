@@ -55,18 +55,18 @@ import javax.xml.stream.XMLStreamWriter;
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.protocol.wps.execute.ExceptionReport;
+import org.deegree.protocol.wps.execute.ExecuteOutputs;
 import org.deegree.protocol.wps.execute.ExecuteWriter;
 import org.deegree.protocol.wps.execute.ExecutionResults;
+import org.deegree.protocol.wps.execute.ExecutionStatus;
+import org.deegree.protocol.wps.execute.OutputDefinition;
+import org.deegree.protocol.wps.execute.ResponseFormat;
 import org.deegree.protocol.wps.execute.ResponseReader;
-import org.deegree.protocol.wps.execute.datatypes.BinaryDataType;
-import org.deegree.protocol.wps.execute.datatypes.BoundingBoxDataType;
-import org.deegree.protocol.wps.execute.datatypes.LiteralDataType;
-import org.deegree.protocol.wps.execute.datatypes.XMLDataType;
-import org.deegree.protocol.wps.execute.input.ExecuteInput;
-import org.deegree.protocol.wps.execute.output.ExecutionStatus;
-import org.deegree.protocol.wps.execute.output.OutputDefinition;
-import org.deegree.protocol.wps.execute.output.ExecuteOutputs;
-import org.deegree.protocol.wps.execute.output.ResponseFormat;
+import org.deegree.protocol.wps.execute.input.BinaryInput;
+import org.deegree.protocol.wps.execute.input.BoundingBoxInput;
+import org.deegree.protocol.wps.execute.input.ExecutionInput;
+import org.deegree.protocol.wps.execute.input.LiteralInput;
+import org.deegree.protocol.wps.execute.input.XMLInput;
 import org.deegree.services.controller.ows.OWSException;
 import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
 import org.slf4j.Logger;
@@ -94,7 +94,7 @@ public class ProcessExecution {
 
     private final Process process;
 
-    private List<ExecuteInput> inputs;
+    private List<ExecutionInput> inputs;
 
     private List<OutputDefinition> outputDefs;
 
@@ -117,7 +117,7 @@ public class ProcessExecution {
     ProcessExecution( WPSClient client, Process process ) {
         this.client = client;
         this.process = process;
-        inputs = new ArrayList<ExecuteInput>();
+        inputs = new ArrayList<ExecutionInput>();
         outputDefs = new ArrayList<OutputDefinition>();
     }
 
@@ -138,7 +138,7 @@ public class ProcessExecution {
      *            by the process description)
      */
     public void addLiteralInput( String id, String idCodeSpace, String value, String type, String uom ) {
-        inputs.add( new ExecuteInput( new CodeType( id, idCodeSpace ), new LiteralDataType( value, type, uom ) ) );
+        inputs.add( new LiteralInput( new CodeType( id, idCodeSpace ), value, type, uom ) );
     }
 
     /**
@@ -157,7 +157,7 @@ public class ProcessExecution {
      *            description applies)
      */
     public void addBBoxInput( String id, String idCodeSpace, double[] lower, double[] upper, String crs ) {
-        inputs.add( new ExecuteInput( new CodeType( id, idCodeSpace ), new BoundingBoxDataType( lower, upper, crs ) ) );
+        inputs.add( new BoundingBoxInput( new CodeType( id, idCodeSpace ), lower, upper, crs ) );
     }
 
     /**
@@ -181,8 +181,7 @@ public class ProcessExecution {
      *            applies)
      */
     public void addXMLInput( String id, String idCodeSpace, URL url, String mimeType, String encoding, String schema ) {
-        XMLDataType xmlData = new XMLDataType( url, false, mimeType, encoding, schema );
-        inputs.add( new ExecuteInput( new CodeType( id, idCodeSpace ), xmlData ) );
+        inputs.add( new XMLInput( new CodeType( id, idCodeSpace ), url, false, mimeType, encoding, schema ) );
     }
 
     /**
@@ -207,8 +206,7 @@ public class ProcessExecution {
      */
     public void addXMLInput( String id, String idCodeSpace, XMLStreamReader reader, String mimeType, String encoding,
                              String schema ) {
-        XMLDataType xmlDataType = new XMLDataType( reader, mimeType, encoding, schema );
-        inputs.add( new ExecuteInput( new CodeType( id, idCodeSpace ), xmlDataType ) );
+        inputs.add( new XMLInput( new CodeType( id, idCodeSpace ), reader, mimeType, encoding, schema ) );
     }
 
     /**
@@ -229,8 +227,7 @@ public class ProcessExecution {
      *            applies)
      */
     public void addBinaryInput( String id, String idCodeSpace, URL url, String mimeType, String encoding ) {
-        BinaryDataType binaryData = new BinaryDataType( url, false, mimeType, encoding );
-        inputs.add( new ExecuteInput( new CodeType( id, idCodeSpace ), binaryData ) );
+        inputs.add( new BinaryInput( new CodeType( id, idCodeSpace ), url, false, mimeType, encoding ) );
     }
 
     /**
@@ -250,8 +247,7 @@ public class ProcessExecution {
      *            applies)
      */
     public void addBinaryInput( String id, String idCodeSpace, InputStream inputStream, String mimeType, String encoding ) {
-        BinaryDataType binaryData = new BinaryDataType( inputStream, mimeType, encoding );
-        inputs.add( new ExecuteInput( new CodeType( id, idCodeSpace ), binaryData ) );
+        inputs.add( new BinaryInput( new CodeType( id, idCodeSpace ), inputStream, mimeType, encoding ) );
     }
 
     /**

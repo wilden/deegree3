@@ -65,8 +65,7 @@ import org.deegree.commons.xml.stax.StAXParsingHelper;
 import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
 import org.deegree.protocol.wps.execute.output.BBoxOutput;
 import org.deegree.protocol.wps.execute.output.ComplexOutput;
-import org.deegree.protocol.wps.execute.output.ExecuteOutput;
-import org.deegree.protocol.wps.execute.output.ExecutionStatus;
+import org.deegree.protocol.wps.execute.output.ExecutionOutput;
 import org.deegree.services.controller.ows.OWSException;
 import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
 import org.slf4j.Logger;
@@ -107,7 +106,7 @@ public class ResponseReader {
                             throws OWSException {
 
         ExecutionStatus status = null;
-        List<ExecuteOutput> outputs = null;
+        List<ExecutionOutput> outputs = null;
 
         try {
             StAXParsingHelper.nextElement( reader );
@@ -134,9 +133,9 @@ public class ResponseReader {
             e.printStackTrace();
         }
 
-        ExecuteOutput[] outputsArray = null;
+        ExecutionOutput[] outputsArray = null;
         if ( outputs != null ) {
-            outputsArray = outputs.toArray( new ExecuteOutput[outputs.size()] );
+            outputsArray = outputs.toArray( new ExecutionOutput[outputs.size()] );
         }
         return new ExecutionResults( status, outputsArray );
     }
@@ -151,14 +150,14 @@ public class ResponseReader {
      * @return
      * @throws XMLStreamException
      */
-    private List<ExecuteOutput> parseOutputs()
+    private List<ExecutionOutput> parseOutputs()
                             throws XMLStreamException {
 
-        List<ExecuteOutput> outputs = new ArrayList<ExecuteOutput>();
+        List<ExecutionOutput> outputs = new ArrayList<ExecutionOutput>();
         try {
             StAXParsingHelper.nextElement( reader );
             while ( START_ELEMENT == reader.getEventType() && "Output".equals( reader.getName().getLocalPart() ) ) {
-                ExecuteOutput output = null;
+                ExecutionOutput output = null;
                 StAXParsingHelper.nextElement( reader );
                 CodeType id = parseIdentifier();
 
@@ -207,9 +206,9 @@ public class ResponseReader {
      * @return
      * @throws XMLStreamException
      */
-    private ExecuteOutput parseOutput( CodeType id )
+    private ExecutionOutput parseOutput( CodeType id )
                             throws XMLStreamException {
-        ExecuteOutput dataType = null;
+        ExecutionOutput dataType = null;
         StAXParsingHelper.nextElement( reader );
         String localName = reader.getName().getLocalPart();
         if ( "ComplexData".equals( localName ) ) {
@@ -281,7 +280,7 @@ public class ResponseReader {
      * @throws XMLStreamException
      * @throws IOException
      */
-    private ExecuteOutput parseComplexOutput( CodeType id )
+    private ExecutionOutput parseComplexOutput( CodeType id )
                             throws XMLStreamException {
 
         ComplexAttributes attribs = parseComplexAttributes();

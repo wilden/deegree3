@@ -33,7 +33,10 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.describeprocess.input;
+package org.deegree.protocol.wps.execute;
+
+import java.util.List;
+
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -45,31 +48,45 @@ package org.deegree.protocol.wps.describeprocess.input;
  * @version $Revision$, $Date$
  * 
  */
-public class BBoxDataDescription implements DataDescription {
+public class ResponseFormat {
 
-    private String defaultCrs;
+    private boolean rawOutput;
 
-    private String[] supportedCrs;
+    private Boolean asynch;
 
-    public BBoxDataDescription( String defaultCRS, String[] supportedCRSs ) {
-        this.defaultCrs = defaultCRS;
-        this.supportedCrs = supportedCRSs;
+    private Boolean includeRequestInfo;
+
+    private Boolean updateStatus;
+
+    private List<OutputDefinition> outputDefs;
+
+    public ResponseFormat( boolean rawOutput, boolean asynch, boolean includeRequestInfo, boolean updateStatus,
+                           List<OutputDefinition> outputDefs ) {
+        this.rawOutput = rawOutput;
+        this.asynch = asynch;
+        this.includeRequestInfo = includeRequestInfo;
+        this.updateStatus = updateStatus;
+        this.outputDefs = outputDefs;
     }
 
-    /**
-     * 
-     * @return the default CRS used for this respective input.
-     */
-    public String getDefaultCRS() {
-        return defaultCrs;
+    public boolean isRaw() {
+        return rawOutput;
     }
 
-    /**
-     * 
-     * @return the supported CRSs that can be used for this respective input.
-     */
-    public String[] getSupportedCrs() {
-        return supportedCrs;
+    public Boolean isAsynch() {
+        return asynch;
+    }
+
+    public Boolean includesRequestInfo() {
+        return includeRequestInfo;
+    }
+
+    public Boolean updatesStatus() {
+        return updateStatus;
+    }
+
+    public List<OutputDefinition> getOutputDefinitions() {
+        return outputDefs;
     }
 
 }

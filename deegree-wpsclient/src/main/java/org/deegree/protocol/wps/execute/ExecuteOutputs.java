@@ -33,17 +33,17 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.output;
+package org.deegree.protocol.wps.execute;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.protocol.wps.ProcessExecution;
-import org.deegree.protocol.wps.execute.datatypes.BinaryDataType;
-import org.deegree.protocol.wps.execute.datatypes.BoundingBoxDataType;
-import org.deegree.protocol.wps.execute.datatypes.LiteralDataType;
-import org.deegree.protocol.wps.execute.datatypes.XMLDataType;
+import org.deegree.protocol.wps.execute.output.ComplexOutput;
+import org.deegree.protocol.wps.execute.output.ExecutionOutput;
+import org.deegree.protocol.wps.execute.output.LiteralOutput;
+import org.deegree.services.wps.output.BoundingBoxOutput;
 
 /**
  * Provides access to the outputs from a {@link ProcessExecution}.
@@ -55,13 +55,13 @@ import org.deegree.protocol.wps.execute.datatypes.XMLDataType;
  */
 public class ExecuteOutputs {
 
-    private final Map<CodeType, ExecuteOutput> paramIdToOutput = new LinkedHashMap<CodeType, ExecuteOutput>();
+    private final Map<CodeType, ExecutionOutput> paramIdToOutput = new LinkedHashMap<CodeType, ExecutionOutput>();
 
     /**
      * @param outputs
      */
-    public ExecuteOutputs( ExecuteOutput[] outputs ) {
-        for ( ExecuteOutput output : outputs ) {
+    public ExecuteOutputs( ExecutionOutput[] outputs ) {
+        for ( ExecutionOutput output : outputs ) {
             paramIdToOutput.put( output.getId(), output );
         }
     }
@@ -69,14 +69,14 @@ public class ExecuteOutputs {
     /**
      * @return
      */
-    public ExecuteOutput[] getAll() {
-        return paramIdToOutput.values().toArray( new ExecuteOutput[paramIdToOutput.size()] );
+    public ExecutionOutput[] getAll() {
+        return paramIdToOutput.values().toArray( new ExecutionOutput[paramIdToOutput.size()] );
     }
 
     /**
      * @return
      */
-    public ExecuteOutput get( int i ) {
+    public ExecutionOutput get( int i ) {
         return getAll()[i];
     }
 
@@ -85,23 +85,19 @@ public class ExecuteOutputs {
      * @param idCodeSpace
      * @return
      */
-    public ExecuteOutput get( String id, String idCodeSpace ) {
+    public ExecutionOutput get( String id, String idCodeSpace ) {
         return paramIdToOutput.get( new CodeType( id, idCodeSpace ) );
     }
 
-    public LiteralDataType getLiteral( String id, String idCodeSpace ) {
-        return null;
+    public LiteralOutput getLiteral( String id, String idCodeSpace ) {
+        return (LiteralOutput) paramIdToOutput.get( new CodeType( id, idCodeSpace ) );
     }
 
-    public BoundingBoxDataType getBoundingBox( String id, String idCodeSpace ) {
-        return null;
+    public BoundingBoxOutput getBoundingBox( String id, String idCodeSpace ) {
+        return (BoundingBoxOutput) paramIdToOutput.get( new CodeType( id, idCodeSpace ) );
     }
 
-    public XMLDataType getXML( String id, String idCodeSpace ) {
-        return null;
-    }
-
-    public BinaryDataType getBinary( String id, String idCodeSpace ) {
-        return null;
+    public ComplexOutput getComplex( String id, String idCodeSpace ) {
+        return (ComplexOutput) paramIdToOutput.get( new CodeType( id, idCodeSpace ) );
     }
 }

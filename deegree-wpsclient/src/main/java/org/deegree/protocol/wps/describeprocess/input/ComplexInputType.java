@@ -33,9 +33,8 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.output;
+package org.deegree.protocol.wps.describeprocess.input;
 
-import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
 
 /**
@@ -48,37 +47,37 @@ import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
  * @version $Revision$, $Date$
  * 
  */
-public class OutputDefinition {
+public class ComplexInputType implements InputType {
 
-    private CodeType id;
+    // private int maximumFileSize;
 
-    private String uom;
+    private ComplexAttributes defaultFormat;
 
-    private ComplexAttributes complexAttributes;
+    private ComplexAttributes[] supportedFormats;
 
-    private boolean asRef;
-
-    public OutputDefinition( CodeType id, String uom, boolean asRef, String mimeType, String encoding, String schema ) {
-        this.id = id;
-        this.uom = uom;
-        this.asRef = asRef;
-        this.complexAttributes = new ComplexAttributes( mimeType, encoding, schema );
+    public ComplexInputType( ComplexAttributes defaultFormat, ComplexAttributes[] supportedFormats ) {
+        this.defaultFormat = defaultFormat;
+        this.supportedFormats = supportedFormats;
     }
 
-    public CodeType getId() {
-        return id;
+    /**
+     * Returns a {@link ComplexAttributes} instance (that encapsulates encoding, mime type and schema) as default format
+     * for this input.
+     * 
+     * @return the default format used for this input.
+     */
+    public ComplexAttributes getDefaultFormat() {
+        return defaultFormat;
     }
 
-    public String getUom() {
-        return uom;
-    }
-
-    public ComplexAttributes getComplexAttributes() {
-        return complexAttributes;
-    }
-
-    public boolean isReference() {
-        return asRef;
+    /**
+     * Returns an array of {@link ComplexAttributes} instances (that encapsulates encoding, mime type and schema) as
+     * supported formats for this input.
+     * 
+     * @return the supported format used for this input.
+     */
+    public ComplexAttributes[] getSupportedFormats() {
+        return supportedFormats;
     }
 
 }

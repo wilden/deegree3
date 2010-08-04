@@ -35,8 +35,7 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.execute;
 
-import org.deegree.protocol.wps.execute.output.ExecuteOutput;
-import org.deegree.protocol.wps.execute.output.ExecutionStatus;
+import org.deegree.protocol.wps.execute.output.ExecutionOutput;
 import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
 
 /**
@@ -52,9 +51,9 @@ public class ExecutionResults {
 
     private final ExecutionStatus status;
 
-    private final ExecuteOutput[] outputs;
+    private final ExecutionOutput[] outputs;
 
-    public ExecutionResults( ExecutionStatus status, ExecuteOutput[] outputs ) {
+    public ExecutionResults( ExecutionStatus status, ExecutionOutput[] outputs ) {
         this.status = status;
         this.outputs = outputs;
     }
@@ -76,7 +75,7 @@ public class ExecutionResults {
      * 
      * @return the output parameters, never <code>null</code>
      */
-    public ExecuteOutput[] getOutputs() {
+    public ExecutionOutput[] getOutputs() {
         return outputs;
     }
 }

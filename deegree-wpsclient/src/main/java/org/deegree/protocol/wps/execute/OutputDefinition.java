@@ -33,9 +33,10 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.output;
+package org.deegree.protocol.wps.execute;
 
-import java.util.List;
+import org.deegree.commons.tom.ows.CodeType;
+import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -47,45 +48,37 @@ import java.util.List;
  * @version $Revision$, $Date$
  * 
  */
-public class ResponseFormat {
+public class OutputDefinition {
 
-    private boolean rawOutput;
+    private CodeType id;
 
-    private Boolean asynch;
+    private String uom;
 
-    private Boolean includeRequestInfo;
+    private ComplexAttributes complexAttributes;
 
-    private Boolean updateStatus;
+    private boolean asRef;
 
-    private List<OutputDefinition> outputDefs;
-
-    public ResponseFormat( boolean rawOutput, boolean asynch, boolean includeRequestInfo, boolean updateStatus,
-                           List<OutputDefinition> outputDefs ) {
-        this.rawOutput = rawOutput;
-        this.asynch = asynch;
-        this.includeRequestInfo = includeRequestInfo;
-        this.updateStatus = updateStatus;
-        this.outputDefs = outputDefs;
+    public OutputDefinition( CodeType id, String uom, boolean asRef, String mimeType, String encoding, String schema ) {
+        this.id = id;
+        this.uom = uom;
+        this.asRef = asRef;
+        this.complexAttributes = new ComplexAttributes( mimeType, encoding, schema );
     }
 
-    public boolean isRaw() {
-        return rawOutput;
+    public CodeType getId() {
+        return id;
     }
 
-    public Boolean isAsynch() {
-        return asynch;
+    public String getUom() {
+        return uom;
     }
 
-    public Boolean includesRequestInfo() {
-        return includeRequestInfo;
+    public ComplexAttributes getComplexAttributes() {
+        return complexAttributes;
     }
 
-    public Boolean updatesStatus() {
-        return updateStatus;
-    }
-
-    public List<OutputDefinition> getOutputDefinitions() {
-        return outputDefs;
+    public boolean isReference() {
+        return asRef;
     }
 
 }

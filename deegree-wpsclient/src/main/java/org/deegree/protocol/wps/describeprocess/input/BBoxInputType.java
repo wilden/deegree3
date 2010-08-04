@@ -33,10 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.input;
-
-import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.execute.datatypes.DataType;
+package org.deegree.protocol.wps.describeprocess.input;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -48,34 +45,31 @@ import org.deegree.protocol.wps.execute.datatypes.DataType;
  * @version $Revision$, $Date$
  * 
  */
-public class ExecuteInput {
+public class BBoxInputType implements InputType {
 
-    private CodeType id;
+    private String defaultCrs;
 
-    private InputReference inputRef;
+    private String[] supportedCrs;
 
-    private DataType dataType;
-
-    public ExecuteInput( CodeType id, InputReference inputRef ) {
-        this.id = id;
-        this.inputRef = inputRef;
+    public BBoxInputType( String defaultCRS, String[] supportedCRSs ) {
+        this.defaultCrs = defaultCRS;
+        this.supportedCrs = supportedCRSs;
     }
 
-    public ExecuteInput( CodeType id, DataType dataType ) {
-        this.id = id;
-        this.dataType = dataType;
+    /**
+     * 
+     * @return the default CRS used for this respective input.
+     */
+    public String getDefaultCRS() {
+        return defaultCrs;
     }
 
-    public CodeType getId() {
-        return id;
-    }
-
-    public DataType getDataType() {
-        return dataType;
-    }
-
-    public InputReference getInputReference() {
-        return inputRef;
+    /**
+     * 
+     * @return the supported CRSs that can be used for this respective input.
+     */
+    public String[] getSupportedCrs() {
+        return supportedCrs;
     }
 
 }

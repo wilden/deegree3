@@ -51,7 +51,7 @@ import org.deegree.services.jaxb.wps.Range;
  * @version $Revision$, $Date$
  * 
  */
-public class LiteralDataDescription implements DataDescription {
+public class LiteralInputType implements InputType {
 
     private ValueWithRef<String> dataType;
 
@@ -71,7 +71,7 @@ public class LiteralDataDescription implements DataDescription {
 
     private ValueWithRef<URI> reference;
 
-    public LiteralDataDescription( ValueWithRef<String> dataType, ValueWithRef<String> defaultUom,
+    public LiteralInputType( ValueWithRef<String> dataType, ValueWithRef<String> defaultUom,
                                    ValueWithRef[] supportedUoms, String[] allowedValues, Range[] range,
                                    boolean anyValue, ValueWithRef<URI> reference ) {
         this.dataType = dataType;

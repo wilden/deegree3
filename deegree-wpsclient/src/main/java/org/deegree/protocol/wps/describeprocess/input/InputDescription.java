@@ -63,10 +63,10 @@ public class InputDescription {
 
     private String maxOccurs;
 
-    private DataDescription dataDescription;
+    private InputType dataDescription;
 
     public InputDescription( CodeType id, LanguageString inputTitle, LanguageString inputAbstract, String minOccurs,
-                             String maxOccurs, DataDescription dataDescription ) {
+                             String maxOccurs, InputType dataDescription ) {
         this.id = id;
         this.inputTitle = inputTitle;
         this.inputAbstract = inputAbstract;
@@ -116,7 +116,7 @@ public class InputDescription {
      * 
      * @return
      */
-    public DataDescription getData() {
+    public InputType getData() {
         return dataDescription;
     }
 

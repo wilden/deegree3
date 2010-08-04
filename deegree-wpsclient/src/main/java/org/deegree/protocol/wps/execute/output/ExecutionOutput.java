@@ -46,11 +46,11 @@ import org.deegree.commons.tom.ows.CodeType;
  * 
  * @version $Revision$, $Date$
  */
-public abstract class ExecuteOutput {
+public abstract class ExecutionOutput {
 
     private CodeType id;
 
-    protected ExecuteOutput( CodeType id ) {
+    protected ExecutionOutput( CodeType id ) {
         this.id = id;
     }
 

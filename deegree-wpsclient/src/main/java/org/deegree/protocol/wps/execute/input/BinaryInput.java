@@ -33,12 +33,13 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.datatypes;
+package org.deegree.protocol.wps.execute.input;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
+import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
 
 /**
@@ -51,7 +52,7 @@ import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
  * @version $Revision$, $Date$
  * 
  */
-public class BinaryDataType implements DataType {
+public class BinaryInput extends ExecutionInput {
 
     private ComplexAttributes complexAttributes;
 
@@ -61,13 +62,15 @@ public class BinaryDataType implements DataType {
 
     private boolean isWebAccessible;
 
-    public BinaryDataType( URL url, boolean isWebAccessible, String mimeType, String encoding ) {
+    public BinaryInput( CodeType id, URL url, boolean isWebAccessible, String mimeType, String encoding ) {
+        super( id );
         this.url = url;
         this.isWebAccessible = isWebAccessible;
         this.complexAttributes = new ComplexAttributes( mimeType, encoding, null );
     }
 
-    public BinaryDataType( InputStream inputStream, String mimeType, String encoding ) {
+    public BinaryInput( CodeType id, InputStream inputStream, String mimeType, String encoding ) {
+        super( id );
         this.inputStream = inputStream;
         this.complexAttributes = new ComplexAttributes( mimeType, encoding, null );
     }
@@ -90,7 +93,6 @@ public class BinaryDataType implements DataType {
         return complexAttributes;
     }
 
-    @Override
     public URL getWebAccessibleURL() {
         return isWebAccessible ? url : null;
     }

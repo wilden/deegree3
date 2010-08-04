@@ -56,7 +56,7 @@ import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
  * 
  * @version $Revision: 25694 $, $Date: 2010-08-04 21:45:33 +0200 (Mi, 04. Aug 2010) $
  */
-public class ComplexOutput extends ExecuteOutput {
+public class ComplexOutput extends ExecutionOutput {
 
     private final ComplexAttributes complexAttribs;
 

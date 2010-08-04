@@ -46,7 +46,7 @@ import org.deegree.commons.tom.ows.CodeType;
  * 
  * @version $Revision: 25694 $, $Date: 2010-08-04 21:45:33 +0200 (Mi, 04. Aug 2010) $
  */
-public class BBoxOutput extends ExecuteOutput {
+public class BBoxOutput extends ExecutionOutput {
 
     private double[] lower;
 

@@ -52,8 +52,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Encapsulates the properties of a process offered by a WPS instance (id, title, abstract, input format, output format,
- * etc.) and provides access to a {@link ProcessExecution} context for executing it.
+ * Encapsulates the properties of a process offered by a WPS instance (id, title, abstract, input parameter types,
+ * output parameter types, etc.) and provides access to a {@link ProcessExecution} context for executing it.
  * 
  * @see WPSClient
  * @see ProcessExecution

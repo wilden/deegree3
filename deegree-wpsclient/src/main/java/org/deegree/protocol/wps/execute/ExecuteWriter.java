@@ -48,7 +48,7 @@ import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
 import org.deegree.protocol.wps.execute.input.BinaryInput;
-import org.deegree.protocol.wps.execute.input.BoundingBoxInput;
+import org.deegree.protocol.wps.execute.input.BBoxInput;
 import org.deegree.protocol.wps.execute.input.ExecutionInput;
 import org.deegree.protocol.wps.execute.input.LiteralInput;
 import org.deegree.protocol.wps.execute.input.XMLInput;
@@ -126,8 +126,8 @@ public class ExecuteWriter {
                 if ( !outputFormat.isRaw() ) {
                     writer.writeStartElement( wpsPrefix, "ResponseDocument", wpsNS );
 
-                    if ( outputFormat.isAsynch() != null ) {
-                        writer.writeAttribute( "storeExecuteResponse", String.valueOf( outputFormat.isAsynch() ) );
+                    if ( outputFormat.isAsync() != null ) {
+                        writer.writeAttribute( "storeExecuteResponse", String.valueOf( outputFormat.isAsync() ) );
                     }
                     if ( outputFormat.includesRequestInfo() != null ) {
                         writer.writeAttribute( "lineage", String.valueOf( outputFormat.includesRequestInfo() ) );
@@ -264,8 +264,8 @@ public class ExecuteWriter {
                         writer.writeCharacters( literalDataType.getValue() );
                         writer.writeEndElement();
 
-                    } else if ( dataInput instanceof BoundingBoxInput ) {
-                        BoundingBoxInput bboxInput = (BoundingBoxInput) dataInput;
+                    } else if ( dataInput instanceof BBoxInput ) {
+                        BBoxInput bboxInput = (BBoxInput) dataInput;
                         writer.writeStartElement( wpsPrefix, "BoundingBoxData", wpsNS );
                         writer.writeAttribute( "dimensions", String.valueOf( bboxInput.getDimension() ) );
                         if ( bboxInput.getCrs() != null ) {

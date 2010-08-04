@@ -66,6 +66,7 @@ import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
 import org.deegree.protocol.wps.execute.output.BBoxOutput;
 import org.deegree.protocol.wps.execute.output.ComplexOutput;
 import org.deegree.protocol.wps.execute.output.ExecutionOutput;
+import org.deegree.protocol.wps.execute.output.LiteralOutput;
 import org.deegree.services.controller.ows.OWSException;
 import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
 import org.slf4j.Logger;
@@ -230,12 +231,12 @@ public class ResponseReader {
      * @return
      * @throws XMLStreamException
      */
-    private org.deegree.protocol.wps.execute.output.LiteralOutput parseLiteralOutput( CodeType id )
+    private LiteralOutput parseLiteralOutput( CodeType id )
                             throws XMLStreamException {
         String dataType = reader.getAttributeValue( null, "dataType" );
         String uom = reader.getAttributeValue( null, "uom" );
         String value = reader.getElementText();
-        return new org.deegree.protocol.wps.execute.output.LiteralOutput( id, value, dataType, uom );
+        return new LiteralOutput( id, value, dataType, uom );
     }
 
     /**

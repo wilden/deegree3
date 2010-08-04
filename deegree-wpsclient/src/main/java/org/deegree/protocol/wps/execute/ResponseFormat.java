@@ -73,7 +73,7 @@ public class ResponseFormat {
         return rawOutput;
     }
 
-    public Boolean isAsynch() {
+    public Boolean isAsync() {
         return asynch;
     }
 

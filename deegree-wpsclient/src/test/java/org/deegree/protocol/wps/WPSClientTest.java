@@ -54,7 +54,7 @@ import org.deegree.protocol.wps.describeprocess.output.BBoxOutputType;
 import org.deegree.protocol.wps.describeprocess.output.ComplexOutputType;
 import org.deegree.protocol.wps.describeprocess.output.LiteralOutputType;
 import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
-import org.deegree.protocol.wps.execute.ExecuteOutputs;
+import org.deegree.protocol.wps.execute.ExecutionOutputs;
 import org.deegree.protocol.wps.execute.output.BBoxOutput;
 import org.deegree.protocol.wps.execute.output.ComplexOutput;
 import org.deegree.protocol.wps.execute.output.LiteralOutput;
@@ -266,7 +266,7 @@ public class WPSClientTest {
         ProcessExecution execution = proc.prepareExecution();
         execution.addXMLInput( "GMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
         execution.addOutput( "Centroid", null, null, true, null, null, null );
-        ExecuteOutputs response = execution.execute();
+        ExecutionOutputs response = execution.execute();
 
         ComplexOutput output = (ComplexOutput) response.get( 0 );
         XMLStreamReader reader = output.getAsXMLStream();
@@ -295,7 +295,7 @@ public class WPSClientTest {
         execution.addLiteralInput( "BufferDistance", null, "0.1", "double", "unity" );
         execution.addXMLInput( "GMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
         execution.addOutput( "BufferedGeometry", null, null, false, null, null, null );
-        ExecuteOutputs response = execution.execute();
+        ExecutionOutputs response = execution.execute();
         Assert.assertNotNull( response );
         // TODO test response
     }
@@ -312,7 +312,7 @@ public class WPSClientTest {
         execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
         execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
         execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), "image/png", null );
-        ExecuteOutputs outputs = execution.execute();
+        ExecutionOutputs outputs = execution.execute();
 
         LiteralOutput out1 = (LiteralOutput) outputs.get( 0 );
         Assert.assertEquals( "0", out1.getValue() );

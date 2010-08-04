@@ -53,14 +53,14 @@ import org.deegree.services.wps.output.BoundingBoxOutput;
  * 
  * @version $Revision$, $Date$
  */
-public class ExecuteOutputs {
+public class ExecutionOutputs {
 
     private final Map<CodeType, ExecutionOutput> paramIdToOutput = new LinkedHashMap<CodeType, ExecutionOutput>();
 
     /**
      * @param outputs
      */
-    public ExecuteOutputs( ExecutionOutput[] outputs ) {
+    public ExecutionOutputs( ExecutionOutput[] outputs ) {
         for ( ExecutionOutput output : outputs ) {
             paramIdToOutput.put( output.getId(), output );
         }

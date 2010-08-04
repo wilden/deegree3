@@ -45,7 +45,7 @@ import org.deegree.commons.tom.ows.CodeType;
  * 
  * @version $Revision$, $Date$
  */
-public class BoundingBoxInput extends ExecutionInput {
+public class BBoxInput extends ExecutionInput {
 
     private double[] lower;
 
@@ -55,7 +55,7 @@ public class BoundingBoxInput extends ExecutionInput {
 
     private int dim;
 
-    public BoundingBoxInput( CodeType id, double[] lower, double[] upper, String crs ) {
+    public BBoxInput( CodeType id, double[] lower, double[] upper, String crs ) {
         super (id);
         this.lower = lower;
         this.upper = upper;

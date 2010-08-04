@@ -55,7 +55,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.protocol.wps.execute.ExceptionReport;
-import org.deegree.protocol.wps.execute.ExecuteOutputs;
+import org.deegree.protocol.wps.execute.ExecutionOutputs;
 import org.deegree.protocol.wps.execute.ExecuteWriter;
 import org.deegree.protocol.wps.execute.ExecutionResults;
 import org.deegree.protocol.wps.execute.ExecutionStatus;
@@ -63,7 +63,7 @@ import org.deegree.protocol.wps.execute.OutputDefinition;
 import org.deegree.protocol.wps.execute.ResponseFormat;
 import org.deegree.protocol.wps.execute.ResponseReader;
 import org.deegree.protocol.wps.execute.input.BinaryInput;
-import org.deegree.protocol.wps.execute.input.BoundingBoxInput;
+import org.deegree.protocol.wps.execute.input.BBoxInput;
 import org.deegree.protocol.wps.execute.input.ExecutionInput;
 import org.deegree.protocol.wps.execute.input.LiteralInput;
 import org.deegree.protocol.wps.execute.input.XMLInput;
@@ -104,7 +104,7 @@ public class ProcessExecution {
 
     private ExecutionStatus status;
 
-    private ExecuteOutputs processOutputs;
+    private ExecutionOutputs processOutputs;
 
     /**
      * Creates a new {@link ProcessExecution} instance.
@@ -157,7 +157,7 @@ public class ProcessExecution {
      *            description applies)
      */
     public void addBBoxInput( String id, String idCodeSpace, double[] lower, double[] upper, String crs ) {
-        inputs.add( new BoundingBoxInput( new CodeType( id, idCodeSpace ), lower, upper, crs ) );
+        inputs.add( new BBoxInput( new CodeType( id, idCodeSpace ), lower, upper, crs ) );
     }
 
     /**
@@ -319,7 +319,7 @@ public class ProcessExecution {
      *             if the server replied with an exception
      * @throws XMLStreamException
      */
-    public ExecuteOutputs execute()
+    public ExecutionOutputs execute()
                             throws OWSException, IOException, XMLStreamException {
 
         responseFormat = new ResponseFormat( rawOutput, false, false, false, outputDefs );
@@ -368,7 +368,7 @@ public class ProcessExecution {
         reader.close();
 
         status = response.getStatus();
-        processOutputs = new ExecuteOutputs( response.getOutputs() );
+        processOutputs = new ExecutionOutputs( response.getOutputs() );
 
         return processOutputs;
     }
@@ -384,7 +384,7 @@ public class ProcessExecution {
      * @throws OWSException
      *             if the server replied with an exception
      */
-    public void startAsync()
+    public void executeAsync()
                             throws IOException, OWSException {
         throw new UnsupportedOperationException( "Async execution is not implemented yet." );
     }
@@ -395,7 +395,7 @@ public class ProcessExecution {
      * @return the outputs of the process execution, or <code>null</code> if the current state is not
      *         {@link ExecutionState#SUCCEEDED}
      */
-    public ExecuteOutputs getOutputs() {
+    public ExecutionOutputs getOutputs() {
         return processOutputs;
     }
 

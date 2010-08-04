@@ -72,23 +72,24 @@ import org.slf4j.LoggerFactory;
  * <h4>Accessing service metadata</h4> The method {@link #getMetadata()} allows to access the metadata announced by the
  * service, such as title, abstract, provider etc.
  * 
- * <h4>Getting process information</h4> The method {@link #getProcesses()} allows to find out about all processes
+ * <h4>Getting process information</h4> The method {@link #getProcesses()} allows to find out about the processes
  * offered by the service. Additionally (if one knows the identifier of a process beforehand, one can use
- * {@link #getProcess(String, String)} to retrieve a specific process}. The {@link Process} class allows to execute a
- * process and offers methods to access detail information such as title, abstract, input parameters and output
- * parameters:
+ * {@link #getProcess(String, String)} to retrieve a specific process). The {@link Process} class allows to execute a
+ * process and offers methods to access detail information such as title, abstract, input parameter types and output
+ * parameters types:
  * 
  * <pre>
  * ...
  *   Process buffer = wpsClient.getProcess ("Buffer", null);
- *   System.out.println ("Buffer process abstract: " + buffer.getAbstract());
- *   System.out.println ("Number of input parameters: " + buffer.getInputsTypes().length);
+ *   System.out.println ("Abstract for Buffer process: " + buffer.getAbstract());
+ *   System.out.println ("Number of input parameters: " + buffer.getInputTypes().length);
+ *   System.out.println ("Number of output parameters: " + buffer.getOutputTypes().length);
  * ...
  * </pre>
  * 
  * <h4>Executing a process</h4> When executing a request, the method {@link Process#prepareExecution()} must be used to
- * create a {@link ProcessExecution} context first. This context provides methods for providing the input parameters,
- * controlling the desired output parameters and performing the execution.
+ * create a {@link ProcessExecution} context first. This context provides methods for setting the input parameters,
+ * controlling the desired output parameter behaviour and invoking the execution.
  * 
  * <pre>
  * ...
@@ -102,15 +103,15 @@ import org.slf4j.LoggerFactory;
  *   execution.addXMLInput( "GMLInput", null, gmlFileUrl, "text/xml", null, null );
  *   
  *   // perform execution
- *   ExecuteOutputs outputs = execution.execute();
+ *   ExecutionOutputs outputs = execution.execute();
  *   
  *   // access individual output values
- *   XMLOutput bufferedGeometryXML = outputs.getXML ("BufferedGeometry", null);
+ *   ComplexOutput bufferedGeometry = outputs.getXML ("BufferedGeometry", null);
  *   XMLStreamReader xmlStream = bufferedGeometry.getAsXMLStream();
  * ...
  * </pre>
  * 
- * <h4>Executing a process asynchronously</h4> TODO
+ * <h4>Executing a process asynchronously</h4>
  * 
  * <pre>
  * ...
@@ -123,12 +124,20 @@ import org.slf4j.LoggerFactory;
  *   execution.addLiteralInput( "BufferDistance", null, "0.1", "double", "unity" );
  *   execution.addXMLInput( "GMLInput", null, gmlFileUrl, "text/xml", null, null );
  *   
- *   // perform execution
- *   ExecuteOutputs outputs = execution.execute();
+ *   // invoke asynchronous execution (returns immediately)
+ *   execution.executeAsync();
  *   
- *   // access individual output values
- *   XMLOutput bufferedGeometryXML = outputs.getXML ("BufferedGeometry", null);
- *   XMLStreamReader xmlStream = bufferedGeometry.getAsXMLStream();
+ *   // do other stuff
+ *   ...
+ *   
+ *   // check execution state
+ *   if (execution.getState() == SUCCEEDED) {
+ *       ExecutionOutputs outputs = execution.getOutputs();
+ *       ...
+ *       // access the outputs as in synchronous case
+ *       ComplexOutput bufferedGeometry = outputs.getXML ("BufferedGeometry", null);
+ *       XMLStreamReader xmlStream = bufferedGeometry.getAsXMLStream();
+ *   }
  * ...
  * </pre>
  * 
@@ -137,16 +146,18 @@ import org.slf4j.LoggerFactory;
  * <li>Supported protocol versions: WPS 1.0.0</li>
  * <li>The implementation is thread-safe, a single {@link WPSClient} instance can be shared among multiple threads.</li>
  * </ul>
- * TODOs
+ *
+ * <h4>TODOs</h4>
  * <ul>
- * <li>Implement asynchronous execution.</li>
- * <li>Implement input parameter passing by reference.</li>
- * <li>Implement input parameter passing by POST-references.</li>
- * <li>Handle exceptions reports that are generated for <code>GetCapabilities</code> and <code>DescribeProcess</code>
+ * <li>Finish implementation of asynchronous execution.</li>
+ * <li>Finish implementation of input parameter passing by reference.</li>
+ * <li>Implement input parameter passing for POST-references.</li>
+ * <li>Cope with exceptions reports that are returned for <code>GetCapabilities</code> and <code>DescribeProcess</code>
  * requests.</li>
  * <li>Clean up exception handling.</li>
  * <li>Enable/document a way to set connection parameters (timeout, proxy settings, ...)</li>
- * <li>Support for metadata in multiple languages (as mandated by the WPS spec).</li>
+ * <li>Support metadata in multiple languages (as mandated by the WPS spec).</li>
+ * <li>Check validity (cardinality, order) of input and output parameters in {@link ProcessExecution}.</li>
  * </ul>
  * 
  * @see Process

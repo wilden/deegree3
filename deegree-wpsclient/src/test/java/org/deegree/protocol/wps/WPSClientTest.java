@@ -58,6 +58,7 @@ import org.deegree.protocol.wps.execute.ExecuteResponse;
 import org.deegree.protocol.wps.execute.datatypes.BoundingBoxDataType;
 import org.deegree.protocol.wps.execute.datatypes.LiteralDataType;
 import org.deegree.protocol.wps.execute.datatypes.XMLDataType;
+import org.deegree.protocol.wps.execute.output.ExecuteOutput;
 import org.deegree.services.controller.ows.OWSException;
 import org.junit.Assert;
 import org.junit.Before;
@@ -282,7 +283,6 @@ public class WPSClientTest {
         execution.addXMLInput( "GMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
         execution.setRequestedOutput( "BufferedGeometry", null, null, false, null, null, null );
         ExecuteResponse response = execution.execute();
-
         Assert.assertNotNull( response );
         // TODO test response
     }

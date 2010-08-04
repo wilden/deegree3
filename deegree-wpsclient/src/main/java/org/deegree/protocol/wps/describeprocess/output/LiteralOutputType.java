@@ -35,6 +35,8 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.describeprocess.output;
 
+import org.deegree.protocol.wps.describeprocess.ValueWithRef;
+
 /**
  * The <code></code> class TODO add class documentation here.
  * 
@@ -45,31 +47,43 @@ package org.deegree.protocol.wps.describeprocess.output;
  * @version $Revision$, $Date$
  * 
  */
-public class BBoxOutput implements GenericOutput {
+public class LiteralOutputType implements OutputType {
 
-    private String defaultCrs;
+    private ValueWithRef<String> dataType;
 
-    private String[] supportedCrs;
+    private ValueWithRef<String> defaultUom;
 
-    public BBoxOutput( String defaultCrs, String[] supportedCrs ) {
-        this.defaultCrs = defaultCrs;
-        this.supportedCrs = supportedCrs;
+    private ValueWithRef<String>[] supportedUoms;
+
+    public LiteralOutputType( ValueWithRef<String> dataType, ValueWithRef<String> defaultUom,
+                          ValueWithRef<String>[] supportedUoms ) {
+        this.dataType = dataType;
+        this.defaultUom = defaultUom;
+        this.supportedUoms = supportedUoms;
     }
 
     /**
      * 
-     * @return the default CRS used
+     * @return the data type as {@link ValueWithRef} for this literal
      */
-    public String getDefaultCrs() {
-        return defaultCrs;
+    public ValueWithRef<String> getDataType() {
+        return dataType;
     }
 
     /**
      * 
-     * @return the supported CRSs
+     * @return the default unit-of-measure used, as {@link ValueWithRef}
      */
-    public String[] getSupportedCrs() {
-        return supportedCrs;
+    public ValueWithRef<String> getDefaultUom() {
+        return defaultUom;
+    }
+
+    /**
+     * 
+     * @return the supported units-of-measure used, as an array of {@link ValueWithRef}
+     */
+    public ValueWithRef<String>[] getSupportedUoms() {
+        return supportedUoms;
     }
 
 }

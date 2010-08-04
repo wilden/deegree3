@@ -33,33 +33,18 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.output;
-
-import org.deegree.commons.tom.ows.CodeType;
+package org.deegree.protocol.wps.describeprocess.output;
 
 /**
- * Abstract base class for output parameters returned by a process execution.
+ * The <code></code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
+ * 
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
+ * 
  */
-public abstract class ExecuteOutput {
-
-    private CodeType id;
-
-    protected ExecuteOutput( CodeType id ) {
-        this.id = id;
-    }
-
-    /**
-     * Returns the parameter identifier.
-     * 
-     * @return the parameter identifier, never <code>null</code>
-     */
-    public CodeType getId() {
-        return id;
-    }
+public interface OutputType {
+    // marker interface
 }

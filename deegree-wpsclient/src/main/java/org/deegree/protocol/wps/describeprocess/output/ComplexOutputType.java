@@ -35,6 +35,8 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.describeprocess.output;
 
+import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
+
 /**
  * The <code></code> class TODO add class documentation here.
  * 
@@ -45,6 +47,31 @@ package org.deegree.protocol.wps.describeprocess.output;
  * @version $Revision$, $Date$
  * 
  */
-public interface GenericOutput {
-    // marker interface
+public class ComplexOutputType implements OutputType {
+
+    private ComplexAttributes defaultFormat;
+
+    private ComplexAttributes[] supportedFormats;
+
+    public ComplexOutputType( ComplexAttributes defaultFormat, ComplexAttributes[] supportedFormats ) {
+        this.defaultFormat = defaultFormat;
+        this.supportedFormats = supportedFormats;
+    }
+
+    /**
+     * 
+     * @return the default {@link ComplexAttributes} used
+     */
+    public ComplexAttributes getDefaultFormat() {
+        return defaultFormat;
+    }
+
+    /**
+     * 
+     * @return the supported array of {@link ComplexAttributes} used
+     */
+    public ComplexAttributes[] getSupportedFormats() {
+        return supportedFormats;
+    }
+
 }

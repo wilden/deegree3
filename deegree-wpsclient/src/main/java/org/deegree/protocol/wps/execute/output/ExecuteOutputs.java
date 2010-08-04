@@ -74,6 +74,13 @@ public class ExecuteOutputs {
     }
 
     /**
+     * @return
+     */
+    public ExecuteOutput get( int i ) {
+        return getAll()[i];
+    }
+
+    /**
      * @param id
      * @param idCodeSpace
      * @return

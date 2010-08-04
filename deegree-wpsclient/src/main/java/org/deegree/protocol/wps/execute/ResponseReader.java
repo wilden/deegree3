@@ -38,10 +38,7 @@ package org.deegree.protocol.wps.execute;
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -62,20 +59,14 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.codec.binary.Base64;
 import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.commons.tom.ows.LanguageString;
+import org.deegree.commons.utils.io.StreamBufferStore;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.stax.StAXParsingHelper;
 import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
-import org.deegree.protocol.wps.execute.datatypes.BinaryDataType;
-import org.deegree.protocol.wps.execute.datatypes.BoundingBoxDataType;
-import org.deegree.protocol.wps.execute.datatypes.DataType;
-import org.deegree.protocol.wps.execute.datatypes.LiteralDataType;
-import org.deegree.protocol.wps.execute.datatypes.XMLDataType;
-import org.deegree.protocol.wps.execute.input.ExecuteInput;
-import org.deegree.protocol.wps.execute.input.InputReference;
+import org.deegree.protocol.wps.execute.output.BBoxOutput;
+import org.deegree.protocol.wps.execute.output.ComplexOutput;
 import org.deegree.protocol.wps.execute.output.ExecuteOutput;
 import org.deegree.protocol.wps.execute.output.ExecutionStatus;
-import org.deegree.protocol.wps.execute.output.OutputDefinition;
 import org.deegree.services.controller.ows.OWSException;
 import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
 import org.slf4j.Logger;
@@ -114,7 +105,7 @@ public class ResponseReader {
      */
     public ExecutionResults parse100()
                             throws OWSException {
-        CodeType processId = null;
+
         ExecutionStatus status = null;
         List<ExecuteOutput> outputs = null;
 
@@ -162,6 +153,7 @@ public class ResponseReader {
      */
     private List<ExecuteOutput> parseOutputs()
                             throws XMLStreamException {
+
         List<ExecuteOutput> outputs = new ArrayList<ExecuteOutput>();
         try {
             StAXParsingHelper.nextElement( reader );
@@ -169,8 +161,6 @@ public class ResponseReader {
                 ExecuteOutput output = null;
                 StAXParsingHelper.nextElement( reader );
                 CodeType id = parseIdentifier();
-
-                DataType data = null;
 
                 int eventType;
                 String localName = null;
@@ -186,19 +176,12 @@ public class ResponseReader {
                     String href = reader.getAttributeValue( null, "href" );
                     ComplexAttributes attribs = parseComplexAttributes();
                     String mimeType = attribs.getMimeType();
-
-                    if ( mimeType != null && mimeType.startsWith( "text/xml" ) ) {
-                        data = new XMLDataType( new URL( href ), true, mimeType, attribs.getEncoding(),
+                    output = new ComplexOutput( id, new URL( href ), mimeType, attribs.getEncoding(),
                                                 attribs.getSchema() );
-                    } else {
-                        data = new BinaryDataType( new URL( href ), true, mimeType, attribs.getEncoding() );
-                    }
-                    output = new ExecuteOutput( id, data );
                     StAXParsingHelper.nextElement( reader );
                 }
                 if ( reader.getName().getLocalPart().equals( "Data" ) ) {
-                    data = parseDataType();
-                    output = new ExecuteOutput( id, data );
+                    output = parseOutput( id );
                     StAXParsingHelper.nextElement( reader );
                 }
 
@@ -215,104 +198,6 @@ public class ResponseReader {
 
     /**
      * <ul>
-     * <li>Precondition: cursor must point at the <code>START_ELEMENT</code> event (&lt;OutputDefinitions&gt;)</li>
-     * <li>Postcondition: cursor points at the corresponding <code>END_ELEMENT</code> event (&lt;/OutputDefinitions&gt;)
-     * </li>
-     * </ul>
-     * 
-     * @return
-     * @throws XMLStreamException
-     */
-    private List<OutputDefinition> parseOutputDefinition()
-                            throws XMLStreamException {
-        List<OutputDefinition> outputDefs = new ArrayList<OutputDefinition>();
-        StAXParsingHelper.nextElement( reader ); // <Output>
-        while ( reader.getName().getLocalPart().equals( "Output" ) ) {
-            ComplexAttributes complexAttribs = parseComplexAttributes();
-            String uom = reader.getAttributeValue( null, "uom" );
-
-            StAXParsingHelper.nextElement( reader );
-            LanguageString outputTitle = null;
-            if ( "Title".equals( reader.getName().getLocalPart() ) ) {
-                String lang = reader.getAttributeValue( xmlNS, "lang" );
-                outputTitle = new LanguageString( reader.getElementText(), lang );
-                StAXParsingHelper.nextElement( reader );
-            }
-            LanguageString outputAbstract = null;
-            if ( "Abstract".equals( reader.getName().getLocalPart() ) ) {
-                String lang = reader.getAttributeValue( xmlNS, "lang" );
-                outputAbstract = new LanguageString( reader.getElementText(), lang );
-                StAXParsingHelper.nextElement( reader );
-            }
-
-            boolean asRef = false;
-            String asRefStr = reader.getAttributeValue( null, "asRef" );
-            if ( asRefStr != null ) {
-                asRef = Boolean.valueOf( asRefStr );
-            }
-
-            StAXParsingHelper.nextElement( reader );
-            CodeType id = parseIdentifier();
-            outputDefs.add( new OutputDefinition( id, uom, asRef, complexAttribs.getMimeType(),
-                                                  complexAttribs.getEncoding(), complexAttribs.getSchema() ) );
-
-            StAXParsingHelper.nextElement( reader );
-            int state = reader.getEventType();
-            while ( state != XMLStreamConstants.END_ELEMENT || !reader.getName().getLocalPart().equals( "Output" ) ) {
-                StAXParsingHelper.nextElement( reader );
-                state = reader.getEventType();
-            }
-        }
-        StAXParsingHelper.nextElement( reader );
-        return outputDefs;
-    }
-
-    /**
-     * <ul>
-     * <li>Precondition: cursor must point at the <code>START_ELEMENT</code> event (&lt;wps:DataInputs&gt;)</li>
-     * <li>Postcondition: cursor points at the corresponding <code>END_ELEMENT</code> event (&lt;/wps:DataInputs&gt;)</li>
-     * </ul>
-     * 
-     * @return
-     * @throws XMLStreamException
-     */
-    private List<ExecuteInput> parseDataInputs()
-                            throws XMLStreamException {
-        List<ExecuteInput> inputs = new ArrayList<ExecuteInput>();
-        InputReference inputRef = null;
-        DataType dataType = null;
-        StAXParsingHelper.nextElement( reader ); // "Input"
-
-        while ( "Input".equals( reader.getName().getLocalPart() ) ) {
-
-            ExecuteInput input = null;
-            StAXParsingHelper.nextElement( reader ); // "Identifier"
-            CodeType id = parseIdentifier();
-            while ( !"Reference".equals( reader.getName().getLocalPart() )
-                    && !"Data".equals( reader.getName().getLocalPart() ) ) {
-                StAXParsingHelper.nextElement( reader );
-            }
-
-            if ( "Reference".equals( reader.getName().getLocalPart() ) ) {
-                inputRef = parseInputRef();
-                input = new ExecuteInput( id, inputRef );
-                StAXParsingHelper.nextElement( reader );
-            }
-
-            if ( "Data".equals( reader.getName().getLocalPart() ) ) {
-                dataType = parseDataType();
-                input = new ExecuteInput( id, dataType );
-                StAXParsingHelper.nextElement( reader );
-            }
-            inputs.add( input );
-            StAXParsingHelper.nextElement( reader ); // </Input>
-            StAXParsingHelper.nextElement( reader );
-        }
-        return inputs;
-    }
-
-    /**
-     * <ul>
      * <li>Precondition: cursor must point at the <code>START_ELEMENT</code> event of either (&lt;wps:ComplexData&gt;),
      * (&lt;wps:LiteralData&gt;) or (&lt;wps:BoundingBoxData&gt;)</li>
      * <li>Postcondition: cursor points at the corresponding <code>END_ELEMENT</code> event of either
@@ -322,105 +207,37 @@ public class ResponseReader {
      * @return
      * @throws XMLStreamException
      */
-    private DataType parseDataType()
+    private ExecuteOutput parseOutput( CodeType id )
                             throws XMLStreamException {
-        DataType dataType = null;
+        ExecuteOutput dataType = null;
         StAXParsingHelper.nextElement( reader );
         String localName = reader.getName().getLocalPart();
         if ( "ComplexData".equals( localName ) ) {
-            dataType = parseComplexData();
+            dataType = parseComplexOutput( id );
         } else if ( "LiteralData".equals( localName ) ) {
-            dataType = parseLiteralData();
+            dataType = parseLiteralOutput( id );
         } else if ( "BoundingBoxData".equals( localName ) ) {
-            dataType = parseBBoxData();
+            dataType = parseBBoxOutput( id );
         }
         return dataType;
     }
 
     /**
      * <ul>
-     * <li>Precondition: cursor must point at the <code>START_ELEMENT</code> event (&lt;wps:ComplexData&gt;)</li>
-     * <li>Postcondition: cursor points at the corresponding <code>END_ELEMENT</code> event (&lt;/wps:ComplexData&gt;)</li>
+     * <li>Precondition: cursor must point at the <code>START_ELEMENT</code> event (&lt;wps:LiteralData&gt;)</li>
+     * <li>Postcondition: cursor points at the corresponding <code>END_ELEMENT</code> event (&lt;/wps:LiteralData&gt;)</li>
      * </ul>
      * 
      * @return
      * @throws XMLStreamException
-     * @throws IOException
      */
-    private DataType parseComplexData()
+    private org.deegree.protocol.wps.execute.output.LiteralOutput parseLiteralOutput( CodeType id )
                             throws XMLStreamException {
-        ComplexAttributes attribs = parseComplexAttributes();
-
-        BinaryDataType data = null;
-        File tmpFile = null;
-        try {
-            if ( attribs.getMimeType().startsWith( "text/xml" ) || attribs.getMimeType().startsWith( "application/xml" ) ) {
-                tmpFile = File.createTempFile( "output", ".xml" );
-                OutputStream sink = new FileOutputStream( tmpFile );
-                XMLOutputFactory fac = XMLOutputFactory.newInstance();
-                fac.setProperty( XMLOutputFactory.IS_REPAIRING_NAMESPACES, true );
-                XMLStreamWriter xmlWriter = fac.createXMLStreamWriter( sink, "UTF-8" );
-
-                xmlWriter.writeStartDocument( "UTF-8", "1.0" );
-                XMLAdapter.writeElement( xmlWriter, reader );
-                xmlWriter.writeEndDocument();
-                xmlWriter.close();
-                return new XMLDataType( tmpFile.toURI().toURL(), false, attribs.getMimeType(), attribs.getEncoding(),
-                                        attribs.getSchema() );
-            }
-
-            tmpFile = File.createTempFile( "output", ".bin" );
-            OutputStream sink = new FileOutputStream( tmpFile );
-
-            if ( "base64".equals( attribs.getEncoding() ) ) {
-                String base64String = reader.getElementText();
-                byte[] bytes = Base64.decodeBase64( base64String );
-                sink.write( bytes );
-            } else {
-                LOG.warn( "The encoding of binary data (found at response location "
-                          + reader.getLocation()
-                          + ") is not base64. Currently only from this format the decoding can be performed. Skipping the data." );
-            }
-            sink.close();
-
-            data = new BinaryDataType( tmpFile.toURI().toURL(), false, attribs.getMimeType(), attribs.getEncoding() );
-            LOG.info( "Wrote decoded binary data into " + tmpFile.toString() );
-        } catch ( IOException e ) {
-            LOG.error( e.getMessage() );
-        }
-
-        return data;
+        String dataType = reader.getAttributeValue( null, "dataType" );
+        String uom = reader.getAttributeValue( null, "uom" );
+        String value = reader.getElementText();
+        return new org.deegree.protocol.wps.execute.output.LiteralOutput( id, value, dataType, uom );
     }
-
-    class XMLDataNamespaceContext implements NamespaceContext {
-
-        private Map<String, String> nsMap = new HashMap<String, String>();
-
-        public void addNamespace( String prefix, String ns ) {
-            nsMap.put( prefix, ns );
-        }
-
-        @Override
-        public String getNamespaceURI( String prefix ) {
-            return nsMap.get( prefix );
-        }
-
-        @Override
-        public String getPrefix( String ns ) {
-            Set<Entry<String, String>> entrySet = nsMap.entrySet();
-            for ( Entry<String, String> entry : entrySet ) {
-                if ( entry.getValue().equals( ns ) ) {
-                    return entry.getKey();
-                }
-            }
-            return null;
-        }
-
-        @Override
-        public Iterator getPrefixes( String arg0 ) {
-            return nsMap.entrySet().iterator();
-        }
-    };
 
     /**
      * <ul>
@@ -432,7 +249,7 @@ public class ResponseReader {
      * @return
      * @throws XMLStreamException
      */
-    private BoundingBoxDataType parseBBoxData()
+    private BBoxOutput parseBBoxOutput( CodeType id )
                             throws XMLStreamException {
 
         String crs = reader.getAttributeValue( null, "crs" );
@@ -451,63 +268,52 @@ public class ResponseReader {
             upper[i] = Double.parseDouble( coordStr[i] );
         }
         StAXParsingHelper.nextElement( reader );
-        return new BoundingBoxDataType( lower, upper, crs );
+        return new BBoxOutput( id, lower, upper, crs );
     }
 
     /**
      * <ul>
-     * <li>Precondition: cursor must point at the <code>START_ELEMENT</code> event (&lt;wps:LiteralData&gt;)</li>
-     * <li>Postcondition: cursor points at the corresponding <code>END_ELEMENT</code> event (&lt;/wps:LiteralData&gt;)</li>
+     * <li>Precondition: cursor must point at the <code>START_ELEMENT</code> event (&lt;wps:ComplexData&gt;)</li>
+     * <li>Postcondition: cursor points at the corresponding <code>END_ELEMENT</code> event (&lt;/wps:ComplexData&gt;)</li>
      * </ul>
      * 
      * @return
      * @throws XMLStreamException
+     * @throws IOException
      */
-    private LiteralDataType parseLiteralData()
+    private ExecuteOutput parseComplexOutput( CodeType id )
                             throws XMLStreamException {
-        String dataType = reader.getAttributeValue( null, "dataType" );
-        String uom = reader.getAttributeValue( null, "uom" );
-        String value = reader.getElementText();
-        return new LiteralDataType( value, dataType, uom );
-    }
 
-    /**
-     * @return
-     * @throws XMLStreamException
-     */
-    private InputReference parseInputRef()
-                            throws XMLStreamException {
-        Map<String, String> headers = new HashMap<String, String>();
-        String body = null;
-        String bodyXlink = null;
-        String xlink;
-        String method = "GET";
-        ComplexAttributes complexAttribs = null;
+        ComplexAttributes attribs = parseComplexAttributes();
 
-        xlink = reader.getAttributeValue( xlinkNS, "href" );
-        method = reader.getAttributeValue( null, "method" );
-        complexAttribs = parseComplexAttributes();
+        StreamBufferStore tmpSink = new StreamBufferStore();
+        try {
+            if ( attribs.getMimeType().startsWith( "text/xml" ) || attribs.getMimeType().startsWith( "application/xml" ) ) {
+                XMLOutputFactory fac = XMLOutputFactory.newInstance();
+                fac.setProperty( XMLOutputFactory.IS_REPAIRING_NAMESPACES, true );
+                XMLStreamWriter xmlWriter = fac.createXMLStreamWriter( tmpSink, "UTF-8" );
 
-        StAXParsingHelper.nextElement( reader );
-        while ( "Header".equals( reader.getName().getLocalPart() ) ) {
-            String key = reader.getAttributeValue( null, "key" );
-            String value = reader.getAttributeValue( null, "value" );
-            headers.put( key, value );
-            StAXParsingHelper.nextElement( reader ); // </Header>
-            StAXParsingHelper.nextElement( reader );
+                xmlWriter.writeStartDocument( "UTF-8", "1.0" );
+                XMLAdapter.writeElement( xmlWriter, reader );
+                xmlWriter.writeEndDocument();
+                xmlWriter.close();
+            } else {
+                if ( "base64".equals( attribs.getEncoding() ) ) {
+                    String base64String = reader.getElementText();
+                    byte[] bytes = Base64.decodeBase64( base64String );
+                    tmpSink.write( bytes );
+                } else {
+                    LOG.warn( "The encoding of binary data (found at response location "
+                              + reader.getLocation()
+                              + ") is not base64. Currently only from this format the decoding can be performed. Skipping the data." );
+                }
+            }
+            tmpSink.close();
+        } catch ( IOException e ) {
+            LOG.error( e.getMessage() );
         }
 
-        if ( "Body".equals( reader.getName().getLocalPart() ) ) {
-            body = reader.getElementText();
-            StAXParsingHelper.nextElement( reader );
-        }
-
-        if ( "BodyReference".equals( reader.getName().getLocalPart() ) ) {
-            bodyXlink = reader.getAttributeValue( xlinkNS, "href" );
-            body = reader.getElementText();
-            StAXParsingHelper.nextElement( reader );
-        }
-        return new InputReference( headers, body, bodyXlink, xlink, method );
+        return new ComplexOutput( id, tmpSink, attribs.getMimeType(), attribs.getEncoding(), attribs.getEncoding() );
     }
 
     /**
@@ -518,6 +324,22 @@ public class ResponseReader {
         String encoding = reader.getAttributeValue( null, "encoding" );
         String schema = reader.getAttributeValue( null, "schema" );
         return new ComplexAttributes( mimeType, encoding, schema );
+    }
+
+    /**
+     * <ul>
+     * <li>Precondition: cursor must point at the <code>START_ELEMENT</code> event (&lt;wps:Identifier&gt;)</li>
+     * <li>Postcondition: cursor points at the corresponding <code>END_ELEMENT</code> event (&lt;/wps:Identifier&gt;)</li>
+     * </ul>
+     * 
+     * @return
+     * @throws XMLStreamException
+     */
+    private CodeType parseIdentifier()
+                            throws XMLStreamException {
+        String codeSpace = reader.getAttributeValue( null, "codeSpace" );
+        String code = reader.getElementText();
+        return new CodeType( code, codeSpace );
     }
 
     /**
@@ -596,37 +418,33 @@ public class ResponseReader {
         return new ExceptionReport( message, code, locator );
     }
 
-    /**
-     * <ul>
-     * <li>Precondition: cursor must point at the <code>START_ELEMENT</code> event (&lt;wps:Process&gt;)</li>
-     * <li>Postcondition: cursor points at the corresponding <code>END_ELEMENT</code> event (&lt;/wps:Process&gt;)</li>
-     * </ul>
-     * 
-     * @return
-     * @throws XMLStreamException
-     */
-    private CodeType parseProcess()
-                            throws XMLStreamException {
-        CodeType id = null;
-        StAXParsingHelper.nextElement( reader );
-        id = parseIdentifier();
-        int state = reader.next();
-        return id; // TODO maybe create a process bean and return it
-    }
+    class XMLDataNamespaceContext implements NamespaceContext {
 
-    /**
-     * <ul>
-     * <li>Precondition: cursor must point at the <code>START_ELEMENT</code> event (&lt;wps:Identifier&gt;)</li>
-     * <li>Postcondition: cursor points at the corresponding <code>END_ELEMENT</code> event (&lt;/wps:Identifier&gt;)</li>
-     * </ul>
-     * 
-     * @return
-     * @throws XMLStreamException
-     */
-    private CodeType parseIdentifier()
-                            throws XMLStreamException {
-        String codeSpace = reader.getAttributeValue( null, "codeSpace" );
-        String code = reader.getElementText();
-        return new CodeType( code, codeSpace );
-    }
+        private Map<String, String> nsMap = new HashMap<String, String>();
+
+        public void addNamespace( String prefix, String ns ) {
+            nsMap.put( prefix, ns );
+        }
+
+        @Override
+        public String getNamespaceURI( String prefix ) {
+            return nsMap.get( prefix );
+        }
+
+        @Override
+        public String getPrefix( String ns ) {
+            Set<Entry<String, String>> entrySet = nsMap.entrySet();
+            for ( Entry<String, String> entry : entrySet ) {
+                if ( entry.getValue().equals( ns ) ) {
+                    return entry.getKey();
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public Iterator getPrefixes( String arg0 ) {
+            return nsMap.entrySet().iterator();
+        }
+    };
 }

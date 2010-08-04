@@ -58,10 +58,10 @@ public class OutputDescription {
 
     // metadata
 
-    private GenericOutput outputData;
+    private OutputType outputData;
 
     public OutputDescription( CodeType id, LanguageString outputTitle, LanguageString outputAbstract,
-                              GenericOutput outputData ) {
+                              OutputType outputData ) {
         this.id = id;
         this.outputTitle = outputTitle;
         this.outputAbstract = outputAbstract;
@@ -88,7 +88,7 @@ public class OutputDescription {
      * 
      * @return output data formats belonging to the inquired process
      */
-    public GenericOutput getOutputData() {
+    public OutputType getOutputData() {
         return outputData;
     }
 }

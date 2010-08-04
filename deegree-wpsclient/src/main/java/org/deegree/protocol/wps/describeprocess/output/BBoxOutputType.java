@@ -33,33 +33,43 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.output;
-
-import org.deegree.commons.tom.ows.CodeType;
+package org.deegree.protocol.wps.describeprocess.output;
 
 /**
- * Abstract base class for output parameters returned by a process execution.
+ * The <code></code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
+ * 
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
+ * 
  */
-public abstract class ExecuteOutput {
+public class BBoxOutputType implements OutputType {
 
-    private CodeType id;
+    private String defaultCrs;
 
-    protected ExecuteOutput( CodeType id ) {
-        this.id = id;
+    private String[] supportedCrs;
+
+    public BBoxOutputType( String defaultCrs, String[] supportedCrs ) {
+        this.defaultCrs = defaultCrs;
+        this.supportedCrs = supportedCrs;
     }
 
     /**
-     * Returns the parameter identifier.
      * 
-     * @return the parameter identifier, never <code>null</code>
+     * @return the default CRS used
      */
-    public CodeType getId() {
-        return id;
+    public String getDefaultCrs() {
+        return defaultCrs;
     }
+
+    /**
+     * 
+     * @return the supported CRSs
+     */
+    public String[] getSupportedCrs() {
+        return supportedCrs;
+    }
+
 }

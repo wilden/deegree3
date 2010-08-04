@@ -1,4 +1,4 @@
-//$HeadURL$
+//$HeadURL: svn+ssh://mschneider@svn.wald.intevation.org/deegree/deegree3/branches/aionita/deegree-wpsclient/src/main/java/org/deegree/protocol/wps/execute/output/ExecuteOutput.java $
 /*----------------------------------------------------------------------------
  This file is part of deegree, http://deegree.org/
  Copyright (C) 2001-2009 by:
@@ -33,45 +33,55 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.describeprocess.output;
+package org.deegree.protocol.wps.execute.output;
 
-import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
+import org.deegree.commons.tom.ows.CodeType;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * Base class for output parameters returned by a process execution.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
+ * @author last edited by: $Author: mschneider $
  * 
- * @author last edited by: $Author$
- * 
- * @version $Revision$, $Date$
- * 
+ * @version $Revision: 25694 $, $Date: 2010-08-04 21:45:33 +0200 (Mi, 04. Aug 2010) $
  */
-public class ComplexOutput implements GenericOutput {
+public class BBoxOutput extends ExecuteOutput {
 
-    private ComplexAttributes defaultFormat;
+    private double[] lower;
 
-    private ComplexAttributes[] supportedFormats;
+    private double[] upper;
 
-    public ComplexOutput( ComplexAttributes defaultFormat, ComplexAttributes[] supportedFormats ) {
-        this.defaultFormat = defaultFormat;
-        this.supportedFormats = supportedFormats;
+    private String crs;
+
+    private int dim;
+
+    public BBoxOutput( CodeType id, double[] lower, double[] upper, String crs ) {
+        super( id );
+        this.lower = lower;
+        this.upper = upper;
+        this.dim = lower.length;
+        this.crs = crs;
+    }
+
+    public double[] getLower() {
+        return lower;
+    }
+
+    public double[] getUpper() {
+        return upper;
+    }
+
+    public int getDimension() {
+        return dim;
     }
 
     /**
+     * Get coordinate system of the bounding box
      * 
-     * @return the default {@link ComplexAttributes} used
+     * @return crs as String
      */
-    public ComplexAttributes getDefaultFormat() {
-        return defaultFormat;
+    public String getCrs() {
+        return crs;
     }
-
-    /**
-     * 
-     * @return the supported array of {@link ComplexAttributes} used
-     */
-    public ComplexAttributes[] getSupportedFormats() {
-        return supportedFormats;
-    }
-
 }

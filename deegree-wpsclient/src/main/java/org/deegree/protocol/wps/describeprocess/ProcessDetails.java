@@ -59,10 +59,10 @@ import org.deegree.protocol.wps.describeprocess.input.ComplexDataDescription;
 import org.deegree.protocol.wps.describeprocess.input.DataDescription;
 import org.deegree.protocol.wps.describeprocess.input.InputDescription;
 import org.deegree.protocol.wps.describeprocess.input.LiteralDataDescription;
-import org.deegree.protocol.wps.describeprocess.output.BBoxOutput;
-import org.deegree.protocol.wps.describeprocess.output.ComplexOutput;
-import org.deegree.protocol.wps.describeprocess.output.GenericOutput;
-import org.deegree.protocol.wps.describeprocess.output.LiteralOutput;
+import org.deegree.protocol.wps.describeprocess.output.BBoxOutputType;
+import org.deegree.protocol.wps.describeprocess.output.ComplexOutputType;
+import org.deegree.protocol.wps.describeprocess.output.OutputType;
+import org.deegree.protocol.wps.describeprocess.output.LiteralOutputType;
 import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
 import org.deegree.services.jaxb.wps.Range;
 
@@ -70,6 +70,7 @@ import org.deegree.services.jaxb.wps.Range;
  * Encapsulates the information returned by a <code>DescribeProcess</code> request.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
@@ -158,15 +159,15 @@ public class ProcessDetails {
             LanguageString outputTitle = parseLanguageString( output, "Title" );
             LanguageString outputAbstract = parseLanguageString( output, "Abstract" );
 
-            GenericOutput outputData = parseOutputData( output );
+            OutputType outputData = parseOutputData( output );
             OutputDescription outputDescrib = new OutputDescription( id, outputTitle, outputAbstract, outputData );
             idToOutputType.put( id, outputDescrib );
         }
         return idToOutputType;
     }
 
-    private GenericOutput parseOutputData( OMElement output ) {
-        GenericOutput outputData = null;
+    private OutputType parseOutputData( OMElement output ) {
+        OutputType outputData = null;
         OMElement complexData = output.getFirstChildWithName( new QName( null, "ComplexOutput" ) );
         if ( complexData != null ) {
             outputData = parseComplexOutput( complexData );
@@ -185,7 +186,7 @@ public class ProcessDetails {
         return outputData;
     }
 
-    private GenericOutput parseBBoxOutput( OMElement bboxData ) {
+    private OutputType parseBBoxOutput( OMElement bboxData ) {
         XPath xpath = new XPath( "Default/CRS", nsContext );
         String defaultCrs = omResponse.getElement( bboxData, xpath ).getText();
 
@@ -196,10 +197,10 @@ public class ProcessDetails {
             supportedCrs[i] = omSupported.get( i ).getText();
         }
 
-        return new BBoxOutput( defaultCrs, supportedCrs );
+        return new BBoxOutputType( defaultCrs, supportedCrs );
     }
 
-    private LiteralOutput parseLiteralOutput( OMElement omLiteral ) {
+    private LiteralOutputType parseLiteralOutput( OMElement omLiteral ) {
         OMElement omDataType = omLiteral.getFirstChildWithName( new QName( owsNS, "DataType" ) );
         ValueWithRef<String> dataType = null;
         if ( omDataType != null ) {
@@ -251,10 +252,10 @@ public class ProcessDetails {
                 supportedUoms[i] = new ValueWithRef<String>( omSupp.getText(), supportedRef );
             }
         }
-        return new LiteralOutput( dataType, defaultUom, supportedUoms );
+        return new LiteralOutputType( dataType, defaultUom, supportedUoms );
     }
 
-    private GenericOutput parseComplexOutput( OMElement omComplex ) {
+    private OutputType parseComplexOutput( OMElement omComplex ) {
         XPath xpath = new XPath( "Default/Format", nsContext );
         OMElement omDefault = omResponse.getElement( omComplex, xpath );
         String mimeType = omDefault.getFirstChildWithName( new QName( null, "MimeType" ) ).getText();
@@ -289,7 +290,7 @@ public class ProcessDetails {
             }
             supportedFormats[i] = new ComplexAttributes( mimeType, encoding, schema );
         }
-        return new ComplexOutput( defaultFormat, supportedFormats );
+        return new ComplexOutputType( defaultFormat, supportedFormats );
     }
 
     private DataDescription parseData( OMElement input ) {

@@ -1,4 +1,4 @@
-//$HeadURL$
+//$HeadURL: svn+ssh://mschneider@svn.wald.intevation.org/deegree/deegree3/branches/aionita/deegree-wpsclient/src/main/java/org/deegree/protocol/wps/execute/output/ExecuteOutput.java $
 /*----------------------------------------------------------------------------
  This file is part of deegree, http://deegree.org/
  Copyright (C) 2001-2009 by:
@@ -33,57 +33,58 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.describeprocess.output;
+package org.deegree.protocol.wps.execute.output;
 
-import org.deegree.protocol.wps.describeprocess.ValueWithRef;
+import org.deegree.commons.tom.ows.CodeType;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * 
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
+ * @author last edited by: $Author: mschneider $
  * 
- * @author last edited by: $Author$
- * 
- * @version $Revision$, $Date$
- * 
+ * @version $Revision: 25694 $, $Date: 2010-08-04 21:45:33 +0200 (Mi, 04. Aug 2010) $
  */
-public class LiteralOutput implements GenericOutput {
+public class LiteralOutput extends ExecuteOutput {
 
-    private ValueWithRef<String> dataType;
+    private final String value;
 
-    private ValueWithRef<String> defaultUom;
+    private final String dataType;
 
-    private ValueWithRef<String>[] supportedUoms;
+    private final String uom;
 
-    public LiteralOutput( ValueWithRef<String> dataType, ValueWithRef<String> defaultUom,
-                          ValueWithRef<String>[] supportedUoms ) {
+    public LiteralOutput( CodeType id, String value, String dataType, String uom ) {
+        super( id );
+        this.value = value;
         this.dataType = dataType;
-        this.defaultUom = defaultUom;
-        this.supportedUoms = supportedUoms;
+        this.uom = uom;
     }
 
     /**
+     * Returns the value.
      * 
-     * @return the data type as {@link ValueWithRef} for this literal
+     * @return the value, never <code>null</code>
      */
-    public ValueWithRef<String> getDataType() {
+    public String getValue() {
+        return value;
+    }
+
+    /**
+     * Returns the data type.
+     * 
+     * @return the data type, may be <code>null</code> (unspecified)
+     */
+    public String getDataType() {
         return dataType;
     }
 
     /**
+     * Returns the unit-of-measure.
      * 
-     * @return the default unit-of-measure used, as {@link ValueWithRef}
+     * @return the unit-of-measure, may be <code>null</code> (unspecified)
      */
-    public ValueWithRef<String> getDefaultUom() {
-        return defaultUom;
+    public String getUom() {
+        return uom;
     }
-
-    /**
-     * 
-     * @return the supported units-of-measure used, as an array of {@link ValueWithRef}
-     */
-    public ValueWithRef<String>[] getSupportedUoms() {
-        return supportedUoms;
-    }
-
 }

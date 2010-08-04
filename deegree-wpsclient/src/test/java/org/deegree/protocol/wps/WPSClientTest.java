@@ -50,15 +50,14 @@ import org.deegree.protocol.wps.describeprocess.input.BBoxDataDescription;
 import org.deegree.protocol.wps.describeprocess.input.ComplexDataDescription;
 import org.deegree.protocol.wps.describeprocess.input.InputDescription;
 import org.deegree.protocol.wps.describeprocess.input.LiteralDataDescription;
-import org.deegree.protocol.wps.describeprocess.output.BBoxOutput;
-import org.deegree.protocol.wps.describeprocess.output.ComplexOutput;
-import org.deegree.protocol.wps.describeprocess.output.LiteralOutput;
+import org.deegree.protocol.wps.describeprocess.output.BBoxOutputType;
+import org.deegree.protocol.wps.describeprocess.output.ComplexOutputType;
+import org.deegree.protocol.wps.describeprocess.output.LiteralOutputType;
 import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
-import org.deegree.protocol.wps.execute.datatypes.BoundingBoxDataType;
-import org.deegree.protocol.wps.execute.datatypes.LiteralDataType;
-import org.deegree.protocol.wps.execute.datatypes.XMLDataType;
-import org.deegree.protocol.wps.execute.output.ExecuteOutput;
+import org.deegree.protocol.wps.execute.output.BBoxOutput;
+import org.deegree.protocol.wps.execute.output.ComplexOutput;
 import org.deegree.protocol.wps.execute.output.ExecuteOutputs;
+import org.deegree.protocol.wps.execute.output.LiteralOutput;
 import org.deegree.services.controller.ows.OWSException;
 import org.deegree.services.jaxb.main.ServiceIdentificationType;
 import org.junit.Assert;
@@ -128,7 +127,7 @@ public class WPSClientTest {
         Assert.assertEquals( true, literalData.isAnyValue() );
 
         OutputDescription output = p1.getOutputType( "BufferedGeometry", null );
-        ComplexOutput complexData = (ComplexOutput) output.getOutputData();
+        ComplexOutputType complexData = (ComplexOutputType) output.getOutputData();
         Assert.assertEquals( "UTF-8", complexData.getDefaultFormat().getEncoding() );
         Assert.assertEquals( "text/xml", complexData.getDefaultFormat().getMimeType() );
         Assert.assertEquals( "http://schemas.opengis.net/gml/3.1.1/base/gml.xsd",
@@ -159,7 +158,7 @@ public class WPSClientTest {
                              complexData.getSupportedFormats()[0].getSchema() );
 
         OutputDescription output = p2.getOutputType( "Crosses", null );
-        LiteralOutput literalOut = (LiteralOutput) output.getOutputData();
+        LiteralOutputType literalOut = (LiteralOutputType) output.getOutputData();
         Assert.assertEquals( "boolean", literalOut.getDataType().getValue() );
         Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#boolean", literalOut.getDataType().getRef().toString() );
     }
@@ -201,24 +200,24 @@ public class WPSClientTest {
 
         OutputDescription firstOutput = p2.getOutputType( "LiteralOutput", null );
         Assert.assertEquals( "A literal output parameter", firstOutput.getTitle().getString() );
-        LiteralOutput literalData = (LiteralOutput) firstOutput.getOutputData();
+        LiteralOutputType literalData = (LiteralOutputType) firstOutput.getOutputData();
         Assert.assertEquals( "integer", literalData.getDataType().getValue() );
         Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#integer", literalData.getDataType().getRef().toString() );
         Assert.assertEquals( "seconds", literalData.getDefaultUom().getValue() );
         Assert.assertEquals( "seconds", literalData.getSupportedUoms()[0].getValue() );
 
         OutputDescription secondOutput = p2.getOutputType( "BBOXOutput", null );
-        BBoxOutput bboxOutput = (BBoxOutput) secondOutput.getOutputData();
+        BBoxOutputType bboxOutput = (BBoxOutputType) secondOutput.getOutputData();
         Assert.assertEquals( "EPSG:4326", bboxOutput.getDefaultCrs() );
         Assert.assertEquals( "EPSG:4326", bboxOutput.getSupportedCrs()[0] );
 
         OutputDescription thirdOutput = p2.getOutputType( "XMLOutput", null );
-        ComplexOutput xmlOutput = (ComplexOutput) thirdOutput.getOutputData();
+        ComplexOutputType xmlOutput = (ComplexOutputType) thirdOutput.getOutputData();
         Assert.assertEquals( "text/xml", xmlOutput.getDefaultFormat().getMimeType() );
         Assert.assertEquals( "text/xml", xmlOutput.getSupportedFormats()[0].getMimeType() );
 
         OutputDescription fourthOutput = p2.getOutputType( "BinaryOutput", null );
-        ComplexOutput binaryOutput = (ComplexOutput) fourthOutput.getOutputData();
+        ComplexOutputType binaryOutput = (ComplexOutputType) fourthOutput.getOutputData();
         Assert.assertEquals( "text/xml", xmlOutput.getDefaultFormat().getMimeType() );
         Assert.assertEquals( "text/xml", xmlOutput.getSupportedFormats()[0].getMimeType() );
     }
@@ -270,8 +269,8 @@ public class WPSClientTest {
         execution.addOutput( "Centroid", null, null, true, null, null, null );
         ExecuteOutputs response = execution.execute();
 
-        XMLDataType data = (XMLDataType) response.getAll()[0].getDataType();
-        XMLStreamReader reader = data.getAsXMLStream();
+        ComplexOutput output = (ComplexOutput) response.get( 0 );
+        XMLStreamReader reader = output.getAsXMLStream();
         XMLAdapter searchableXML = new XMLAdapter( reader );
         NamespaceContext nsContext = new NamespaceContext();
         nsContext.addNamespace( "wps", WPSConstants.WPS_100_NS );
@@ -316,14 +315,12 @@ public class WPSClientTest {
         execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), "image/png", null );
         ExecuteOutputs outputs = execution.execute();
 
-        ExecuteOutput bufferedGeometry = outputs.get( "BufferedGeometry", null );
-
-        LiteralDataType out1 = (LiteralDataType) outputs.getAll()[0].getDataType();
+        LiteralOutput out1 = (LiteralOutput) outputs.get( 0 );
         Assert.assertEquals( "0", out1.getValue() );
         Assert.assertEquals( "integer", out1.getDataType() );
         Assert.assertEquals( "seconds", out1.getUom() );
 
-        BoundingBoxDataType out2 = (BoundingBoxDataType) outputs.getAll()[1].getDataType();
+        BBoxOutput out2 = (BBoxOutput) outputs.get( 1 );
         Assert.assertTrue( Arrays.equals( new double[] { 0.0, 0.0 }, out2.getLower() ) );
         Assert.assertTrue( Arrays.equals( new double[] { 90.0, 180.0 }, out2.getUpper() ) );
         Assert.assertEquals( "EPSG:4326", out2.getCrs() );

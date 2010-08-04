@@ -35,31 +35,19 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps;
 
-import static org.deegree.commons.xml.CommonNamespaces.XLNNS;
-import static org.deegree.protocol.i18n.Messages.get;
-import static org.deegree.protocol.wps.WPSConstants.WPS_100_NS;
-import static org.deegree.protocol.wps.WPSConstants.WPS_PREFIX;
-
 import java.io.IOException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.xml.namespace.QName;
 
 import org.apache.axiom.om.OMElement;
 import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.commons.tom.ows.LanguageString;
-import org.deegree.commons.xml.NamespaceContext;
-import org.deegree.commons.xml.XMLAdapter;
-import org.deegree.commons.xml.XPath;
+import org.deegree.protocol.wps.getcapabilities.ProcessInfo;
+import org.deegree.protocol.wps.getcapabilities.WPS100CapabilitiesAdapter;
 import org.deegree.services.controller.ows.OWSException;
-import org.deegree.services.jaxb.main.AddressType;
 import org.deegree.services.jaxb.main.DeegreeServicesMetadataType;
-import org.deegree.services.jaxb.main.ServiceContactType;
-import org.deegree.services.jaxb.main.ServiceIdentificationType;
-import org.deegree.services.jaxb.main.ServiceProviderType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,7 +93,7 @@ import org.slf4j.LoggerFactory;
  * <pre>
  * ...
  *   Process buffer = wpsClient.getProcess ("Buffer", null);
- *
+ * 
  *   // get execution context
  *   ProcessExecution execution = buffer.prepareExecution();
  *   
@@ -135,6 +123,7 @@ import org.slf4j.LoggerFactory;
  * requests.</li>
  * <li>Clean up exception handling.</li>
  * <li>Enable/document a way to set connection parameters (timeout, proxy settings, ...)</li>
+ * <li>Support for metadata in multiple languages (as mandated by the WPS spec).</li>
  * </ul>
  * 
  * @see Process
@@ -152,37 +141,19 @@ public class WPSClient {
 
     private static Logger LOG = LoggerFactory.getLogger( WPSClient.class );
 
-    private DeegreeServicesMetadataType metadata;
+    private final DeegreeServicesMetadataType metadata;
 
-    // [0]: Get, [1]: Post
+    // [0]: GET, [1]: POST
     private final URL[] describeProcessURLs = new URL[2];
 
-    // [0]: Get, [1]: Post
+    // [0]: GET, [1]: POST
     private final URL[] executeURLs = new URL[2];
-
-    private final Map<CodeType, Process> processIdToProcess = new HashMap<CodeType, Process>();
-
-    private final XMLAdapter capabilitesDoc;
-
-    private static final NamespaceContext nsContext;
-
-    private static final String owsPrefix = "ows";
-
-    private static final String owsNS = "http://www.opengis.net/ows/1.1";
-
-    private static final String xmlNS = "http://www.w3.org/XML/1998/namespace";
-
-    private static final String xlinkNS = "http://www.w3.org/1999/xlink";
-
-    static {
-        nsContext = new NamespaceContext();
-        nsContext.addNamespace( WPS_PREFIX, WPS_100_NS );
-        nsContext.addNamespace( owsPrefix, owsNS );
-        nsContext.addNamespace( "xlink", xlinkNS );
-    }
+    
+    // using LinkedHashMap because it keeps insertion order
+    private final Map<CodeType, Process> processIdToProcess = new LinkedHashMap<CodeType, Process>();
 
     /**
-     * Initializes a new {@link WPSClient} instance.
+     * Creates a new {@link WPSClient} instance.
      * 
      * @param capabilitiesURL
      *            url of a WPS capabilities document, usually this is a GetCapabilities request to a WPS service, must
@@ -194,143 +165,48 @@ public class WPSClient {
      */
     public WPSClient( URL capabilitiesURL ) throws IOException, OWSException {
 
+        WPS100CapabilitiesAdapter capabilitiesDoc = retrieveCapabilities( capabilitiesURL );
+
+        // TODO what if server only supports Get? What is optional and what is mandatory?
+        describeProcessURLs[0] = capabilitiesDoc.getOperationURL( "DescribeProcess", false );
+        describeProcessURLs[1] = capabilitiesDoc.getOperationURL( "DescribeProcess", true );
+        executeURLs[0] = capabilitiesDoc.getOperationURL( "Execute", false );
+        executeURLs[1] = capabilitiesDoc.getOperationURL( "Execute", true );
+
+        metadata = capabilitiesDoc.parseMetadata();
+
+        for ( ProcessInfo processInfo : capabilitiesDoc.getProcesses() ) {
+            Process process = new Process( this, processInfo );
+            processIdToProcess.put( process.getId(), process );
+        }
+    }
+
+    private WPS100CapabilitiesAdapter retrieveCapabilities( URL capabilitiesURL )
+                            throws IOException {
+
+        WPS100CapabilitiesAdapter capabilitiesDoc = null;
         try {
-            this.capabilitesDoc = new XMLAdapter( capabilitiesURL );
+            LOG.trace( "Retrieving capabilities document from {}", capabilitiesURL );
+            capabilitiesDoc = new WPS100CapabilitiesAdapter();
+            capabilitiesDoc.load( capabilitiesURL );
         } catch ( Exception e ) {
-            LOG.error( e.getLocalizedMessage(), e );
-            throw new RuntimeException( "Could not read from URL: " + capabilitiesURL + " error was: "
-                                        + e.getLocalizedMessage() );
+            String msg = "Unable to retrieve/parse capabilities document from URL '" + capabilitiesURL + "': "
+                         + e.getMessage();
+            throw new IOException( msg );
         }
 
-        OMElement root = capabilitesDoc.getRootElement();
-        String version = root.getAttributeValue( new QName( "version" ) );
-        if ( !"1.0.0".equals( version ) ) {
-            throw new IllegalArgumentException( get( "WPSCLIENT.WRONG_VERSION_CAPABILITIES", version, "1.0.0" ) );
+        OMElement root = capabilitiesDoc.getRootElement();
+        String protocolVersion = root.getAttributeValue( new QName( "version" ) );
+        if ( !"1.0.0".equals( protocolVersion ) ) {
+            String msg = "Capabilities document has unsupported version " + protocolVersion + ".";
+            throw new UnsupportedOperationException( msg );
         }
         String service = root.getAttributeValue( new QName( "service" ) );
         if ( !service.equalsIgnoreCase( "WPS" ) ) {
-            throw new IllegalArgumentException( get( "WPSCLIENT.NO_WPS_CAPABILITIES", service, "WPS" ) );
+            String msg = "Capabilities document is not a WPS capabilities document.";
+            throw new IllegalArgumentException( msg );
         }
-
-        // TODO what if server only supports Get? What is optional and what is mandatory?
-        describeProcessURLs[0] = getOperationURL( "DescribeProcess", false );
-        describeProcessURLs[1] = getOperationURL( "DescribeProcess", true );
-        executeURLs[0] = getOperationURL( "Execute", false );
-        executeURLs[1] = getOperationURL( "Execute", true );
-
-        extractProcesses( root );
-        extractMetadata( root );
-    }
-
-    private void extractMetadata( OMElement root ) {
-
-        metadata = new DeegreeServicesMetadataType();
-        XPath xpath = new XPath( "/wps:Capabilities/ows:ServiceIdentification", nsContext );
-        ServiceIdentificationType serviceIdentification = new ServiceIdentificationType();
-
-        metadata.setServiceIdentification( serviceIdentification );
-        ServiceProviderType serviceProvider = new ServiceProviderType();
-
-        xpath = new XPath( "/wps:Capabilities/ows:ServiceProvider/ows:ProviderName", nsContext );
-        serviceProvider.setProviderName( capabilitesDoc.getRequiredNodeAsString( root, xpath ) );
-
-        xpath = new XPath( "/wps:Capabilities/ows:ServiceProvider/ows:ProviderSite/@xlink:href", nsContext );
-        serviceProvider.setProviderSite( capabilitesDoc.getRequiredNodeAsString( root, xpath ) );
-
-        xpath = new XPath( "/wps:Capabilities/ows:ServiceProvider/ows:ServiceContact", nsContext );
-        OMElement omServiceContact = capabilitesDoc.getRequiredElement( root, xpath );
-        ServiceContactType serviceContact = new ServiceContactType();
-
-        AddressType address = new AddressType();
-        xpath = new XPath( "ows:ContactInfo/ows:Address/ows:AdministrativeArea", nsContext );
-        address.setAdministrativeArea( capabilitesDoc.getRequiredNodeAsString( omServiceContact, xpath ) );
-        xpath = new XPath( "ows:ContactInfo/ows:Address/ows:City", nsContext );
-        address.setCity( capabilitesDoc.getRequiredNodeAsString( omServiceContact, xpath ) );
-        xpath = new XPath( "ows:ContactInfo/ows:Address/ows:Country", nsContext );
-        address.setCountry( capabilitesDoc.getRequiredNodeAsString( omServiceContact, xpath ) );
-        xpath = new XPath( "ows:ContactInfo/ows:Address/ows:PostalCode", nsContext );
-        address.setPostalCode( capabilitesDoc.getRequiredNodeAsString( omServiceContact, xpath ) );
-        serviceContact.setAddress( address );
-
-        xpath = new XPath( "ows:ContactInfo/ows:ContactInstructions", nsContext );
-        serviceContact.setContactInstructions( capabilitesDoc.getNodeAsString( omServiceContact, xpath, null ) );
-        xpath = new XPath( "ows:ContactInfo/ows:Phone/ows:Facsimile", nsContext );
-        serviceContact.setFacsimile( capabilitesDoc.getRequiredNodeAsString( omServiceContact, xpath ) );
-        xpath = new XPath( "ows:ContactInfo/ows:HoursOfService", nsContext );
-        serviceContact.setHoursOfService( capabilitesDoc.getNodeAsString( omServiceContact, xpath, null ) );
-        xpath = new XPath( "ows:IndividualName", nsContext );
-        serviceContact.setIndividualName( capabilitesDoc.getRequiredNodeAsString( omServiceContact, xpath ) );
-        xpath = new XPath( "ows:ContactInfo/ows:OnlineResource/@xlink:href", nsContext );
-        serviceContact.setOnlineResource( capabilitesDoc.getNodeAsString( omServiceContact, xpath, null ) );
-        xpath = new XPath( "ows:ContactInfo/ows:Phone/ows:Voice", nsContext );
-        serviceContact.setPhone( capabilitesDoc.getRequiredNodeAsString( omServiceContact, xpath ) );
-        xpath = new XPath( "ows:PositionName", nsContext );
-        serviceContact.setPositionName( capabilitesDoc.getRequiredNodeAsString( omServiceContact, xpath ) );
-        xpath = new XPath( "ows:Role", nsContext );
-        serviceContact.setRole( capabilitesDoc.getNodeAsString( omServiceContact, xpath, null ) );
-
-        serviceProvider.setServiceContact( serviceContact );
-        metadata.setServiceProvider( serviceProvider );
-    }
-
-    private void extractProcesses( OMElement root ) {
-        XPath xpath = new XPath( "/wps:Capabilities/wps:ProcessOfferings/wps:Process", nsContext );
-        List<OMElement> omProcesses = capabilitesDoc.getElements( root, xpath );
-        for ( OMElement omProcess : omProcesses ) {
-            String version = omProcess.getAttributeValue( new QName( WPS_100_NS, "processVersion" ) );
-            CodeType id = parseId( omProcess );
-            LanguageString processTitle = parseLanguageString( omProcess, "Title" );
-            LanguageString processAbstract = parseLanguageString( omProcess, "Abstract" );
-
-            Process process = new Process( this, version, id, processTitle, processAbstract );
-            processIdToProcess.put( id, process );
-        }
-    }
-
-    private LanguageString parseLanguageString( OMElement omElement, String name ) {
-        OMElement omElem = omElement.getFirstChildWithName( new QName( owsNS, name ) );
-        if ( omElem != null ) {
-            String lang = omElem.getAttributeValue( new QName( xmlNS, "lang" ) );
-            return new LanguageString( omElem.getText(), lang );
-        }
-        return null;
-    }
-
-    private CodeType parseId( OMElement omProcess ) {
-        OMElement omId = omProcess.getFirstChildWithName( new QName( owsNS, "Identifier" ) );
-        String codeSpace = omId.getAttributeValue( new QName( null, "codeSpace" ) );
-        if ( codeSpace != null ) {
-            return new CodeType( omId.getText(), codeSpace );
-        }
-        return new CodeType( omId.getText() );
-    }
-
-    /**
-     * @param operation
-     * @param post
-     * @return in case the URL that appears in GetCapabilities ends in ? then this method will strip it
-     */
-    private URL getOperationURL( String operation, boolean post ) {
-        String xpathStr = "/wps:Capabilities/ows:OperationsMetadata/ows:Operation[@name='" + operation
-                          + "']/ows:DCP/ows:HTTP/ows:" + ( post ? "Post" : "Get" ) + "/@xlink:href";
-        NamespaceContext nsContext = new NamespaceContext();
-        nsContext.addNamespace( "wps", WPS_100_NS );
-        nsContext.addNamespace( "ows", "http://www.opengis.net/ows/1.1" );
-        nsContext.addNamespace( "xlink", XLNNS );
-
-        URL url = null;
-        try {
-            String href = capabilitesDoc.getRequiredNodeAsString( capabilitesDoc.getRootElement(),
-                                                                  new XPath( xpathStr, nsContext ) );
-            if ( href.endsWith( "?" ) ) {
-                href = href.substring( 0, href.length() - 1 );
-            }
-            url = new URL( href );
-        } catch ( Throwable t ) {
-            String msg = "URL for operation '" + operation + " was not found. ': " + t.getMessage();
-            LOG.warn( msg );
-        }
-        return url;
+        return capabilitiesDoc;
     }
 
     /**
@@ -344,7 +220,7 @@ public class WPSClient {
     }
 
     /**
-     * Returns the metadata of the service.
+     * Returns the metadata (ServiceIdentification, ServiceProvider) of the service.
      * 
      * @return the metadata of the service, never <code>null</code>
      */

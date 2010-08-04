@@ -35,63 +35,48 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.execute;
 
-import java.util.List;
-
-import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.execute.input.ExecuteInput;
-import org.deegree.protocol.wps.execute.output.ResponseFormat;
+import org.deegree.protocol.wps.execute.output.ExecuteOutput;
+import org.deegree.protocol.wps.execute.output.ExecutionStatus;
+import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * Encapsulates the results from a process execution.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
+ * @author last edited by: $Author: ionita $
  * 
- * @author last edited by: $Author$
- * 
- * @version $Revision$, $Date$
- * 
+ * @version $Revision: $, $Date: $
  */
-public class ExecuteRequest {
+public class ExecutionResult {
 
-    private CodeType processId;
+    private final ExecutionStatus status;
 
-    private String version;
+    private final ExecuteOutput[] outputs;
 
-    private List<ExecuteInput> inputList;
-
-    private ResponseFormat responseFormat;
-
-    public ExecuteRequest( CodeType processId, String version, List<ExecuteInput> inputList,
-                           ResponseFormat responseFormat ) {
-        this.processId = processId;
-        this.version = version;
-        this.inputList = inputList;
-        this.responseFormat = responseFormat;
+    public ExecutionResult( ExecutionStatus status, ExecuteOutput[] outputs ) {
+        this.status = status;
+        this.outputs = outputs;
     }
 
     /**
-     * @return
+     * Returns the current status of the process execution.
+     * 
+     * @return the current status of the process execution, never <code>null</code>
      */
-    public CodeType getId() {
-        return processId;
-    }
-
-    public String getVersion() {
-        return version;
+    public ExecutionStatus getStatus() {
+        return status;
     }
 
     /**
-     * @return
+     * Returns the output parameters from the process execution.
+     * <p>
+     * NOTE: This method may only be called when the process is in state {@link ExecutionState#SUCCEEDED}.
+     * </p>
+     * 
+     * @return the output parameters, never <code>null</code>
      */
-    public List<ExecuteInput> getInputList() {
-        return inputList;
+    public ExecuteOutput[] getOutputs() {
+        return outputs;
     }
-
-    /**
-     * @return
-     */
-    public ResponseFormat getOutputFormat() {
-        return responseFormat;
-    }
-
 }

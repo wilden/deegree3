@@ -54,12 +54,12 @@ import org.deegree.protocol.wps.describeprocess.output.BBoxOutput;
 import org.deegree.protocol.wps.describeprocess.output.ComplexOutput;
 import org.deegree.protocol.wps.describeprocess.output.LiteralOutput;
 import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
-import org.deegree.protocol.wps.execute.ExecuteResponse;
+import org.deegree.protocol.wps.execute.ExecutionResult;
 import org.deegree.protocol.wps.execute.datatypes.BoundingBoxDataType;
 import org.deegree.protocol.wps.execute.datatypes.LiteralDataType;
 import org.deegree.protocol.wps.execute.datatypes.XMLDataType;
-import org.deegree.protocol.wps.execute.output.ExecuteOutput;
 import org.deegree.services.controller.ows.OWSException;
+import org.deegree.services.jaxb.main.ServiceIdentificationType;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -94,6 +94,20 @@ public class WPSClientTest {
         if ( DEMO_SERVICE_URL == null ) {
             throw new RuntimeException( "Cannot proceed: Service URL not provided." );
         }
+    }
+
+    @Test
+    public void testMetadata()
+                            throws OWSException, IOException {
+        URL serviceUrl = new URL( DEMO_SERVICE_URL );
+        WPSClient client = new WPSClient( serviceUrl );
+        Assert.assertNotNull( client );
+        ServiceIdentificationType serviceId = client.getMetadata().getServiceIdentification();
+        Assert.assertNotNull( serviceId );
+        Assert.assertEquals( serviceId.getTitle().size(), 1 );
+        Assert.assertEquals( serviceId.getTitle().get( 0 ), "deegree 3 WPS" );
+        Assert.assertEquals( serviceId.getAbstract().size(), 1 );
+        Assert.assertEquals( serviceId.getAbstract().get( 0 ), "deegree 3 WPS implementation" );        
     }
 
     @Test
@@ -208,29 +222,29 @@ public class WPSClientTest {
         Assert.assertEquals( "text/xml", xmlOutput.getSupportedFormats()[0].getMimeType() );
     }
 
-//    @Test
-//    public void testProcessDescription_4()
-//                            throws OWSException, IOException {
-//        URL processUrl = new URL( NORTH52_SERVICE_URL );
-//        WPSClient wpsClient = new WPSClient( processUrl );
-//        Process proc = wpsClient.getProcess( "buffer", null );
-//        InputDescription inputLayer = proc.getInputType( "LAYER", null );
-//        ComplexDataDescription layerData = (ComplexDataDescription) inputLayer.getData();
-//        Assert.assertEquals( "http://geoserver.itc.nl:8080/wps/schemas/gml/2.1.2/gmlpacket.xsd",
-//                             layerData.getSupportedFormats()[1].getSchema() );
-//
-//        InputDescription inputField = proc.getInputType( "FIELD", null );
-//        LiteralDataDescription fieldData = (LiteralDataDescription) inputField.getData();
-//        Assert.assertEquals( "xs:int", fieldData.getDataType().getRef().toString() );
-//        Assert.assertEquals( "0", fieldData.getRanges()[0].getMinimumValue() );
-//        Assert.assertEquals( "+Infinity", fieldData.getRanges()[0].getMaximumValue() );
-//
-//        InputDescription inputMethod = proc.getInputType( "METHOD", null );
-//        Assert.assertEquals( "Distance", inputMethod.getAbstract().getString() );
-//        LiteralDataDescription methodData = (LiteralDataDescription) inputMethod.getData();
-//        Assert.assertEquals( "Fixed distance", methodData.getAllowedValues()[0] );
-//        Assert.assertEquals( "Distance from table field", methodData.getAllowedValues()[1] );
-//    }
+    // @Test
+    // public void testProcessDescription_4()
+    // throws OWSException, IOException {
+    // URL processUrl = new URL( NORTH52_SERVICE_URL );
+    // WPSClient wpsClient = new WPSClient( processUrl );
+    // Process proc = wpsClient.getProcess( "buffer", null );
+    // InputDescription inputLayer = proc.getInputType( "LAYER", null );
+    // ComplexDataDescription layerData = (ComplexDataDescription) inputLayer.getData();
+    // Assert.assertEquals( "http://geoserver.itc.nl:8080/wps/schemas/gml/2.1.2/gmlpacket.xsd",
+    // layerData.getSupportedFormats()[1].getSchema() );
+    //
+    // InputDescription inputField = proc.getInputType( "FIELD", null );
+    // LiteralDataDescription fieldData = (LiteralDataDescription) inputField.getData();
+    // Assert.assertEquals( "xs:int", fieldData.getDataType().getRef().toString() );
+    // Assert.assertEquals( "0", fieldData.getRanges()[0].getMinimumValue() );
+    // Assert.assertEquals( "+Infinity", fieldData.getRanges()[0].getMaximumValue() );
+    //
+    // InputDescription inputMethod = proc.getInputType( "METHOD", null );
+    // Assert.assertEquals( "Distance", inputMethod.getAbstract().getString() );
+    // LiteralDataDescription methodData = (LiteralDataDescription) inputMethod.getData();
+    // Assert.assertEquals( "Fixed distance", methodData.getAllowedValues()[0] );
+    // Assert.assertEquals( "Distance from table field", methodData.getAllowedValues()[1] );
+    // }
 
     @Test
     public void testGetProcess()
@@ -252,8 +266,8 @@ public class WPSClientTest {
         Process proc = wpsClient.getProcess( "Centroid", null );
         ProcessExecution execution = proc.prepareExecution();
         execution.addXMLInput( "GMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
-        execution.setRequestedOutput( "Centroid", null, null, true, null, null, null );
-        ExecuteResponse response = execution.execute();
+        execution.addOutput( "Centroid", null, null, true, null, null, null );
+        ExecutionResult response = execution.execute();
 
         XMLDataType data = (XMLDataType) response.getOutputs()[0].getDataType();
         XMLStreamReader reader = data.getAsXMLStream();
@@ -281,8 +295,8 @@ public class WPSClientTest {
         ProcessExecution execution = proc.prepareExecution();
         execution.addLiteralInput( "BufferDistance", null, "0.1", "double", "unity" );
         execution.addXMLInput( "GMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
-        execution.setRequestedOutput( "BufferedGeometry", null, null, false, null, null, null );
-        ExecuteResponse response = execution.execute();
+        execution.addOutput( "BufferedGeometry", null, null, false, null, null, null );
+        ExecutionResult response = execution.execute();
         Assert.assertNotNull( response );
         // TODO test response
     }
@@ -299,7 +313,7 @@ public class WPSClientTest {
         execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
         execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
         execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), "image/png", null );
-        ExecuteResponse response = execution.execute();
+        ExecutionResult response = execution.execute();
 
         LiteralDataType out1 = (LiteralDataType) response.getOutputs()[0].getDataType();
         Assert.assertEquals( "0", out1.getValue() );

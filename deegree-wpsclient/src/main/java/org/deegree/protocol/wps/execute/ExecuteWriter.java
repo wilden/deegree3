@@ -60,18 +60,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * Generates WPS Execute request documents.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
-public class RequestWriter {
+public class ExecuteWriter {
 
-    private static Logger LOG = LoggerFactory.getLogger( RequestWriter.class );
+    private static Logger LOG = LoggerFactory.getLogger( ExecuteWriter.class );
 
     private static final String wpsPrefix = "wps";
 
@@ -87,16 +86,16 @@ public class RequestWriter {
 
     private static XMLStreamWriter writer;
 
-    public RequestWriter( XMLStreamWriter writer ) {
+    public ExecuteWriter( XMLStreamWriter writer ) {
         this.writer = writer;
     }
 
-    public void write100( ExecuteRequest request ) {
+    public void write100( CodeType id, List<ExecuteInput> inputs, ResponseFormat responseFormat ) {
         try {
             writer.writeStartDocument();
             writer.writeStartElement( wpsPrefix, "Execute", wpsNS );
             writer.writeAttribute( "service", "WPS" );
-            writer.writeAttribute( "version", request.getVersion() );
+            writer.writeAttribute( "version", "1.0.0" );
             String schemaLocation = "http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsExecute_request.xsd";
             writer.writeAttribute( "xsi", "http://www.w3.org/2001/XMLSchema-instance", "schemaLocation", schemaLocation );
 
@@ -104,9 +103,9 @@ public class RequestWriter {
             writer.writeNamespace( owsPrefix, owsNS );
             writer.writeNamespace( xsiPrefix, xsiNS );
 
-            writeHeader( request.getId() );
-            writeInputs( request.getInputList() );
-            writeOutputs( request.getOutputFormat() );
+            writeHeader( id );
+            writeInputs( inputs );
+            writeOutputs( responseFormat );
 
             writer.writeEndElement();
             writer.writeEndDocument();

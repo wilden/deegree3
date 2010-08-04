@@ -84,11 +84,15 @@ public class ProcessDetails {
 
     private static NamespaceContext nsContext;
 
+    private final XMLAdapter omResponse;
+
     private final Map<CodeType, InputDescription> inputs;
 
     private final Map<CodeType, OutputDescription> outputs;
 
-    private final XMLAdapter omResponse;
+    private final boolean storeSupported;
+
+    private final boolean statusSupported;
 
     static {
         nsContext = new NamespaceContext();
@@ -100,6 +104,12 @@ public class ProcessDetails {
         this.omResponse = describeResponse;
         this.inputs = parseInputs();
         this.outputs = parseOutputs();
+
+        XPath xpath = new XPath( "/wps:ProcessDescriptions/ProcessDescription/@storeSupported", nsContext );
+        storeSupported = describeResponse.getNodeAsBoolean( describeResponse.getRootElement(), xpath, false );
+
+        xpath = new XPath( "/wps:ProcessDescriptions/ProcessDescription/@statusSupported", nsContext );
+        statusSupported = describeResponse.getNodeAsBoolean( describeResponse.getRootElement(), xpath, false );
     }
 
     /**
@@ -120,9 +130,6 @@ public class ProcessDetails {
         return outputs;
     }
 
-    /**
-     * @return
-     */
     private Map<CodeType, InputDescription> parseInputs() {
         XPath xpath = new XPath( "/wps:ProcessDescriptions/ProcessDescription/DataInputs/Input", nsContext );
         List<OMElement> inputs = omResponse.getElements( omResponse.getRootElement(), xpath );
@@ -142,10 +149,7 @@ public class ProcessDetails {
         return idToInputType;
     }
 
-    /**
-     * @return
-     */
-    public Map<CodeType, OutputDescription> parseOutputs() {
+    private Map<CodeType, OutputDescription> parseOutputs() {
         XPath xpath = new XPath( "/wps:ProcessDescriptions/ProcessDescription/ProcessOutputs/Output", nsContext );
         List<OMElement> outputs = omResponse.getElements( omResponse.getRootElement(), xpath );
         Map<CodeType, OutputDescription> idToOutputType = new HashMap<CodeType, OutputDescription>();
@@ -161,9 +165,6 @@ public class ProcessDetails {
         return idToOutputType;
     }
 
-    /**
-     * @return
-     */
     private GenericOutput parseOutputData( OMElement output ) {
         GenericOutput outputData = null;
         OMElement complexData = output.getFirstChildWithName( new QName( null, "ComplexOutput" ) );
@@ -184,10 +185,6 @@ public class ProcessDetails {
         return outputData;
     }
 
-    /**
-     * @param bboxData
-     * @return
-     */
     private GenericOutput parseBBoxOutput( OMElement bboxData ) {
         XPath xpath = new XPath( "Default/CRS", nsContext );
         String defaultCrs = omResponse.getElement( bboxData, xpath ).getText();
@@ -202,10 +199,6 @@ public class ProcessDetails {
         return new BBoxOutput( defaultCrs, supportedCrs );
     }
 
-    /**
-     * @param output
-     * @return
-     */
     private LiteralOutput parseLiteralOutput( OMElement omLiteral ) {
         OMElement omDataType = omLiteral.getFirstChildWithName( new QName( owsNS, "DataType" ) );
         ValueWithRef<String> dataType = null;
@@ -261,10 +254,6 @@ public class ProcessDetails {
         return new LiteralOutput( dataType, defaultUom, supportedUoms );
     }
 
-    /**
-     * @param output
-     * @return
-     */
     private GenericOutput parseComplexOutput( OMElement omComplex ) {
         XPath xpath = new XPath( "Default/Format", nsContext );
         OMElement omDefault = omResponse.getElement( omComplex, xpath );
@@ -303,10 +292,6 @@ public class ProcessDetails {
         return new ComplexOutput( defaultFormat, supportedFormats );
     }
 
-    /**
-     * @param input
-     * @return
-     */
     private DataDescription parseData( OMElement input ) {
         DataDescription inputData = null;
 
@@ -328,10 +313,6 @@ public class ProcessDetails {
         return inputData;
     }
 
-    /**
-     * @param input
-     * @return
-     */
     private DataDescription parseBBoxData( OMElement input ) {
         XPath xpath = new XPath( "Default/CRS", nsContext );
         String defaultCRS = omResponse.getElement( input, xpath ).getText();
@@ -345,10 +326,6 @@ public class ProcessDetails {
         return new BBoxDataDescription( defaultCRS, supportedCRSs );
     }
 
-    /**
-     * @param input
-     * @return
-     */
     private DataDescription parseLiteralData( OMElement input ) {
         OMElement omDataType = input.getFirstChildWithName( new QName( owsNS, "DataType" ) );
         String dataTypeStr = omDataType.getText();
@@ -480,9 +457,6 @@ public class ProcessDetails {
                                            valuesRef );
     }
 
-    /**
-     * @return
-     */
     private DataDescription parseComplexData( OMElement input ) {
         XPath xpath = new XPath( "Default/Format", nsContext );
         OMElement omDefaultFormat = omResponse.getElement( input, xpath );
@@ -521,10 +495,6 @@ public class ProcessDetails {
         return new ComplexDataDescription( defaultFormat, supported );
     }
 
-    /**
-     * @param omElement
-     * @return
-     */
     private LanguageString parseLanguageString( OMElement omElement, String name ) {
         OMElement omElem = omElement.getFirstChildWithName( new QName( owsNS, name ) );
         if ( omElem != null ) {
@@ -534,9 +504,6 @@ public class ProcessDetails {
         return null;
     }
 
-    /**
-     * @return
-     */
     private CodeType parseId( OMElement omElement ) {
         OMElement omId = omElement.getFirstChildWithName( new QName( owsNS, "Identifier" ) );
         String codeSpace = omId.getAttributeValue( new QName( null, "codeSpace" ) );
@@ -547,12 +514,10 @@ public class ProcessDetails {
     }
 
     public boolean getStoreSupported() {
-        // TODO
-        return false;
+        return storeSupported;
     }
 
     public boolean getStatusSupported() {
-        // TODO
-        return false;
+        return statusSupported;
     }
 }

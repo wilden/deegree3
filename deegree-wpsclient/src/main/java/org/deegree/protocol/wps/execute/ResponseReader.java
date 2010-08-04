@@ -74,9 +74,10 @@ import org.deegree.protocol.wps.execute.datatypes.XMLDataType;
 import org.deegree.protocol.wps.execute.input.ExecuteInput;
 import org.deegree.protocol.wps.execute.input.InputReference;
 import org.deegree.protocol.wps.execute.output.ExecuteOutput;
-import org.deegree.protocol.wps.execute.output.ExecuteStatus;
+import org.deegree.protocol.wps.execute.output.ExecutionStatus;
 import org.deegree.protocol.wps.execute.output.OutputDefinition;
 import org.deegree.services.controller.ows.OWSException;
+import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,12 +111,11 @@ public class ResponseReader {
      * @param reader
      * @return
      * @throws OWSException
-     * @throws XMLStreamException
      */
-    public ExecuteResponse parse100()
+    public ExecutionResult parse100()
                             throws OWSException {
         CodeType processId = null;
-        ExecuteStatus status = null;
+        ExecutionStatus status = null;
         List<ExecuteOutput> outputs = null;
 
         try {
@@ -123,7 +123,7 @@ public class ResponseReader {
             int state = reader.getEventType();
             if ( new QName( owsNS, "ExceptionReport" ).equals( reader.getName() ) ) {
                 ExceptionReport excep = parseException();
-                LOG.error( "Service returned returned OWSException. " + excep.getMessage() );
+                LOG.error( "Service responded with exception report: " + excep.getMessage() );
                 throw new OWSException( excep.getMessage(), excep.getCode(), excep.getLocator() );
             }
 
@@ -147,7 +147,7 @@ public class ResponseReader {
         if ( outputs != null ) {
             outputsArray = outputs.toArray( new ExecuteOutput[outputs.size()] );
         }
-        return new ExecuteResponse( status, outputsArray );
+        return new ExecutionResult( status, outputsArray );
     }
 
     /**
@@ -451,7 +451,7 @@ public class ResponseReader {
             upper[i] = Double.parseDouble( coordStr[i] );
         }
         StAXParsingHelper.nextElement( reader );
-        return new BoundingBoxDataType( lower, upper, crs);
+        return new BoundingBoxDataType( lower, upper, crs );
     }
 
     /**
@@ -529,12 +529,13 @@ public class ResponseReader {
      * @return
      * @throws XMLStreamException
      */
-    private ExecuteStatus parseStatus()
+    private ExecutionStatus parseStatus()
                             throws XMLStreamException {
+        ExecutionState state = null;
         String statusMsg = null;
         Integer percent = null;
         String creationTime = null;
-        String exceptionReport = null;
+        ExceptionReport exceptionReport = null;
 
         String attribute = reader.getAttributeValue( null, "creationTime" );
         if ( attribute != null ) {
@@ -543,22 +544,31 @@ public class ResponseReader {
 
         StAXParsingHelper.nextElement( reader );
         String localName = reader.getName().getLocalPart();
-        if ( "ProcessAccepted".equals( localName ) || "ProcessSucceeded".equals( localName ) ) {
+        if ( "ProcessAccepted".equals( localName ) ) {
+            state = ExecutionState.ACCEPTED;
             statusMsg = reader.getElementText();
-        }
-        if ( "ProcessStarted".equals( localName ) || "ProcessPaused".equals( localName ) ) {
+        } else if ( "ProcessSucceeded".equals( localName ) ) {
+            state = ExecutionState.SUCCEEDED;
+            statusMsg = reader.getElementText();
+        } else if ( "ProcessStarted".equals( localName ) ) {
             statusMsg = reader.getElementText();
             String percentStr = reader.getAttributeValue( null, "percentCompleted" );
             if ( percentStr != null ) {
                 percent = Integer.parseInt( percentStr );
             }
             StAXParsingHelper.nextElement( reader );
+        } else if ( "ProcessPaused".equals( localName ) ) {
+            statusMsg = reader.getElementText();
+            String percentStr = reader.getAttributeValue( null, "percentCompleted" );
+            if ( percentStr != null ) {
+                percent = Integer.parseInt( percentStr );
+            }
+            StAXParsingHelper.nextElement( reader );
+        } else if ( "ProcessFailed".equals( localName ) ) {
+            exceptionReport = parseException();
         }
-        // if ( "ProcessFailed".equals( localName ) ) {
-        // exceptionReport = parseException();
-        // }
         StAXParsingHelper.nextElement( reader ); // </Status>
-        return new ExecuteStatus( statusMsg, percent, creationTime, exceptionReport );
+        return new ExecutionStatus( state, statusMsg, percent, creationTime, exceptionReport );
     }
 
     /**

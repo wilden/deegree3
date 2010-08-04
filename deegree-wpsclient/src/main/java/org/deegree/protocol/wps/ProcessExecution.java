@@ -54,9 +54,8 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.XMLAdapter;
-import org.deegree.protocol.wps.execute.ExecuteRequest;
-import org.deegree.protocol.wps.execute.ExecuteResponse;
-import org.deegree.protocol.wps.execute.RequestWriter;
+import org.deegree.protocol.wps.execute.ExecuteWriter;
+import org.deegree.protocol.wps.execute.ExecutionResult;
 import org.deegree.protocol.wps.execute.ResponseReader;
 import org.deegree.protocol.wps.execute.datatypes.BinaryDataType;
 import org.deegree.protocol.wps.execute.datatypes.BoundingBoxDataType;
@@ -154,20 +153,24 @@ public class ProcessExecution {
     }
 
     /**
-     * Adds a complex input parameter that contains XML.
+     * Adds an XML-valued complex input parameter.
      * 
      * @param id
      *            identifier of the input parameter, must not be <code>null</code>
      * @param idCodeSpace
      *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
      * @param url
-     *            {@link URL} to the xml data, must not be <code>null</code>
+     *            {@link URL} reference to the xml resource, must not be <code>null</code> (and must not be
+     *            web-accessible)
      * @param mimeType
-     *            mime type of the xml data, may be null
+     *            mime type, may be <code>null</code> (indicates that the default mime type from the parameter
+     *            description applies)
      * @param encoding
-     *            encoding of the xml data, may be null
+     *            encoding, may be <code>null</code> (indicates that the default encoding from the parameter description
+     *            applies)
      * @param schema
-     *            schema of the xml fragment, may be null
+     *            schema, may be <code>null</code> (indicates that the default schema from the parameter description
+     *            applies)
      */
     public void addXMLInput( String id, String idCodeSpace, URL url, String mimeType, String encoding, String schema ) {
         XMLDataType xmlData = new XMLDataType( url, false, mimeType, encoding, schema );
@@ -175,20 +178,24 @@ public class ProcessExecution {
     }
 
     /**
-     * Adds a complex input parameter that contains XML.
+     * Adds an XML-valued complex input parameter.
      * 
      * @param id
      *            identifier of the input parameter, must not be <code>null</code>
      * @param idCodeSpace
      *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
      * @param reader
-     *            {@link XMLStreamReader} to the xml data, mustn't be null
+     *            {@link XMLStreamReader} to the xml data, must not be <code>null</code> and point to the START_ELEMENT
+     *            event
      * @param mimeType
-     *            mime type of the xml data, may be null
+     *            mime type, may be <code>null</code> (indicates that the default mime type from the parameter
+     *            description applies)
      * @param encoding
-     *            encoding of the xml data, may be null
+     *            encoding, may be <code>null</code> (indicates that the default encoding from the parameter description
+     *            applies)
      * @param schema
-     *            schema of the xml fragment, may be null
+     *            schema, may be <code>null</code> (indicates that the default schema from the parameter description
+     *            applies)
      */
     public void addXMLInput( String id, String idCodeSpace, XMLStreamReader reader, String mimeType, String encoding,
                              String schema ) {
@@ -197,18 +204,21 @@ public class ProcessExecution {
     }
 
     /**
-     * Add binary input data under the specified id as URL.
+     * Adds a binary-valued complex input parameter.
      * 
      * @param id
      *            identifier of the input parameter, must not be <code>null</code>
      * @param idCodeSpace
      *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
      * @param url
-     *            {@link URL} to the binary data, mustn't be null
+     *            {@link URL} reference to the binary resource, must not be <code>null</code> (and must not be
+     *            web-accessible)
      * @param mimeType
-     *            mime type of the binary data, may be null
+     *            mime type, may be <code>null</code> (indicates that the default mime type from the parameter
+     *            description applies)
      * @param encoding
-     *            encoding of the binary data, may be null
+     *            encoding, may be <code>null</code> (indicates that the default encoding from the parameter description
+     *            applies)
      */
     public void addBinaryInput( String id, String idCodeSpace, URL url, String mimeType, String encoding ) {
         BinaryDataType binaryData = new BinaryDataType( url, false, mimeType, encoding );
@@ -216,18 +226,20 @@ public class ProcessExecution {
     }
 
     /**
-     * Add binary input data under the specified id as input stream.
+     * Adds a binary-valued complex input parameter.
      * 
      * @param id
      *            identifier of the input parameter, must not be <code>null</code>
      * @param idCodeSpace
      *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
      * @param inputStream
-     *            input stream to the binary data, mustn't be null
+     *            input stream to the binary data, must not be <code>null</code>
      * @param mimeType
-     *            mime type of the binary data, may be null
+     *            mime type, may be <code>null</code> (indicates that the default mime type from the parameter
+     *            description applies)
      * @param encoding
-     *            encoding of the binary data, may be null
+     *            encoding, may be <code>null</code> (indicates that the default encoding from the parameter description
+     *            applies)
      */
     public void addBinaryInput( String id, String idCodeSpace, InputStream inputStream, String mimeType, String encoding ) {
         BinaryDataType binaryData = new BinaryDataType( inputStream, mimeType, encoding );
@@ -235,33 +247,44 @@ public class ProcessExecution {
     }
 
     /**
-     * Set format of the identified output as an XML response document. Use this method or
-     * {@link #setRawOutput(String, String, String, String, String) } to specify the format in which the output should be
-     * presented.
+     * Adds the specified parameter to the list of explicitly requested output parameters.
+     * <p>
+     * Calling this method sets the <code>ResponseForm</code> to <code>ResponseDocument</code>.
+     * </p>
      * 
      * @param id
      *            identifier of the output parameter, must not be <code>null</code>
      * @param idCodeSpace
      *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
      * @param uom
-     *            unit of measure, in case it is a Literal Output, otherwise null
+     *            requested unit of measure, may be <code>null</code> (indicates that the default mime type from the
+     *            parameter description applies). This parameter only applies for literal outputs.
      * @param asRef
-     *            return output as an URL
+     *            if true, the output should be returned by the process as a reference, otherwise it will be embedded in
+     *            the response document
      * @param mimeType
-     *            mimeType of the data, may be null
+     *            requested mime type, may be <code>null</code> (indicates that the default mime type from the parameter
+     *            description applies)
      * @param encoding
-     *            encoding of data, may be null
+     *            requested encoding, may be <code>null</code> (indicates that the default encoding from the parameter
+     *            description applies)
      * @param schema
+     *            requested schema, may be <code>null</code> (indicates that the default schema from the parameter
+     *            description applies)
      */
-    public void setRequestedOutput( String id, String idCodeSpace, String uom, boolean asRef, String mimeType,
-                                    String encoding, String schema ) {
+    public void addOutput( String id, String idCodeSpace, String uom, boolean asRef, String mimeType, String encoding,
+                           String schema ) {
         outputDefs.add( new OutputDefinition( new CodeType( id ), uom, asRef, mimeType, encoding, schema ) );
+        rawOutput = false;
     }
 
     /**
-     * Set format of the identified output as raw data. Use this method or
-     * {@link #setRequestedOutput(String, String, String, boolean, String, String, String)} to specify the format in
-     * which the output should be presented.
+     * Sets an explicitly requested output parameter and sets the <code>ResponseForm</code> of the <code>Execute</code>
+     * request to <code>RawOutput</code>.
+     * <p>
+     * By calling this method, the server will only be able to respond with a single output parameter. If you require
+     * multiple output parameters, use {@link #addOutput(String, String, String, boolean, String, String, String)}.
+     * </p>
      * 
      * @param id
      *            identifier of the output parameter, must not be <code>null</code>
@@ -273,33 +296,31 @@ public class ProcessExecution {
      *            encoding of data, may be null
      * @param schema
      *            schema of data, in case it is an XML document
-     * @throws Exception
      */
-    public void setRawOutput( String id, String idCodeSpace, String mimeType, String encoding, String schema )
-                            throws Exception {
+    public void setRawOutput( String id, String idCodeSpace, String mimeType, String encoding, String schema ) {
         outputDefs.add( new OutputDefinition( new CodeType( id ), null, false, mimeType, encoding, schema ) );
         rawOutput = true;
         if ( outputDefs.size() > 1 ) {
-            throw new Exception( "A raw response can be delivered only for one output parameter." );
+            throw new RuntimeException( "A raw response can be delivered only for one output parameter." );
         }
     }
 
     /**
      * Executes the process.
      * 
-     * @return execution response, never <code>null</code>
+     * @return execution result, never <code>null</code>
      * @throws IOException
      *             if a communication/network problem occured
      * @throws OWSException
      *             if the server replied with an exception
      * @throws XMLStreamException
      */
-    public ExecuteResponse execute()
+    public ExecutionResult execute()
                             throws OWSException, IOException, XMLStreamException {
 
         responseFormat = new ResponseFormat( rawOutput, false, false, false, outputDefs );
 
-        ExecuteResponse response = null;
+        ExecutionResult response = null;
         // TODO what if server only supports Get?
         URL url = client.getExecuteURL( true );
 
@@ -317,10 +338,8 @@ public class ProcessExecution {
         // "wpsClientIn",
         // ".xml" ) ) );
 
-        String version = client.getServiceVersion();
-        ExecuteRequest executeRequest = new ExecuteRequest( process.getId(), version, inputs, responseFormat );
-        RequestWriter executer = new RequestWriter( writer );
-        executer.write100( executeRequest );
+        ExecuteWriter executer = new ExecuteWriter( writer );
+        executer.write100( process.getId(), inputs, responseFormat );
         writer.flush();
         writer.close();
 
@@ -353,12 +372,13 @@ public class ProcessExecution {
      * This method issues the <code>Execute</code> request against the server and returns immediately.
      * </p>
      * 
+     * @return execution result, never <code>null</code>
      * @throws IOException
      *             if a communication/network problem occured
      * @throws OWSException
      *             if the server replied with an exception
      */
-    public void executeAsync()
+    public ExecutionResult executeAsync()
                             throws IOException, OWSException {
         throw new UnsupportedOperationException( "Async execution is not implemented yet." );
     }

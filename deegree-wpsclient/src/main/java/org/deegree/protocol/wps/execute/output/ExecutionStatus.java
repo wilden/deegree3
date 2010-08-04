@@ -35,15 +35,21 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.execute.output;
 
+import org.deegree.protocol.wps.execute.ExceptionReport;
+import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
+
 /**
  * TODO add class documentation here
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
  */
-public class ExecuteStatus {
+public class ExecutionStatus {
+
+    private ExecutionState state;
 
     private String statusMsg;
 
@@ -51,9 +57,17 @@ public class ExecuteStatus {
 
     private String creationTime;
 
-    private String exceptionReport;
+    private ExceptionReport exceptionReport;
 
-    public ExecuteStatus( String statusMsg, Integer percent, String creationTime, String exceptionReport ) {
+    /**
+     * @param state
+     * @param statusMsg
+     * @param percent
+     * @param creationTime
+     * @param exceptionReport
+     */
+    public ExecutionStatus( ExecutionState state, String statusMsg, Integer percent, String creationTime,
+                            ExceptionReport exceptionReport ) {
         this.statusMsg = statusMsg;
         this.percent = percent;
         this.creationTime = creationTime;
@@ -61,36 +75,48 @@ public class ExecuteStatus {
     }
 
     /**
-     * Returns the status message beloging to the respective process.
+     * Returns the current state of the execution.
      * 
-     * @return message
+     * @return state of the execution, never <code>null</code>
+     */
+    public ExecutionState getState() {
+        return state;
+    }
+
+    /**
+     * Returns the status message.
+     * 
+     * @return status message, may be <code>null</code> (no status message available)
      */
     public String getStatusMessage() {
         return statusMsg;
     }
 
     /**
-     * Returns what fraction of the process is finished, or null if this does not apply (the execution was synchronous).
+     * Returns the percentage of the process that has been completed.
      * 
-     * @return the percent of the finished process
+     * @return the completed percentage of the process, may be <code>null</code> (no completion percentage available)
      */
     public Integer getPercentCompleted() {
         return percent;
     }
 
     /**
-     * @return creation time of the process execution
+     * @return creation time of the process execution, never <code>null</code>
      */
     public String getCreationTime() {
         return creationTime;
     }
 
     /**
+     * Returns the exception report.
+     * <p>
+     * NOTE: An exception report is only available if state is {@link ExecutionState#FAILED}.
+     * </p>
      * 
-     * @return an exception message in case the execution went wrong, null otherwise
+     * @return an exception message in case the execution failed, <code>null</code> otherwise
      */
-    public String getExceptionReport() {
+    public ExceptionReport getExceptionReport() {
         return exceptionReport;
     }
-
 }

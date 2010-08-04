@@ -46,13 +46,14 @@ import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.protocol.wps.describeprocess.ProcessDetails;
 import org.deegree.protocol.wps.describeprocess.input.InputDescription;
 import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
+import org.deegree.protocol.wps.getcapabilities.ProcessInfo;
 import org.deegree.services.controller.ows.OWSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Encapsulates the properties of a process offered by a WPS instance (id, title, input format, output format, etc.) and
- * provides access to a {@link ProcessExecution} context for executing it.
+ * Encapsulates the properties of a process offered by a WPS instance (id, title, abstract, input format, output format,
+ * etc.) and provides access to a {@link ProcessExecution} context for executing it.
  * 
  * @see WPSClient
  * @see ProcessExecution
@@ -69,39 +70,23 @@ public class Process {
 
     private static final Logger LOG = LoggerFactory.getLogger( Process.class );
 
-    private final WPSClient wpsclient;
+    private final WPSClient client;
 
-    private final String version;
-
-    private final CodeType processId;
-
-    private final LanguageString title;
-
-    private final LanguageString processAbstract;
+    private final ProcessInfo processInfo;
 
     private ProcessDetails processDetails;
 
     /**
      * Creates a new {@link Process} instance.
      * 
-     * @param wpsclient
+     * @param client
      *            associated client instance, must not be <code>null</code>
-     * @param version
-     *            process version, must not be <code>null</code>
-     * @param processId
-     *            process id, must not be <code>null</code>
-     * @param title
-     *            process title, must not be <code>null</code>
-     * @param processAbstract
-     *            process abstract, can be <code>null</code>
+     * @param processInfo
+     *            brief process info, must not be <code>null</code>
      */
-    Process( WPSClient wpsclient, String version, CodeType processId, LanguageString title,
-             LanguageString processAbstract ) {
-        this.wpsclient = wpsclient;
-        this.version = version;
-        this.processId = processId;
-        this.title = title;
-        this.processAbstract = processAbstract;
+    public Process( WPSClient client, ProcessInfo processInfo ) {
+        this.client = client;
+        this.processInfo = processInfo;
     }
 
     /**
@@ -110,7 +95,7 @@ public class Process {
      * @return the identifier, never <code>null</code>
      */
     public CodeType getId() {
-        return processId;
+        return processInfo.getId();
     }
 
     /**
@@ -119,7 +104,7 @@ public class Process {
      * @return the version, never <code>null</code>
      */
     public String getVersion() {
-        return version;
+        return processInfo.getVersion();
     }
 
     /**
@@ -128,7 +113,7 @@ public class Process {
      * @return the title, never <code>null</code>
      */
     public LanguageString getTitle() {
-        return title;
+        return processInfo.getTitle();
     }
 
     /**
@@ -137,7 +122,7 @@ public class Process {
      * @return the abstract, can be <code>null</code> (if the process description does not define an abstract)
      */
     public LanguageString getAbstract() {
-        return processAbstract;
+        return processInfo.getAbstract();
     }
 
     /**
@@ -242,13 +227,13 @@ public class Process {
      * @return new process execution context, never <code>null</code>
      */
     public ProcessExecution prepareExecution() {
-        return new ProcessExecution( wpsclient, this );
+        return new ProcessExecution( client, this );
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append( "ProcessIdentifier: " + this.processId + "\n" );
+        sb.append( "ProcessIdentifier: " + processInfo.getId() + "\n" );
         return sb.toString();
     }
 
@@ -265,17 +250,18 @@ public class Process {
                             throws IOException, OWSException {
 
         if ( processDetails == null ) {
-            URL url = wpsclient.getDescribeProcessURL( false );
+            URL url = client.getDescribeProcessURL( false );
 
-            if ( processId.getCodeSpace() != null ) {
-                LOG.warn( "Performing DescribeProcess using GET, but process identifier ('" + processId
-                          + "') has a code space (which cannot be expressed). "
+            if ( processInfo.getId().getCodeSpace() != null ) {
+                LOG.warn( "Performing DescribeProcess using GET, but process identifier ('" + processInfo.getId()
+                          + "') has a code space (which cannot be expressed using the GET binding). "
                           + "Omitting the code space and hoping for the best..." );
             }
 
-            String finalURLStr = url.toExternalForm() + "?service=WPS&version=" + URLEncoder.encode( version, "UTF-8" )
+            String finalURLStr = url.toExternalForm() + "?service=WPS&version="
+                                 + URLEncoder.encode( client.getServiceVersion(), "UTF-8" )
                                  + "&request=DescribeProcess&identifier="
-                                 + URLEncoder.encode( processId.getCode(), "UTF-8" );
+                                 + URLEncoder.encode( processInfo.getId().getCode(), "UTF-8" );
             URL finalURL = new URL( finalURLStr );
             XMLAdapter describeProcessResponse = new XMLAdapter( finalURL );
             processDetails = new ProcessDetails( describeProcessResponse );

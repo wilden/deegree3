@@ -38,8 +38,6 @@ package org.deegree.protocol.wps.process;
 import static org.deegree.protocol.wps.WPSConstants.WPS_100_NS;
 import static org.deegree.protocol.wps.WPSConstants.WPS_PREFIX;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -462,11 +460,21 @@ public class ProcessDetails {
         return new CodeType( omId.getText() );
     }
 
-    public boolean getStoreSupported() {
+    /**
+     * Returns whether the process supports storing the response document.
+     * 
+     * @return true, if storing is supported, false otherwise
+     */
+    boolean getStoreSupported() {
         return storeSupported;
     }
 
-    public boolean getStatusSupported() {
+    /**
+     * Returns whether the process supports status information during asynchronous operation.
+     * 
+     * @return true, if status information is supported, false otherwise
+     */
+    boolean getStatusSupported() {
         return statusSupported;
     }
 }

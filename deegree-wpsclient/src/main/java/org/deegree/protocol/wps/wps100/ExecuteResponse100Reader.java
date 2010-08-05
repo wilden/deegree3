@@ -68,7 +68,6 @@ import org.deegree.protocol.wps.output.ComplexOutput;
 import org.deegree.protocol.wps.output.ExecutionOutput;
 import org.deegree.protocol.wps.output.LiteralOutput;
 import org.deegree.protocol.wps.param.ComplexFormat;
-import org.deegree.protocol.wps.process.execute.ExceptionReport;
 import org.deegree.protocol.wps.process.execute.ExecutionResponse;
 import org.deegree.protocol.wps.process.execute.ExecutionStatus;
 import org.deegree.services.controller.ows.OWSException;
@@ -116,9 +115,8 @@ public class ExecuteResponse100Reader {
             StAXParsingHelper.nextElement( reader );
 
             if ( new QName( owsNS, "ExceptionReport" ).equals( reader.getName() ) ) {
-                ExceptionReport excep = parseException();
+                OWSException excep = parseException();
                 LOG.error( "Service responded with exception report: " + excep.getMessage() );
-                throw new OWSException( excep.getMessage(), excep.getCode(), excep.getLocator() );
             }
 
             // TODO handle raw output
@@ -397,7 +395,7 @@ public class ExecuteResponse100Reader {
         String statusMsg = null;
         Integer percent = null;
         String creationTime = null;
-        ExceptionReport exceptionReport = null;
+        OWSException exceptionReport = null;
 
         String attribute = reader.getAttributeValue( null, "creationTime" );
         if ( attribute != null ) {
@@ -442,7 +440,7 @@ public class ExecuteResponse100Reader {
      * @return
      * @throws XMLStreamException
      */
-    private ExceptionReport parseException() {
+    private OWSException parseException() {
         String code = null;
         String locator = null;
         String message = null;
@@ -455,7 +453,7 @@ public class ExecuteResponse100Reader {
         } catch ( XMLStreamException e ) {
             e.printStackTrace();
         }
-        return new ExceptionReport( message, code, locator );
+        return new OWSException( message, code, locator );
     }
 
     class XMLDataNamespaceContext implements NamespaceContext {

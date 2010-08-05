@@ -64,7 +64,6 @@ import org.deegree.protocol.wps.input.ExecutionInput;
 import org.deegree.protocol.wps.input.LiteralInput;
 import org.deegree.protocol.wps.input.XMLInput;
 import org.deegree.protocol.wps.output.type.OutputType;
-import org.deegree.protocol.wps.process.execute.ExceptionReport;
 import org.deegree.protocol.wps.process.execute.ExecutionOutputs;
 import org.deegree.protocol.wps.process.execute.ExecutionResponse;
 import org.deegree.protocol.wps.process.execute.OutputFormat;
@@ -310,7 +309,7 @@ public class ProcessExecution {
      *            schema of data, in case it is an XML document
      */
     public void setRawOutput( String id, String idCodeSpace, String mimeType, String encoding, String schema ) {
-        throw new UnsupportedOperationException("Raw data output is currently not activated -- needs testing.");
+        throw new UnsupportedOperationException( "Raw data output is currently not activated -- needs testing." );
         // outputDefs.add( new OutputDefinition( new CodeType( id ), null, false, mimeType, encoding, schema ) );
         // rawOutput = true;
         // if ( outputDefs.size() > 1 ) {
@@ -374,9 +373,9 @@ public class ProcessExecution {
         if ( lastResponse == null ) {
             return null;
         }
-        ExceptionReport report = lastResponse.getStatus().getExceptionReport();
+        OWSException report = lastResponse.getStatus().getExceptionReport();
         if ( report != null ) {
-            throw new OWSException( report.getMessage(), report.getCode(), report.getLocator() );
+            throw report;
         }
         return lastResponse.getOutputs();
     }
@@ -453,9 +452,9 @@ public class ProcessExecution {
      * NOTE: An exception report is only available if state is {@link ExecutionState#FAILED}.
      * </p>
      * 
-     * @return an exception message in case the execution failed, <code>null</code> otherwise
+     * @return an exception report in case the execution failed, <code>null</code> otherwise
      */
-    public ExceptionReport getExceptionReport() {
+    public OWSException getExceptionReport() {
         if ( lastResponse == null ) {
             return null;
         }
@@ -478,14 +477,14 @@ public class ProcessExecution {
 
         XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
 
-//        if ( LOG.isDebugEnabled() ) {
-//            File logFile = File.createTempFile( "wpsclient", "request.xml" );
-//            XMLStreamWriter logWriter = outFactory.createXMLStreamWriter( new FileOutputStream( logFile ) );
-//            ExecuteWriter executer = new ExecuteWriter( logWriter );
-//            executer.write100( process.getId(), inputs, responseFormat );
-//            logWriter.close();
-//            LOG.debug( "WPS request can be found at " + logFile.toString() );
-//        }
+        // if ( LOG.isDebugEnabled() ) {
+        // File logFile = File.createTempFile( "wpsclient", "request.xml" );
+        // XMLStreamWriter logWriter = outFactory.createXMLStreamWriter( new FileOutputStream( logFile ) );
+        // ExecuteWriter executer = new ExecuteWriter( logWriter );
+        // executer.write100( process.getId(), inputs, responseFormat );
+        // logWriter.close();
+        // LOG.debug( "WPS request can be found at " + logFile.toString() );
+        // }
 
         XMLStreamWriter writer = outFactory.createXMLStreamWriter( conn.getOutputStream() );
         ExecuteRequest100Writer executer = new ExecuteRequest100Writer( writer );

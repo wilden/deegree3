@@ -47,7 +47,7 @@ import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
  * @version $Revision$, $Date$
  */
 public class ExecutionStatus {
-
+   
     private ExecutionState state;
 
     private String statusMsg;
@@ -67,6 +67,7 @@ public class ExecutionStatus {
      */
     public ExecutionStatus( ExecutionState state, String statusMsg, Integer percent, String creationTime,
                             ExceptionReport exceptionReport ) {
+        this.state = state;
         this.statusMsg = statusMsg;
         this.percent = percent;
         this.creationTime = creationTime;

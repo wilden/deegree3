@@ -35,6 +35,10 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps;
 
+import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.FAILED;
+import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.SUCCEEDED;
+import static org.junit.Assert.assertEquals;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -59,6 +63,7 @@ import org.deegree.protocol.wps.execute.output.BBoxOutput;
 import org.deegree.protocol.wps.execute.output.ComplexOutput;
 import org.deegree.protocol.wps.execute.output.LiteralOutput;
 import org.deegree.services.controller.ows.OWSException;
+import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
 import org.deegree.services.jaxb.main.ServiceIdentificationType;
 import org.junit.Assert;
 import org.junit.Before;
@@ -267,6 +272,8 @@ public class WPSClientTest {
         execution.addXMLInput( "GMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
         execution.addOutput( "Centroid", null, null, true, null, null, null );
         ExecutionOutputs response = execution.execute();
+        
+        assertEquals( SUCCEEDED, execution.getState() );
 
         ComplexOutput output = (ComplexOutput) response.get( 0 );
         XMLStreamReader reader = output.getAsXMLStream();
@@ -325,23 +332,43 @@ public class WPSClientTest {
         Assert.assertEquals( "EPSG:4326", out2.getCrs() );
         Assert.assertEquals( 2, out2.getDimension() );
     }
-    
-//    @Test
-//    public void testExecuteAsync()
-//                            throws OWSException, IOException, XMLStreamException {
-//        URL processUrl = new URL( DEMO_SERVICE_URL );
-//        WPSClient wpsClient = new WPSClient( processUrl );
-//        Process proc = wpsClient.getProcess( "ParameterDemoProcess", null );
-//
-//        ProcessExecution execution = proc.prepareExecution();
-//        execution.addLiteralInput( "LiteralInput", null, "10", "integer", "seconds" );
-//        execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
-//        execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
-//        execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), "image/png", null );
-//
-//        execution.executeAsync();
-//    }
-    
+
+    @Test
+    public void testExecuteAsync()
+                            throws OWSException, IOException, XMLStreamException, InterruptedException {
+        URL processUrl = new URL( DEMO_SERVICE_URL );
+        WPSClient wpsClient = new WPSClient( processUrl );
+        Process proc = wpsClient.getProcess( "ParameterDemoProcess", null );
+
+        ProcessExecution execution = proc.prepareExecution();
+        execution.addLiteralInput( "LiteralInput", null, "5", "integer", "seconds" );
+        execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
+        execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
+        execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), "image/png", null );
+
+        execution.executeAsync();
+        Assert.assertNotSame( SUCCEEDED, execution.getState() );
+        Assert.assertNotSame( FAILED, execution.getState() );
+
+        ExecutionState state = null;
+        while ( ( state = execution.getState() ) != SUCCEEDED ) {            
+            System.out.println (execution.getPercentCompleted());
+            Thread.sleep( 500 );
+        }
+        
+        ExecutionOutputs outputs = execution.getOutputs();
+        LiteralOutput out1 = (LiteralOutput) outputs.get( "LiteralOutput", null );
+        Assert.assertEquals( "5", out1.getValue() );
+        Assert.assertEquals( "integer", out1.getDataType() );
+//        Assert.assertEquals( "seconds", out1.getUom() );
+
+        BBoxOutput out2 = (BBoxOutput) outputs.get( "BBOXOutput", null );
+        Assert.assertTrue( Arrays.equals( new double[] { 0.0, 0.0 }, out2.getLower() ) );
+        Assert.assertTrue( Arrays.equals( new double[] { 90.0, 180.0 }, out2.getUpper() ) );
+        Assert.assertEquals( "EPSG:4326", out2.getCrs() );
+        Assert.assertEquals( 2, out2.getDimension() );        
+    }
+
     // @Test
     // public void testExecute_4()
     // throws OWSException, IOException, XMLStreamException {

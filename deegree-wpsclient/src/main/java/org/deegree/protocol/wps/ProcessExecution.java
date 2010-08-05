@@ -35,6 +35,9 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps;
 
+import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.FAILED;
+import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.SUCCEEDED;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -59,7 +62,6 @@ import org.deegree.protocol.wps.execute.ExceptionReport;
 import org.deegree.protocol.wps.execute.ExecuteWriter;
 import org.deegree.protocol.wps.execute.ExecutionOutputs;
 import org.deegree.protocol.wps.execute.ExecutionResponse;
-import org.deegree.protocol.wps.execute.ExecutionStatus;
 import org.deegree.protocol.wps.execute.OutputDefinition;
 import org.deegree.protocol.wps.execute.ResponseFormat;
 import org.deegree.protocol.wps.execute.ResponseReader;
@@ -103,9 +105,7 @@ public class ProcessExecution {
 
     private boolean rawOutput;
 
-    private ExecutionStatus status;
-
-    private ExecutionOutputs processOutputs;
+    private ExecutionResponse lastResponse;
 
     /**
      * Creates a new {@link ProcessExecution} instance.
@@ -323,10 +323,8 @@ public class ProcessExecution {
     public ExecutionOutputs execute()
                             throws OWSException, IOException, XMLStreamException {
 
-        ExecutionResponse response = sendExecute( false );
-        status = response.getStatus();
-        processOutputs = new ExecutionOutputs( response.getOutputs() );
-        return processOutputs;
+        lastResponse = sendExecute( false );
+        return lastResponse.getOutputs();
     }
 
     /**
@@ -344,6 +342,7 @@ public class ProcessExecution {
     public void executeAsync()
                             throws IOException, OWSException, XMLStreamException {
 
+        // needed, because ResponseDocument must be set in any case for async mode
         if ( outputDefs == null || outputDefs.size() == 0 ) {
             outputDefs = new ArrayList<OutputDefinition>();
             for ( OutputDescription output : process.getOutputTypes() ) {
@@ -351,9 +350,7 @@ public class ProcessExecution {
                 outputDefs.add( outputDef );
             }
         }
-        ExecutionResponse response = sendExecute( true );
-        status = response.getStatus();
-        processOutputs = new ExecutionOutputs( response.getOutputs() );
+        lastResponse = sendExecute( true );
     }
 
     /**
@@ -361,21 +358,49 @@ public class ProcessExecution {
      * 
      * @return the outputs of the process execution, or <code>null</code> if the current state is not
      *         {@link ExecutionState#SUCCEEDED}
+     * @throws OWSException
+     *             if the server replied with an exception
      */
-    public ExecutionOutputs getOutputs() {
-        return processOutputs;
+    public ExecutionOutputs getOutputs()
+                            throws OWSException {
+        if ( lastResponse == null ) {
+            return null;
+        }
+        ExceptionReport report = lastResponse.getStatus().getExceptionReport();
+        if ( report != null ) {
+            throw new OWSException( report.getMessage(), report.getCode(), report.getLocator() );
+        }
+        return lastResponse.getOutputs();
     }
 
     /**
      * Returns the current state of the execution.
      * 
      * @return state of the execution, or <code>null</code> if the execution has not been started yet
+     * @throws IOException
+     *             if a communication/network problem occured
+     * @throws OWSException
+     *             if the server replied with an exception
+     * @throws XMLStreamException
      */
-    public ExecutionState getState() {
-        if ( status == null ) {
+    public ExecutionState getState()
+                            throws OWSException, IOException, XMLStreamException {
+        if ( lastResponse == null ) {
             return null;
         }
-        return status.getState();
+        if ( lastResponse.getStatus().getState() != SUCCEEDED && lastResponse.getStatus().getState() != FAILED ) {
+            URL statusLocation = lastResponse.getStatusLocation();
+            if ( statusLocation == null ) {
+                throw new RuntimeException( "Cannot update status. No statusLocation provided." );
+            }
+            LOG.debug( "Polling response document from status location: " + statusLocation );
+            XMLInputFactory inFactory = XMLInputFactory.newInstance();
+            InputStream is = statusLocation.openStream();
+            XMLStreamReader xmlReader = inFactory.createXMLStreamReader( is );
+            ResponseReader reader = new ResponseReader( xmlReader );
+            lastResponse = reader.parse100();
+        }
+        return lastResponse.getStatus().getState();
     }
 
     /**
@@ -385,10 +410,10 @@ public class ProcessExecution {
      *         available
      */
     public String getStatusMessage() {
-        if ( status == null ) {
+        if ( lastResponse == null ) {
             return null;
         }
-        return status.getStatusMessage();
+        return lastResponse.getStatus().getStatusMessage();
     }
 
     /**
@@ -398,20 +423,20 @@ public class ProcessExecution {
      *         or no completion percentage provided by the process
      */
     public Integer getPercentCompleted() {
-        if ( status == null ) {
+        if ( lastResponse == null ) {
             return null;
         }
-        return status.getPercentCompleted();
+        return lastResponse.getStatus().getPercentCompleted();
     }
 
     /**
      * @return creation time of the process execution, never <code>null</code>
      */
     public String getCreationTime() {
-        if ( status == null ) {
+        if ( lastResponse == null ) {
             return null;
         }
-        return status.getCreationTime();
+        return lastResponse.getStatus().getCreationTime();
     }
 
     /**
@@ -423,10 +448,10 @@ public class ProcessExecution {
      * @return an exception message in case the execution failed, <code>null</code> otherwise
      */
     public ExceptionReport getExceptionReport() {
-        if ( status == null ) {
+        if ( lastResponse == null ) {
             return null;
         }
-        return status.getExceptionReport();
+        return lastResponse.getStatus().getExceptionReport();
     }
 
     private ExecutionResponse sendExecute( boolean async )
@@ -434,7 +459,6 @@ public class ProcessExecution {
 
         responseFormat = new ResponseFormat( rawOutput, async, false, async, outputDefs );
 
-        ExecutionResponse response = null;
         // TODO what if server only supports Get?
         URL url = client.getExecuteURL( true );
 
@@ -446,14 +470,14 @@ public class ProcessExecution {
 
         XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
 
-//        if ( LOG.isDebugEnabled() ) {
-//            File logFile = File.createTempFile( "wpsclient", "request.xml" );
-//            XMLStreamWriter logWriter = outFactory.createXMLStreamWriter( new FileOutputStream( logFile ) );
-//            ExecuteWriter executer = new ExecuteWriter( logWriter );
-//            executer.write100( process.getId(), inputs, responseFormat );
-//            logWriter.close();
-//            LOG.debug( "WPS request can be found at " + logFile.toString() );
-//        }
+        // if ( LOG.isDebugEnabled() ) {
+        // File logFile = File.createTempFile( "wpsclient", "request.xml" );
+        // XMLStreamWriter logWriter = outFactory.createXMLStreamWriter( new FileOutputStream( logFile ) );
+        // ExecuteWriter executer = new ExecuteWriter( logWriter );
+        // executer.write100( process.getId(), inputs, responseFormat );
+        // logWriter.close();
+        // LOG.debug( "WPS request can be found at " + logFile.toString() );
+        // }
 
         XMLStreamWriter writer = outFactory.createXMLStreamWriter( conn.getOutputStream() );
         ExecuteWriter executer = new ExecuteWriter( writer );
@@ -477,9 +501,9 @@ public class ProcessExecution {
         }
 
         ResponseReader responseReader = new ResponseReader( reader );
-        response = responseReader.parse100();
+        lastResponse = responseReader.parse100();
         reader.close();
 
-        return response;
+        return lastResponse;
     }
 }

@@ -62,6 +62,7 @@ public class ExecutionOutputs {
      */
     public ExecutionOutputs( ExecutionOutput[] outputs ) {
         for ( ExecutionOutput output : outputs ) {
+            System.out.println (output.getId());
             paramIdToOutput.put( output.getId(), output );
         }
     }

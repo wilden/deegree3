@@ -35,6 +35,8 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.execute;
 
+import java.net.URL;
+
 import org.deegree.protocol.wps.execute.output.ExecutionOutput;
 import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
 
@@ -49,13 +51,25 @@ import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
  */
 public class ExecutionResponse {
 
+    private final URL statusLocation;
+
     private final ExecutionStatus status;
 
-    private final ExecutionOutput[] outputs;
+    private final ExecutionOutputs outputs;
 
-    public ExecutionResponse( ExecutionStatus status, ExecutionOutput[] outputs ) {
+    public ExecutionResponse( URL statusLocation, ExecutionStatus status, ExecutionOutput[] outputs ) {
+        this.statusLocation = statusLocation;
         this.status = status;
-        this.outputs = outputs;
+        this.outputs = new ExecutionOutputs( outputs );
+    }
+
+    /**
+     * Returns the status location for fetching updated response documents.
+     * 
+     * @return the status location, may be <code>null</code> (in synchronous mode)
+     */
+    public URL getStatusLocation() {
+        return statusLocation;
     }
 
     /**
@@ -75,7 +89,7 @@ public class ExecutionResponse {
      * 
      * @return the output parameters, never <code>null</code>
      */
-    public ExecutionOutput[] getOutputs() {
+    public ExecutionOutputs getOutputs() {
         return outputs;
     }
 }

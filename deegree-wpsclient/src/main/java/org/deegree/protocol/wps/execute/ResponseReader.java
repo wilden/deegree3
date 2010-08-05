@@ -35,6 +35,7 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.execute;
 
+import static javax.xml.stream.XMLStreamConstants.END_DOCUMENT;
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
@@ -106,39 +107,68 @@ public class ResponseReader {
     public ExecutionResponse parse100()
                             throws OWSException {
 
-        ExecutionStatus status = null;
-        List<ExecutionOutput> outputs = null;
+        ExecutionResponse response = null;
 
         try {
             StAXParsingHelper.nextElement( reader );
-            int state = reader.getEventType();
+
             if ( new QName( owsNS, "ExceptionReport" ).equals( reader.getName() ) ) {
                 ExceptionReport excep = parseException();
                 LOG.error( "Service responded with exception report: " + excep.getMessage() );
                 throw new OWSException( excep.getMessage(), excep.getCode(), excep.getLocator() );
             }
 
-            while ( state != XMLStreamConstants.START_ELEMENT || !reader.getName().getLocalPart().equals( "Status" ) ) {
-                state = reader.next();
-            }
-            status = parseStatus();
+            // TODO handle raw output
+            response = parseResponseDocument();
+            // response = parseRawResponse ();
 
-            while ( state != XMLStreamConstants.START_ELEMENT
-                    || !reader.getName().getLocalPart().equals( "ProcessOutputs" ) ) {
-                state = reader.next();
-            }
-            outputs = parseOutputs();
-
-        } catch ( XMLStreamException e ) {
+        } catch ( Exception e ) {
             LOG.error( "Error while parsing Execute reponse coming from WPS. " + e.getMessage() );
             e.printStackTrace();
+        }
+        return response;
+    }
+
+    private ExecutionResponse parseRawResponse() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    private ExecutionResponse parseResponseDocument()
+                            throws MalformedURLException, XMLStreamException {
+
+        ExecutionStatus status = null;
+        List<ExecutionOutput> outputs = null;
+
+        String statusLocationXMLEncoded = reader.getAttributeValue( null, "statusLocation" );
+        LOG.debug( "Status location: " + statusLocationXMLEncoded );
+        URL statusLocation = null;
+        if ( statusLocationXMLEncoded != null ) {
+            statusLocation = new URL( statusLocationXMLEncoded );
+        }
+
+        int state = reader.getEventType();
+
+        while ( state != XMLStreamConstants.START_ELEMENT || !reader.getName().getLocalPart().equals( "Status" ) ) {
+            state = reader.next();
+        }
+        status = parseStatus();
+
+        while ( state != END_DOCUMENT
+                && ( state != START_ELEMENT || !reader.getName().getLocalPart().equals( "ProcessOutputs" ) ) ) {
+            state = reader.next();
+        }
+        if ( state == XMLStreamConstants.START_ELEMENT ) {
+            outputs = parseOutputs();
         }
 
         ExecutionOutput[] outputsArray = null;
         if ( outputs != null ) {
             outputsArray = outputs.toArray( new ExecutionOutput[outputs.size()] );
+        } else {
+            outputsArray = new ExecutionOutput[0];
         }
-        return new ExecutionResponse( status, outputsArray );
+        return new ExecutionResponse( statusLocation, status, outputsArray );
     }
 
     /**
@@ -373,18 +403,18 @@ public class ResponseReader {
             state = ExecutionState.SUCCEEDED;
             statusMsg = reader.getElementText();
         } else if ( "ProcessStarted".equals( localName ) ) {
-            statusMsg = reader.getElementText();
             String percentStr = reader.getAttributeValue( null, "percentCompleted" );
             if ( percentStr != null ) {
                 percent = Integer.parseInt( percentStr );
             }
+            statusMsg = reader.getElementText();
             StAXParsingHelper.nextElement( reader );
         } else if ( "ProcessPaused".equals( localName ) ) {
-            statusMsg = reader.getElementText();
             String percentStr = reader.getAttributeValue( null, "percentCompleted" );
             if ( percentStr != null ) {
                 percent = Integer.parseInt( percentStr );
             }
+            statusMsg = reader.getElementText();
             StAXParsingHelper.nextElement( reader );
         } else if ( "ProcessFailed".equals( localName ) ) {
             exceptionReport = parseException();

@@ -33,11 +33,10 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.describeprocess.output;
+package org.deegree.protocol.wps.input.type;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
-import org.deegree.protocol.wps.describeprocess.ValueWithRef;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -49,45 +48,33 @@ import org.deegree.protocol.wps.describeprocess.ValueWithRef;
  * @version $Revision$, $Date$
  * 
  */
-public class LiteralOutputType extends OutputType {
+public class BBoxInputType extends InputType {
 
-    private ValueWithRef<String> dataType;
+    private String defaultCrs;
 
-    private ValueWithRef<String> defaultUom;
+    private String[] supportedCrs;
 
-    private ValueWithRef<String>[] supportedUoms;
-
-    public LiteralOutputType( CodeType id, LanguageString outputTitle, LanguageString outputAbstract,
-                              ValueWithRef<String> dataType, ValueWithRef<String> defaultUom,
-                              ValueWithRef<String>[] supportedUoms ) {
-        super( id, outputTitle, outputAbstract );
-        this.dataType = dataType;
-        this.defaultUom = defaultUom;
-        this.supportedUoms = supportedUoms;
+    public BBoxInputType( CodeType id, LanguageString inputTitle, LanguageString inputAbstract, String minOccurs,
+                          String maxOccurs, String defaultCRS, String[] supportedCRSs ) {
+        super( id, inputTitle, inputAbstract, minOccurs, maxOccurs );
+        this.defaultCrs = defaultCRS;
+        this.supportedCrs = supportedCRSs;
     }
 
     /**
      * 
-     * @return the data type as {@link ValueWithRef} for this literal
+     * @return the default CRS used for this respective input.
      */
-    public ValueWithRef<String> getDataType() {
-        return dataType;
+    public String getDefaultCRS() {
+        return defaultCrs;
     }
 
     /**
      * 
-     * @return the default unit-of-measure used, as {@link ValueWithRef}
+     * @return the supported CRSs that can be used for this respective input.
      */
-    public ValueWithRef<String> getDefaultUom() {
-        return defaultUom;
-    }
-
-    /**
-     * 
-     * @return the supported units-of-measure used, as an array of {@link ValueWithRef}
-     */
-    public ValueWithRef<String>[] getSupportedUoms() {
-        return supportedUoms;
+    public String[] getSupportedCrs() {
+        return supportedCrs;
     }
 
 }

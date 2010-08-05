@@ -33,7 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.describeprocess.output;
+package org.deegree.protocol.wps.output.type;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
@@ -49,33 +49,45 @@ import org.deegree.protocol.wps.describeprocess.ValueWithRef;
  * @version $Revision$, $Date$
  * 
  */
-public class BBoxOutputType extends OutputType {
+public class LiteralOutputType extends OutputType {
 
-    private String defaultCrs;
+    private ValueWithRef<String> dataType;
 
-    private String[] supportedCrs;
+    private ValueWithRef<String> defaultUom;
 
-    public BBoxOutputType( CodeType id, LanguageString outputTitle, LanguageString outputAbstract, String defaultCrs,
-                           String[] supportedCrs ) {
+    private ValueWithRef<String>[] supportedUoms;
+
+    public LiteralOutputType( CodeType id, LanguageString outputTitle, LanguageString outputAbstract,
+                              ValueWithRef<String> dataType, ValueWithRef<String> defaultUom,
+                              ValueWithRef<String>[] supportedUoms ) {
         super( id, outputTitle, outputAbstract );
-        this.defaultCrs = defaultCrs;
-        this.supportedCrs = supportedCrs;
+        this.dataType = dataType;
+        this.defaultUom = defaultUom;
+        this.supportedUoms = supportedUoms;
     }
 
     /**
      * 
-     * @return the default CRS used
+     * @return the data type as {@link ValueWithRef} for this literal
      */
-    public String getDefaultCrs() {
-        return defaultCrs;
+    public ValueWithRef<String> getDataType() {
+        return dataType;
     }
 
     /**
      * 
-     * @return the supported CRSs
+     * @return the default unit-of-measure used, as {@link ValueWithRef}
      */
-    public String[] getSupportedCrs() {
-        return supportedCrs;
+    public ValueWithRef<String> getDefaultUom() {
+        return defaultUom;
+    }
+
+    /**
+     * 
+     * @return the supported units-of-measure used, as an array of {@link ValueWithRef}
+     */
+    public ValueWithRef<String>[] getSupportedUoms() {
+        return supportedUoms;
     }
 
 }

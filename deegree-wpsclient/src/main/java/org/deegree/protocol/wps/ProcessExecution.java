@@ -57,7 +57,6 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.XMLAdapter;
-import org.deegree.protocol.wps.describeprocess.output.OutputType;
 import org.deegree.protocol.wps.execute.ExceptionReport;
 import org.deegree.protocol.wps.execute.ExecuteWriter;
 import org.deegree.protocol.wps.execute.ExecutionOutputs;
@@ -70,6 +69,7 @@ import org.deegree.protocol.wps.input.BinaryInput;
 import org.deegree.protocol.wps.input.ExecutionInput;
 import org.deegree.protocol.wps.input.LiteralInput;
 import org.deegree.protocol.wps.input.XMLInput;
+import org.deegree.protocol.wps.output.type.OutputType;
 import org.deegree.services.controller.ows.OWSException;
 import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
 import org.slf4j.Logger;

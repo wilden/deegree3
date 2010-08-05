@@ -54,14 +54,14 @@ import org.deegree.commons.tom.ows.LanguageString;
 import org.deegree.commons.xml.NamespaceContext;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.XPath;
-import org.deegree.protocol.wps.describeprocess.input.BBoxInputType;
-import org.deegree.protocol.wps.describeprocess.input.ComplexInputType;
-import org.deegree.protocol.wps.describeprocess.input.InputType;
-import org.deegree.protocol.wps.describeprocess.input.LiteralInputType;
-import org.deegree.protocol.wps.describeprocess.output.BBoxOutputType;
-import org.deegree.protocol.wps.describeprocess.output.ComplexOutputType;
-import org.deegree.protocol.wps.describeprocess.output.LiteralOutputType;
-import org.deegree.protocol.wps.describeprocess.output.OutputType;
+import org.deegree.protocol.wps.input.type.BBoxInputType;
+import org.deegree.protocol.wps.input.type.ComplexInputType;
+import org.deegree.protocol.wps.input.type.InputType;
+import org.deegree.protocol.wps.input.type.LiteralInputType;
+import org.deegree.protocol.wps.output.type.BBoxOutputType;
+import org.deegree.protocol.wps.output.type.ComplexOutputType;
+import org.deegree.protocol.wps.output.type.LiteralOutputType;
+import org.deegree.protocol.wps.output.type.OutputType;
 import org.deegree.services.jaxb.wps.Range;
 
 /**

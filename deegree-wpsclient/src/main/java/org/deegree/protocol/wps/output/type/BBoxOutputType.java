@@ -33,10 +33,11 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.describeprocess.input;
+package org.deegree.protocol.wps.output.type;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
+import org.deegree.protocol.wps.describeprocess.ValueWithRef;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -48,30 +49,30 @@ import org.deegree.commons.tom.ows.LanguageString;
  * @version $Revision$, $Date$
  * 
  */
-public class BBoxInputType extends InputType {
+public class BBoxOutputType extends OutputType {
 
     private String defaultCrs;
 
     private String[] supportedCrs;
 
-    public BBoxInputType( CodeType id, LanguageString inputTitle, LanguageString inputAbstract, String minOccurs,
-                          String maxOccurs, String defaultCRS, String[] supportedCRSs ) {
-        super( id, inputTitle, inputAbstract, minOccurs, maxOccurs );
-        this.defaultCrs = defaultCRS;
-        this.supportedCrs = supportedCRSs;
+    public BBoxOutputType( CodeType id, LanguageString outputTitle, LanguageString outputAbstract, String defaultCrs,
+                           String[] supportedCrs ) {
+        super( id, outputTitle, outputAbstract );
+        this.defaultCrs = defaultCrs;
+        this.supportedCrs = supportedCrs;
     }
 
     /**
      * 
-     * @return the default CRS used for this respective input.
+     * @return the default CRS used
      */
-    public String getDefaultCRS() {
+    public String getDefaultCrs() {
         return defaultCrs;
     }
 
     /**
      * 
-     * @return the supported CRSs that can be used for this respective input.
+     * @return the supported CRSs
      */
     public String[] getSupportedCrs() {
         return supportedCrs;

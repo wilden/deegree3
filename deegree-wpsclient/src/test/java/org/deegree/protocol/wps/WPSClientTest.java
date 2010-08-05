@@ -73,8 +73,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException;
-
 /**
  * The <code></code> class TODO add class documentation here.
  * 
@@ -345,7 +343,7 @@ public class WPSClientTest {
 
     @Test
     public void testExecuteRawOutput()
-                            throws OWSException, IOException, XMLStreamException, Base64DecodingException {
+                            throws OWSException, IOException, XMLStreamException {
         URL processUrl = new URL( DEMO_SERVICE_URL );
         WPSClient wpsClient = new WPSClient( processUrl );
         Process proc = wpsClient.getProcess( "ParameterDemoProcess", null );

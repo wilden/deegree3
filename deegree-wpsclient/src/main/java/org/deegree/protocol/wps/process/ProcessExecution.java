@@ -481,14 +481,6 @@ public class ProcessExecution {
 
         XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
 
-        // if ( LOG.isDebugEnabled() ) {
-        // File logFile = File.createTempFile( "wpsclient", "request.xml" );
-        // XMLStreamWriter logWriter = outFactory.createXMLStreamWriter( new FileOutputStream( logFile ) );
-        // ExecuteRequest100Writer executer = new ExecuteRequest100Writer( logWriter );
-        // executer.write100( process.getId(), inputs, responseFormat );
-        // logWriter.close();
-        // LOG.debug( "WPS request can be found at " + logFile.toString() );
-        // }
         OutputStream os = conn.getOutputStream();
         XMLInputFactory inFactory = XMLInputFactory.newInstance();
 
@@ -514,8 +506,24 @@ public class ProcessExecution {
             executer.write100( process.getId(), inputs, responseFormat );
             writer.close();
         }
-        
-        InputStream responseStream = conn.getInputStream();        
+
+        InputStream responseStream = conn.getInputStream();
+
+        if ( LOG.isDebugEnabled() ) {
+            File logFile = File.createTempFile( "wpsclient", "response" );
+            OutputStream logStream = new FileOutputStream( logFile );
+
+            byte[] buffer = new byte[1024];
+            int read = 0;
+            while ( ( read = responseStream.read( buffer ) ) != -1 ) {
+                logStream.write( buffer, 0, read );
+            }
+            logStream.close();
+
+            responseStream = new FileInputStream( logFile );
+            LOG.debug( "WPS response can be found at " + logFile );
+        }
+
         String outputContent = conn.getContentType();
         if ( outputContent.startsWith( "text/xml" ) || outputContent.startsWith( "application/xml" ) ) {
 

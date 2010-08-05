@@ -47,13 +47,13 @@ import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
  * 
  * @version $Revision: $, $Date: $
  */
-public class ExecutionResults {
+public class ExecutionResponse {
 
     private final ExecutionStatus status;
 
     private final ExecutionOutput[] outputs;
 
-    public ExecutionResults( ExecutionStatus status, ExecutionOutput[] outputs ) {
+    public ExecutionResponse( ExecutionStatus status, ExecutionOutput[] outputs ) {
         this.status = status;
         this.outputs = outputs;
     }

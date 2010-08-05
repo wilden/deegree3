@@ -103,7 +103,7 @@ public class ResponseReader {
      * @return
      * @throws OWSException
      */
-    public ExecutionResults parse100()
+    public ExecutionResponse parse100()
                             throws OWSException {
 
         ExecutionStatus status = null;
@@ -138,7 +138,7 @@ public class ResponseReader {
         if ( outputs != null ) {
             outputsArray = outputs.toArray( new ExecutionOutput[outputs.size()] );
         }
-        return new ExecutionResults( status, outputsArray );
+        return new ExecutionResponse( status, outputsArray );
     }
 
     /**

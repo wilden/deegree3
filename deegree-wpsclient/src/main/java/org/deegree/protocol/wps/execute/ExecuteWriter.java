@@ -118,7 +118,7 @@ public class ExecuteWriter {
     private void writeOutputs( ResponseFormat outputFormat )
                             throws XMLStreamException {
         if ( outputFormat != null ) {
-            List<OutputDefinition> outputs = outputFormat.getOutputDefinitions();
+            List<OutputDefinition> outputs = outputFormat.getOutputDefinitions();            
 
             if ( outputs != null && outputs.size() > 0 ) {
                 writer.writeStartElement( wpsPrefix, "ResponseForm", wpsNS );

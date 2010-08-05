@@ -68,6 +68,10 @@ public class OutputDescription {
         this.outputData = outputData;
     }
 
+    public CodeType getId () {
+        return id;
+    }
+    
     /**
      * 
      * @return title of the output

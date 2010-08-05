@@ -325,6 +325,23 @@ public class WPSClientTest {
         Assert.assertEquals( "EPSG:4326", out2.getCrs() );
         Assert.assertEquals( 2, out2.getDimension() );
     }
+    
+//    @Test
+//    public void testExecuteAsync()
+//                            throws OWSException, IOException, XMLStreamException {
+//        URL processUrl = new URL( DEMO_SERVICE_URL );
+//        WPSClient wpsClient = new WPSClient( processUrl );
+//        Process proc = wpsClient.getProcess( "ParameterDemoProcess", null );
+//
+//        ProcessExecution execution = proc.prepareExecution();
+//        execution.addLiteralInput( "LiteralInput", null, "10", "integer", "seconds" );
+//        execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
+//        execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
+//        execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), "image/png", null );
+//
+//        execution.executeAsync();
+//    }
+    
     // @Test
     // public void testExecute_4()
     // throws OWSException, IOException, XMLStreamException {

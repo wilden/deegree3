@@ -54,16 +54,17 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.XMLAdapter;
+import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
 import org.deegree.protocol.wps.execute.ExceptionReport;
-import org.deegree.protocol.wps.execute.ExecutionOutputs;
 import org.deegree.protocol.wps.execute.ExecuteWriter;
-import org.deegree.protocol.wps.execute.ExecutionResults;
+import org.deegree.protocol.wps.execute.ExecutionOutputs;
+import org.deegree.protocol.wps.execute.ExecutionResponse;
 import org.deegree.protocol.wps.execute.ExecutionStatus;
 import org.deegree.protocol.wps.execute.OutputDefinition;
 import org.deegree.protocol.wps.execute.ResponseFormat;
 import org.deegree.protocol.wps.execute.ResponseReader;
-import org.deegree.protocol.wps.execute.input.BinaryInput;
 import org.deegree.protocol.wps.execute.input.BBoxInput;
+import org.deegree.protocol.wps.execute.input.BinaryInput;
 import org.deegree.protocol.wps.execute.input.ExecutionInput;
 import org.deegree.protocol.wps.execute.input.LiteralInput;
 import org.deegree.protocol.wps.execute.input.XMLInput;
@@ -322,54 +323,9 @@ public class ProcessExecution {
     public ExecutionOutputs execute()
                             throws OWSException, IOException, XMLStreamException {
 
-        responseFormat = new ResponseFormat( rawOutput, false, false, false, outputDefs );
-
-        ExecutionResults response = null;
-        // TODO what if server only supports Get?
-        URL url = client.getExecuteURL( true );
-
-        URLConnection conn = url.openConnection();
-        conn.setDoOutput( true );
-        conn.setUseCaches( false );
-        // TODO does this need configurability?
-        conn.setRequestProperty( "Content-Type", "application/xml" );
-
-        XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
-        XMLStreamWriter writer = outFactory.createXMLStreamWriter( conn.getOutputStream() );
-
-        // XMLStreamWriter writer = outFactory.createXMLStreamWriter( new FileOutputStream(
-        // File.createTempFile(
-        // "wpsClientIn",
-        // ".xml" ) ) );
-
-        ExecuteWriter executer = new ExecuteWriter( writer );
-        executer.write100( process.getId(), inputs, responseFormat );
-        writer.flush();
-        writer.close();
-
-        XMLInputFactory inFactory = XMLInputFactory.newInstance();
-        XMLStreamReader reader = inFactory.createXMLStreamReader( conn.getInputStream() );
-
-        reader.nextTag(); // so that it points to START_ELEMENT, hence prepared to be processed by XMLAdapter
-
-        if ( LOG.isDebugEnabled() ) {
-            File logOutputFile = File.createTempFile( "wpsClient", "Out.xml" );
-            OutputStream outStream = new FileOutputStream( logOutputFile );
-            XMLStreamWriter straightWriter = XMLOutputFactory.newInstance().createXMLStreamWriter( outStream );
-            XMLAdapter.writeElement( straightWriter, reader );
-            LOG.debug( "WPS response can be found at " + logOutputFile.toString() );
-            straightWriter.close();
-
-            reader = XMLInputFactory.newInstance().createXMLStreamReader( new FileInputStream( logOutputFile ) );
-        }
-
-        ResponseReader responseReader = new ResponseReader( reader );
-        response = responseReader.parse100();
-        reader.close();
-
+        ExecutionResponse response = sendExecute( false );
         status = response.getStatus();
         processOutputs = new ExecutionOutputs( response.getOutputs() );
-
         return processOutputs;
     }
 
@@ -383,10 +339,21 @@ public class ProcessExecution {
      *             if a communication/network problem occured
      * @throws OWSException
      *             if the server replied with an exception
+     * @throws XMLStreamException
      */
     public void executeAsync()
-                            throws IOException, OWSException {
-        throw new UnsupportedOperationException( "Async execution is not implemented yet." );
+                            throws IOException, OWSException, XMLStreamException {
+
+        if ( outputDefs == null || outputDefs.size() == 0 ) {
+            outputDefs = new ArrayList<OutputDefinition>();
+            for ( OutputDescription output : process.getOutputTypes() ) {
+                OutputDefinition outputDef = new OutputDefinition( output.getId(), null, false, null, null, null );
+                outputDefs.add( outputDef );
+            }
+        }
+        ExecutionResponse response = sendExecute( true );
+        status = response.getStatus();
+        processOutputs = new ExecutionOutputs( response.getOutputs() );
     }
 
     /**
@@ -460,5 +427,59 @@ public class ProcessExecution {
             return null;
         }
         return status.getExceptionReport();
+    }
+
+    private ExecutionResponse sendExecute( boolean async )
+                            throws XMLStreamException, IOException, OWSException {
+
+        responseFormat = new ResponseFormat( rawOutput, async, false, async, outputDefs );
+
+        ExecutionResponse response = null;
+        // TODO what if server only supports Get?
+        URL url = client.getExecuteURL( true );
+
+        URLConnection conn = url.openConnection();
+        conn.setDoOutput( true );
+        conn.setUseCaches( false );
+        // TODO does this need configurability?
+        conn.setRequestProperty( "Content-Type", "application/xml" );
+
+        XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
+
+//        if ( LOG.isDebugEnabled() ) {
+//            File logFile = File.createTempFile( "wpsclient", "request.xml" );
+//            XMLStreamWriter logWriter = outFactory.createXMLStreamWriter( new FileOutputStream( logFile ) );
+//            ExecuteWriter executer = new ExecuteWriter( logWriter );
+//            executer.write100( process.getId(), inputs, responseFormat );
+//            logWriter.close();
+//            LOG.debug( "WPS request can be found at " + logFile.toString() );
+//        }
+
+        XMLStreamWriter writer = outFactory.createXMLStreamWriter( conn.getOutputStream() );
+        ExecuteWriter executer = new ExecuteWriter( writer );
+        executer.write100( process.getId(), inputs, responseFormat );
+        writer.close();
+
+        XMLInputFactory inFactory = XMLInputFactory.newInstance();
+        XMLStreamReader reader = inFactory.createXMLStreamReader( conn.getInputStream() );
+
+        reader.nextTag(); // so that it points to START_ELEMENT, hence prepared to be processed by XMLAdapter
+
+        if ( LOG.isDebugEnabled() ) {
+            File logFile = File.createTempFile( "wpsclient", "response.xml" );
+            OutputStream outStream = new FileOutputStream( logFile );
+            XMLStreamWriter logWriter = XMLOutputFactory.newInstance().createXMLStreamWriter( outStream );
+            XMLAdapter.writeElement( logWriter, reader );
+            LOG.debug( "WPS response can be found at " + logFile.toString() );
+            logWriter.close();
+
+            reader = XMLInputFactory.newInstance().createXMLStreamReader( new FileInputStream( logFile ) );
+        }
+
+        ResponseReader responseReader = new ResponseReader( reader );
+        response = responseReader.parse100();
+        reader.close();
+
+        return response;
     }
 }

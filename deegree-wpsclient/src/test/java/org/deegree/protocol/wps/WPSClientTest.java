@@ -36,12 +36,13 @@
 package org.deegree.protocol.wps;
 
 import static org.deegree.protocol.wfs.WFSConstants.WFS_NS;
-import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.FAILED;
 import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.SUCCEEDED;
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Arrays;
 
@@ -71,6 +72,8 @@ import org.deegree.services.jaxb.main.ServiceIdentificationType;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -340,31 +343,32 @@ public class WPSClientTest {
         Assert.assertEquals( 2, out2.getDimension() );
     }
 
-    // @Test
-    // public void testExecuteRawOutput()
-    // throws OWSException, IOException, XMLStreamException, Base64DecodingException {
-    // URL processUrl = new URL( DEMO_SERVICE_URL );
-    // WPSClient wpsClient = new WPSClient( processUrl );
-    // Process proc = wpsClient.getProcess( "ParameterDemoProcess", null );
-    //
-    // ProcessExecution execution = proc.prepareExecution();
-    // execution.addLiteralInput( "LiteralInput", null, "0", "integer", "seconds" );
-    // execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
-    // execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), false, "text/xml", null, null );
-    // execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), false, "image/png", null );
-    // execution.setRawOutput( "BinaryOutput", null, "image/png", null, null );
-    // ExecutionOutputs outputs = execution.execute();
-    //
-    // ComplexOutput out = (ComplexOutput) outputs.get( 0 );
-    // InputStream stream = out.getAsBinaryStream();
-    // FileOutputStream fileStream = new FileOutputStream( File.createTempFile( "wpsBinaryOut", "" ) );
-    // byte[] b = new byte[1024];
-    // while ( stream.read( b ) != -1 ) {
-    // fileStream.write( b );
-    // }
-    // fileStream.close();
-    // stream.close();
-    // }
+    @Test
+    public void testExecuteRawOutput()
+                            throws OWSException, IOException, XMLStreamException, Base64DecodingException {
+        URL processUrl = new URL( DEMO_SERVICE_URL );
+        WPSClient wpsClient = new WPSClient( processUrl );
+        Process proc = wpsClient.getProcess( "ParameterDemoProcess", null );
+
+        ProcessExecution execution = proc.prepareExecution();
+        execution.addLiteralInput( "LiteralInput", null, "0", "integer", "seconds" );
+        execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
+        execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), false, "text/xml", null, null );
+        execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), false, "image/png", null );
+        execution.setRawOutput( "BinaryOutput", null, "image/png", null, null );
+        ExecutionOutputs outputs = execution.execute();
+
+        ComplexOutput out = (ComplexOutput) outputs.get( 0 );
+        InputStream stream = out.getAsBinaryStream();
+        FileOutputStream fileStream = new FileOutputStream( File.createTempFile( "wpsBinaryOut", "" ) );
+        byte[] b = new byte[1024];
+        int read = -1;
+        while ( ( read = stream.read( b ) ) != -1 ) {
+            fileStream.write( b, 0, read );
+        }
+        fileStream.close();
+        stream.close();
+    }
 
     @Test
     public void testExecuteInputsByRef()
@@ -417,8 +421,8 @@ public class WPSClientTest {
         execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), false, "image/png", null );
 
         execution.executeAsync();
-        Assert.assertNotSame( SUCCEEDED, execution.getState() );
-        Assert.assertNotSame( FAILED, execution.getState() );
+        // Assert.assertNotSame( SUCCEEDED, execution.getState() );
+        // Assert.assertNotSame( FAILED, execution.getState() );
 
         ExecutionState state = null;
         while ( ( state = execution.getState() ) != SUCCEEDED ) {

@@ -38,8 +38,11 @@ package org.deegree.protocol.wps.process;
 import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.FAILED;
 import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.SUCCEEDED;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -53,6 +56,7 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.deegree.commons.tom.ows.CodeType;
+import org.deegree.commons.utils.io.LoggingInputStream;
 import org.deegree.commons.xml.stax.StAXParsingHelper;
 import org.deegree.protocol.ows.OWSExceptionReader;
 import org.deegree.protocol.wps.WPSClient;
@@ -480,7 +484,7 @@ public class ProcessExecution {
         // if ( LOG.isDebugEnabled() ) {
         // File logFile = File.createTempFile( "wpsclient", "request.xml" );
         // XMLStreamWriter logWriter = outFactory.createXMLStreamWriter( new FileOutputStream( logFile ) );
-        // ExecuteWriter executer = new ExecuteWriter( logWriter );
+        // ExecuteRequest100Writer executer = new ExecuteRequest100Writer( logWriter );
         // executer.write100( process.getId(), inputs, responseFormat );
         // logWriter.close();
         // LOG.debug( "WPS request can be found at " + logFile.toString() );
@@ -495,11 +499,12 @@ public class ProcessExecution {
 
         InputStream responseStream = conn.getInputStream();
 
-        // if ( LOG.isDebugEnabled() ) {
-        // File logFile = File.createTempFile( "wpsclient", "response" );
-        // OutputStream logStream = new FileOutputStream( logFile );
-        // responseStream = new LoggingInputStream( responseStream, logStream );
-        // }
+        if ( LOG.isDebugEnabled() ) {
+            File logFile = File.createTempFile( "wpsclient", "response" );
+            OutputStream logStream = new FileOutputStream( logFile );
+            responseStream = new LoggingInputStream( responseStream, logStream );
+            LOG.debug( "WPS response can be found at " + logFile.toString() );
+        }
 
         String outputContent = conn.getContentType();
         if ( outputContent.startsWith( "text/xml" ) || outputContent.startsWith( "application/xml" ) ) {
@@ -510,7 +515,7 @@ public class ProcessExecution {
                 throw OWSExceptionReader.parseException( reader );
             }
 
-            if ( new QName( WPSConstants.WPS_100_NS, "ExecutionResponse" ).equals( reader.getName() ) ) {
+            if ( new QName( WPSConstants.WPS_100_NS, "ExecuteResponse" ).equals( reader.getName() ) ) {
                 ExecuteResponse100Reader responseReader = new ExecuteResponse100Reader( reader );
                 lastResponse = responseReader.parse100();
                 reader.close();

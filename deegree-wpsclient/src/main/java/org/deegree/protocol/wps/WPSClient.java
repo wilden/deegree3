@@ -157,7 +157,7 @@ import org.slf4j.LoggerFactory;
  * ...
  * </pre>
  * 
- * <h4>Controlling output</h4>
+ * <h4>Controlling output</h4>One can normally
  * 
  * <h4>Executing a process asynchronously</h4>
  * 

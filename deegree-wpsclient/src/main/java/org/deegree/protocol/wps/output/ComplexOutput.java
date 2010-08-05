@@ -128,8 +128,9 @@ public class ComplexOutput extends ExecutionOutput {
         super( id );
         store = new StreamBufferStore();
         byte[] b = new byte[1024];
-        while ( is.read( b ) != -1 ) {
-            store.write( b );
+        int read = -1;
+        while ( ( read = is.read( b ) ) != -1 ) {
+            store.write( b, 0, read );
         }
         store.close();
         is.close();

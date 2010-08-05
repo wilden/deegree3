@@ -69,7 +69,11 @@ public class ExecutionResponse {
      */
     public ExecutionResponse( URL statusLocation, ExecutionStatus status, ExecutionOutput[] outputs ) {
         this.statusLocation = statusLocation;
-        this.status = new ExecutionStatus( SUCCEEDED, null, null, null, null );
+        if ( status == null ) {
+            this.status = new ExecutionStatus( SUCCEEDED, null, null, null, null );
+        } else {
+            this.status = status;
+        }
         this.outputs = new ExecutionOutputs( outputs );
     }
 

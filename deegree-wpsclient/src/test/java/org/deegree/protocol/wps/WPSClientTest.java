@@ -36,6 +36,7 @@
 package org.deegree.protocol.wps;
 
 import static org.deegree.protocol.wfs.WFSConstants.WFS_NS;
+import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.FAILED;
 import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.SUCCEEDED;
 import static org.junit.Assert.assertEquals;
 
@@ -419,8 +420,8 @@ public class WPSClientTest {
         execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), false, "image/png", null );
 
         execution.executeAsync();
-        // Assert.assertNotSame( SUCCEEDED, execution.getState() );
-        // Assert.assertNotSame( FAILED, execution.getState() );
+        Assert.assertNotSame( SUCCEEDED, execution.getState() );
+        Assert.assertNotSame( FAILED, execution.getState() );
 
         ExecutionState state = null;
         while ( ( state = execution.getState() ) != SUCCEEDED ) {

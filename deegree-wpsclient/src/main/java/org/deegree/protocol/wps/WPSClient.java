@@ -36,6 +36,7 @@
 package org.deegree.protocol.wps;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -197,11 +198,10 @@ import org.slf4j.LoggerFactory;
  * 
  * <h4>TODOs</h4>
  * <ul>
- * <li>Encoding of xml data (US-ASCII, etc.) see http://www.ietf.org/rfc/rfc2376.txt</li>
- * <li>Handle raw output in the ResponseReader.</li>
  * <li>Implement input parameter passing for POST-references.</li>
  * <li>Cope with exceptions reports that are returned for <code>GetCapabilities</code> and <code>DescribeProcess</code>
  * requests.</li>
+ * <li>Determine the correct XML encoding for HTTP-requests/responses, see http://www.ietf.org/rfc/rfc2376.txt</li>
  * <li>Clean up exception handling.</li>
  * <li>Enable/document a way to set connection parameters (timeout, proxy settings, ...)</li>
  * <li>Support metadata in multiple languages (as mandated by the WPS spec).</li>

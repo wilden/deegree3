@@ -388,6 +388,7 @@ public class ExecuteResponse100Reader {
             statusMsg = reader.getElementText();
 
         } else if ( "ProcessStarted".equals( localName ) ) {
+            state = ExecutionState.STARTED;
             String percentStr = reader.getAttributeValue( null, "percentCompleted" );
             if ( percentStr != null ) {
                 percent = Integer.parseInt( percentStr );
@@ -396,6 +397,7 @@ public class ExecuteResponse100Reader {
             StAXParsingHelper.nextElement( reader );
 
         } else if ( "ProcessPaused".equals( localName ) ) {
+            state = ExecutionState.PAUSED;
             String percentStr = reader.getAttributeValue( null, "percentCompleted" );
             if ( percentStr != null ) {
                 percent = Integer.parseInt( percentStr );

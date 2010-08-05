@@ -408,6 +408,10 @@ public class ProcessExecution {
             XMLInputFactory inFactory = XMLInputFactory.newInstance();
             InputStream is = statusLocation.openStream();
             XMLStreamReader xmlReader = inFactory.createXMLStreamReader( is );
+            StAXParsingHelper.nextElement( xmlReader );
+            if ( OWSExceptionReader.isException( xmlReader ) ) {
+                throw OWSExceptionReader.parseException( xmlReader );
+            }
             ExecuteResponse100Reader reader = new ExecuteResponse100Reader( xmlReader );
             lastResponse = reader.parse100();
         }
@@ -551,10 +555,6 @@ public class ProcessExecution {
         return lastResponse;
     }
 
-    /**
-     * @return
-     * @throws IOException
-     */
     private ExecutionResponse handleRawResponse( InputStream responseStream, String outputContent )
                             throws IOException {
         ComplexOutput rawComplex;

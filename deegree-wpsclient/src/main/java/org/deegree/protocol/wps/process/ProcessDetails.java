@@ -137,9 +137,9 @@ public class ProcessDetails {
 
     private Map<CodeType, InputType> parseInputs() {
         XPath xpath = new XPath( "/wps:ProcessDescriptions/ProcessDescription/DataInputs/Input", nsContext );
-        List<OMElement> inputs = omResponse.getElements( omResponse.getRootElement(), xpath );
+        List<OMElement> omInputs = omResponse.getElements( omResponse.getRootElement(), xpath );
         Map<CodeType, InputType> idToInputType = new HashMap<CodeType, InputType>();
-        for ( OMElement input : inputs ) {
+        for ( OMElement input : omInputs ) {
             String minOccurs = input.getAttribute( new QName( null, "minOccurs" ) ).getAttributeValue();
             String maxOccurs = input.getAttribute( new QName( null, "minOccurs" ) ).getAttributeValue();
 
@@ -154,9 +154,9 @@ public class ProcessDetails {
 
     private Map<CodeType, OutputType> parseOutputs() {
         XPath xpath = new XPath( "/wps:ProcessDescriptions/ProcessDescription/ProcessOutputs/Output", nsContext );
-        List<OMElement> outputs = omResponse.getElements( omResponse.getRootElement(), xpath );
+        List<OMElement> omOutputs = omResponse.getElements( omResponse.getRootElement(), xpath );
         Map<CodeType, OutputType> idToOutputType = new HashMap<CodeType, OutputType>();
-        for ( OMElement output : outputs ) {
+        for ( OMElement output : omOutputs ) {
             CodeType id = parseId( output );
             LanguageString outputTitle = parseLanguageString( output, "Title" );
             LanguageString outputAbstract = parseLanguageString( output, "Abstract" );

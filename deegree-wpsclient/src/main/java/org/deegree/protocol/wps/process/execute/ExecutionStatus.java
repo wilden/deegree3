@@ -103,7 +103,7 @@ public class ExecutionStatus {
     }
 
     /**
-     * @return creation time of the process execution, never <code>null</code>
+     * @return creation time of the process execution, can be <code>null</code>
      */
     public String getCreationTime() {
         return creationTime;

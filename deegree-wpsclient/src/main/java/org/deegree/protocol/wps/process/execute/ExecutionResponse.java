@@ -35,6 +35,8 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.process.execute;
 
+import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.SUCCEEDED;
+
 import java.net.URL;
 
 import org.deegree.protocol.wps.output.ExecutionOutput;
@@ -57,9 +59,17 @@ public class ExecutionResponse {
 
     private final ExecutionOutputs outputs;
 
+    /**
+     * @param statusLocation
+     *            may be <code>null</code>
+     * @param status
+     *            may be <code>null</code>
+     * @param outputs
+     *            never <code>null</code>
+     */
     public ExecutionResponse( URL statusLocation, ExecutionStatus status, ExecutionOutput[] outputs ) {
         this.statusLocation = statusLocation;
-        this.status = status;
+        this.status = new ExecutionStatus( SUCCEEDED, null, null, null, null );
         this.outputs = new ExecutionOutputs( outputs );
     }
 

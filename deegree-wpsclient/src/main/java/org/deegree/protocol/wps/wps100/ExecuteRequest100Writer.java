@@ -162,13 +162,13 @@ public class ExecuteRequest100Writer {
                 } else {
                     writer.writeStartElement( wpsPrefix, "RawDataOutput", wpsNS );
 
-                    writeIdentifier( outputFormat.getOutputDefinitions().get( 0 ).getId() );
-
                     if ( outputFormat.getOutputDefinitions().get( 0 ).getUom() != null ) {
                         writer.writeAttribute( "uom", outputFormat.getOutputDefinitions().get( 0 ).getUom() );
                     }
                     writeComplexAttributes( outputFormat.getOutputDefinitions().get( 0 ).getComplexAttributes() );
-                    writer.writeEndElement();
+
+                    writeIdentifier( outputFormat.getOutputDefinitions().get( 0 ).getId() );
+                    writer.writeEndElement(); // RawDataOutput
                 }
             }
         }

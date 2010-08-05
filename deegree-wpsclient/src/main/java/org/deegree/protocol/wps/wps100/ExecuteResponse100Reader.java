@@ -51,7 +51,6 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 import javax.xml.namespace.NamespaceContext;
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
@@ -63,6 +62,7 @@ import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.utils.io.StreamBufferStore;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.stax.StAXParsingHelper;
+import org.deegree.protocol.ows.OWSExceptionReader;
 import org.deegree.protocol.wps.output.BBoxOutput;
 import org.deegree.protocol.wps.output.ComplexOutput;
 import org.deegree.protocol.wps.output.ExecutionOutput;
@@ -72,6 +72,7 @@ import org.deegree.protocol.wps.process.execute.ExecutionResponse;
 import org.deegree.protocol.wps.process.execute.ExecutionStatus;
 import org.deegree.services.controller.ows.OWSException;
 import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
+import org.deegree.services.controller.wps.execute.ExecuteResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,51 +92,24 @@ public class ExecuteResponse100Reader {
 
     private XMLStreamReader reader;
 
-    private static final String owsNS = "http://www.opengis.net/ows/1.1";
-
-    private static final String xlinkNS = "http://www.w3.org/1999/xlink";
-
-    private static final String xmlNS = "http://www.w3.org/XML/1998/namespace";
-
+    /**
+     * Creates an {@link ExecuteResponse100Reader} instance.
+     * 
+     * @param reader
+     *            an {@link XMLStreamReader} instance, never <code>null</code>
+     */
     public ExecuteResponse100Reader( XMLStreamReader reader ) {
         this.reader = reader;
     }
 
     /**
-     * @param reader
-     * @return
-     * @throws OWSException
+     * Parses an execute response document. The response shall not be an ExceptionReport.
+     * 
+     * @return an {@link ExecuteResponse} object
+     * @throws MalformedURLException
+     * @throws XMLStreamException
      */
     public ExecutionResponse parse100()
-                            throws OWSException {
-
-        ExecutionResponse response = null;
-
-        try {
-            StAXParsingHelper.nextElement( reader );
-
-            if ( new QName( owsNS, "ExceptionReport" ).equals( reader.getName() ) ) {
-                OWSException excep = parseException();
-                LOG.error( "Service responded with exception report: " + excep.getMessage() );
-            }
-
-            // TODO handle raw output
-            response = parseResponseDocument();
-            // response = parseRawResponse ();
-
-        } catch ( Exception e ) {
-            LOG.error( "Error while parsing Execute reponse coming from WPS. " + e.getMessage() );
-            e.printStackTrace();
-        }
-        return response;
-    }
-
-    private ExecutionResponse parseRawResponse() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    private ExecutionResponse parseResponseDocument()
                             throws MalformedURLException, XMLStreamException {
 
         ExecutionStatus status = null;
@@ -169,6 +143,7 @@ public class ExecuteResponse100Reader {
         } else {
             outputsArray = new ExecutionOutput[0];
         }
+
         return new ExecutionResponse( statusLocation, status, outputsArray );
     }
 
@@ -407,9 +382,11 @@ public class ExecuteResponse100Reader {
         if ( "ProcessAccepted".equals( localName ) ) {
             state = ExecutionState.ACCEPTED;
             statusMsg = reader.getElementText();
+
         } else if ( "ProcessSucceeded".equals( localName ) ) {
             state = ExecutionState.SUCCEEDED;
             statusMsg = reader.getElementText();
+
         } else if ( "ProcessStarted".equals( localName ) ) {
             String percentStr = reader.getAttributeValue( null, "percentCompleted" );
             if ( percentStr != null ) {
@@ -417,6 +394,7 @@ public class ExecuteResponse100Reader {
             }
             statusMsg = reader.getElementText();
             StAXParsingHelper.nextElement( reader );
+
         } else if ( "ProcessPaused".equals( localName ) ) {
             String percentStr = reader.getAttributeValue( null, "percentCompleted" );
             if ( percentStr != null ) {
@@ -424,36 +402,12 @@ public class ExecuteResponse100Reader {
             }
             statusMsg = reader.getElementText();
             StAXParsingHelper.nextElement( reader );
+
         } else if ( "ProcessFailed".equals( localName ) ) {
-            exceptionReport = parseException();
+            exceptionReport = OWSExceptionReader.parseException( reader );
         }
         StAXParsingHelper.nextElement( reader ); // </Status>
         return new ExecutionStatus( state, statusMsg, percent, creationTime, exceptionReport );
-    }
-
-    /**
-     * <ul>
-     * <li>Precondition: cursor must point at the <code>START_ELEMENT</code> event (&lt;wps:Exception&gt;)</li>
-     * <li>Postcondition: cursor points at the corresponding <code>END_ELEMENT</code> event (&lt;/wps:Exception&gt;)</li>
-     * </ul>
-     * 
-     * @return
-     * @throws XMLStreamException
-     */
-    private OWSException parseException() {
-        String code = null;
-        String locator = null;
-        String message = null;
-        try {
-            StAXParsingHelper.nextElement( reader ); // "Exception"
-            StAXParsingHelper.nextElement( reader ); // "ExceptionText"
-            code = reader.getAttributeValue( null, "exceptionCode" );
-            locator = reader.getAttributeValue( null, "locator" );
-            message = reader.getElementText();
-        } catch ( XMLStreamException e ) {
-            e.printStackTrace();
-        }
-        return new OWSException( message, code, locator );
     }
 
     class XMLDataNamespaceContext implements NamespaceContext {

@@ -340,6 +340,32 @@ public class WPSClientTest {
         Assert.assertEquals( 2, out2.getDimension() );
     }
 
+    // @Test
+    // public void testExecuteRawOutput()
+    // throws OWSException, IOException, XMLStreamException, Base64DecodingException {
+    // URL processUrl = new URL( DEMO_SERVICE_URL );
+    // WPSClient wpsClient = new WPSClient( processUrl );
+    // Process proc = wpsClient.getProcess( "ParameterDemoProcess", null );
+    //
+    // ProcessExecution execution = proc.prepareExecution();
+    // execution.addLiteralInput( "LiteralInput", null, "0", "integer", "seconds" );
+    // execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
+    // execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), false, "text/xml", null, null );
+    // execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), false, "image/png", null );
+    // execution.setRawOutput( "BinaryOutput", null, "image/png", null, null );
+    // ExecutionOutputs outputs = execution.execute();
+    //
+    // ComplexOutput out = (ComplexOutput) outputs.get( 0 );
+    // InputStream stream = out.getAsBinaryStream();
+    // FileOutputStream fileStream = new FileOutputStream( File.createTempFile( "wpsBinaryOut", "" ) );
+    // byte[] b = new byte[1024];
+    // while ( stream.read( b ) != -1 ) {
+    // fileStream.write( b );
+    // }
+    // fileStream.close();
+    // stream.close();
+    // }
+
     @Test
     public void testExecuteInputsByRef()
                             throws OWSException, IOException, XMLStreamException {

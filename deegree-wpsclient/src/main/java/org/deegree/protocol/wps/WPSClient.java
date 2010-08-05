@@ -197,6 +197,7 @@ import org.slf4j.LoggerFactory;
  * 
  * <h4>TODOs</h4>
  * <ul>
+ * <li>Encoding of xml data (US-ASCII, etc.) see http://www.ietf.org/rfc/rfc2376.txt</li>
  * <li>Handle raw output in the ResponseReader.</li>
  * <li>Implement input parameter passing for POST-references.</li>
  * <li>Cope with exceptions reports that are returned for <code>GetCapabilities</code> and <code>DescribeProcess</code>

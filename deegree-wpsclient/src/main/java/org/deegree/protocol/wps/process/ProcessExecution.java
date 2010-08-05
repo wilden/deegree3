@@ -38,17 +38,14 @@ package org.deegree.protocol.wps.process;
 import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.FAILED;
 import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.SUCCEEDED;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -56,13 +53,17 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.commons.xml.XMLAdapter;
+import org.deegree.commons.xml.stax.StAXParsingHelper;
+import org.deegree.protocol.ows.OWSExceptionReader;
 import org.deegree.protocol.wps.WPSClient;
+import org.deegree.protocol.wps.WPSConstants;
 import org.deegree.protocol.wps.input.BBoxInput;
 import org.deegree.protocol.wps.input.BinaryInput;
 import org.deegree.protocol.wps.input.ExecutionInput;
 import org.deegree.protocol.wps.input.LiteralInput;
 import org.deegree.protocol.wps.input.XMLInput;
+import org.deegree.protocol.wps.output.ComplexOutput;
+import org.deegree.protocol.wps.output.ExecutionOutput;
 import org.deegree.protocol.wps.output.type.OutputType;
 import org.deegree.protocol.wps.process.execute.ExecutionOutputs;
 import org.deegree.protocol.wps.process.execute.ExecutionResponse;
@@ -309,12 +310,11 @@ public class ProcessExecution {
      *            schema of data, in case it is an XML document
      */
     public void setRawOutput( String id, String idCodeSpace, String mimeType, String encoding, String schema ) {
-        throw new UnsupportedOperationException( "Raw data output is currently not activated -- needs testing." );
-        // outputDefs.add( new OutputDefinition( new CodeType( id ), null, false, mimeType, encoding, schema ) );
-        // rawOutput = true;
-        // if ( outputDefs.size() > 1 ) {
-        // throw new RuntimeException( "A raw response can be delivered only for one output parameter." );
-        // }
+        outputDefs.add( new OutputFormat( new CodeType( id ), null, false, mimeType, encoding, schema ) );
+        rawOutput = true;
+        if ( outputDefs.size() > 1 ) {
+            throw new RuntimeException( "A raw response can be delivered only for one output parameter." );
+        }
     }
 
     /**
@@ -492,25 +492,56 @@ public class ProcessExecution {
         writer.close();
 
         XMLInputFactory inFactory = XMLInputFactory.newInstance();
-        XMLStreamReader reader = inFactory.createXMLStreamReader( conn.getInputStream() );
 
-        reader.nextTag(); // so that it points to START_ELEMENT, hence prepared to be processed by XMLAdapter
+        InputStream responseStream = conn.getInputStream();
 
-        if ( LOG.isDebugEnabled() ) {
-            File logFile = File.createTempFile( "wpsclient", "response.xml" );
-            OutputStream outStream = new FileOutputStream( logFile );
-            XMLStreamWriter logWriter = XMLOutputFactory.newInstance().createXMLStreamWriter( outStream );
-            XMLAdapter.writeElement( logWriter, reader );
-            LOG.debug( "WPS response can be found at " + logFile.toString() );
-            logWriter.close();
+        // if ( LOG.isDebugEnabled() ) {
+        // File logFile = File.createTempFile( "wpsclient", "response" );
+        // OutputStream logStream = new FileOutputStream( logFile );
+        // responseStream = new LoggingInputStream( responseStream, logStream );
+        // }
 
-            reader = XMLInputFactory.newInstance().createXMLStreamReader( new FileInputStream( logFile ) );
+        String outputContent = conn.getContentType();
+        if ( outputContent.startsWith( "text/xml" ) || outputContent.startsWith( "application/xml" ) ) {
+
+            XMLStreamReader reader = inFactory.createXMLStreamReader( responseStream );
+            StAXParsingHelper.nextElement( reader );
+            if ( OWSExceptionReader.isException( reader ) ) {
+                throw OWSExceptionReader.parseException( reader );
+            }
+
+            if ( new QName( WPSConstants.WPS_100_NS, "ExecutionResponse" ).equals( reader.getName() ) ) {
+                ExecuteResponse100Reader responseReader = new ExecuteResponse100Reader( reader );
+                lastResponse = responseReader.parse100();
+                reader.close();
+
+            } else {
+                // handle xml raw response
+                lastResponse = handleRawResponse( responseStream, outputContent );
+            }
+
+        } else {
+            // handle binary raw response
+            lastResponse = handleRawResponse( responseStream, outputContent );
         }
 
-        ExecuteResponse100Reader responseReader = new ExecuteResponse100Reader( reader );
-        lastResponse = responseReader.parse100();
-        reader.close();
-
         return lastResponse;
+    }
+
+    /**
+     * @return
+     * @throws IOException
+     */
+    private ExecutionResponse handleRawResponse( InputStream responseStream, String outputContent )
+                            throws IOException {
+        ComplexOutput rawComplex;
+        if ( !outputContent.contains( "xml" ) ) {
+            rawComplex = new ComplexOutput( null, responseStream, outputContent, null, null );
+        } else {
+
+            rawComplex = new ComplexOutput( null, responseStream, outputContent, null, null );
+        }
+        ExecutionOutput[] outputs = new ExecutionOutput[] { rawComplex };
+        return new ExecutionResponse( null, null, outputs );
     }
 }

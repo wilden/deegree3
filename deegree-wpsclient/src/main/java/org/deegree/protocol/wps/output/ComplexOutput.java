@@ -108,6 +108,36 @@ public class ComplexOutput extends ExecutionOutput {
     }
 
     /**
+     * Creates a new {@link ComplexOutput} instance.
+     * 
+     * @param id
+     *            output parameter identifier, must not be <code>null</code>
+     * @param is
+     *            input stream to the complex data, must not be <code>null</code>
+     * @param mimeType
+     *            mime type of the complex data, can be <code>null</code> (unspecified)
+     * @param encoding
+     *            encoding of the complex data, can be <code>null</code> (unspecified)
+     * @param schema
+     *            XML schema of the complex data, can be <code>null</code> (unspecified)
+     * @throws IOException
+     * 
+     */
+    public ComplexOutput( CodeType id, InputStream is, String mimeType, String encoding, String schema )
+                            throws IOException {
+        super( id );
+        store = new StreamBufferStore();
+        byte[] b = new byte[1024];
+        while ( is.read( b ) != -1 ) {
+            store.write( b );
+        }
+        store.close();
+        is.close();
+        this.complexAttribs = new ComplexFormat( mimeType, encoding, schema );
+        this.url = null;
+    }
+
+    /**
      * Returns the format of the output.
      * 
      * @return the format of the output, never <code>null</code>
@@ -157,8 +187,8 @@ public class ComplexOutput extends ExecutionOutput {
      * Returns an {@link InputStream} for accessing the complex value as a binary stream.
      * <p>
      * NOTE: Don't use this method if the input parameter is encoded in XML -- use {@link #getAsXMLStream()} instead.
-     * Otherwise erroneous behaviour has to be expected (e.g. if the input value is given embedded in the execute request
-     * document).
+     * Otherwise erroneous behaviour has to be expected (e.g. if the input value is given embedded in the execute
+     * request document).
      * </p>
      * The returned stream will point at the first START_ELEMENT event of the data.
      * 

@@ -112,6 +112,10 @@ import org.slf4j.LoggerFactory;
  *   XMLStreamReader xmlStream = bufferedGeometry.getAsXMLStream();
  * ...
  * </pre>
+ *
+ * <h4>Providing input</h4>
+ * 
+ * <h4>Controlling output</h4>
  * 
  * <h4>Executing a process asynchronously</h4>
  * 

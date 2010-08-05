@@ -1,4 +1,4 @@
-//$HeadURL: svn+ssh://mschneider@svn.wald.intevation.org/deegree/deegree3/branches/aionita/deegree-wpsclient/src/main/java/org/deegree/protocol/wps/execute/output/ExecuteOutput.java $
+//$HeadURL$
 /*----------------------------------------------------------------------------
  This file is part of deegree, http://deegree.org/
  Copyright (C) 2001-2009 by:
@@ -33,20 +33,19 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.output;
+package org.deegree.protocol.wps.input;
 
 import org.deegree.commons.tom.ows.CodeType;
 
 /**
- * Base class for output parameters returned by a process execution.
+ * The <code></code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
- * @author last edited by: $Author: mschneider $
+ * @author last edited by: $Author$
  * 
- * @version $Revision: 25694 $, $Date: 2010-08-04 21:45:33 +0200 (Mi, 04. Aug 2010) $
+ * @version $Revision$, $Date$
  */
-public class BBoxOutput extends ExecutionOutput {
+public class BBoxInput extends ExecutionInput {
 
     private double[] lower;
 
@@ -56,8 +55,8 @@ public class BBoxOutput extends ExecutionOutput {
 
     private int dim;
 
-    public BBoxOutput( CodeType id, double[] lower, double[] upper, String crs ) {
-        super( id );
+    public BBoxInput( CodeType id, double[] lower, double[] upper, String crs ) {
+        super (id);
         this.lower = lower;
         this.upper = upper;
         this.dim = lower.length;
@@ -72,10 +71,10 @@ public class BBoxOutput extends ExecutionOutput {
         return upper;
     }
 
-    public int getDimension() {
+    public int getDimension () {
         return dim;
     }
-
+    
     /**
      * Get coordinate system of the bounding box
      * 

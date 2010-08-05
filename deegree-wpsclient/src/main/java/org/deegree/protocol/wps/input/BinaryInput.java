@@ -33,54 +33,67 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.input;
+package org.deegree.protocol.wps.input;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 
 import org.deegree.commons.tom.ows.CodeType;
+import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
 
 /**
  * The <code></code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
+ * 
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
+ * 
  */
-public class BBoxInput extends ExecutionInput {
+public class BinaryInput extends ExecutionInput {
 
-    private double[] lower;
+    private ComplexAttributes complexAttributes;
 
-    private double[] upper;
+    private URL url;
 
-    private String crs;
+    private InputStream inputStream;
 
-    private int dim;
+    private boolean isWebAccessible;
 
-    public BBoxInput( CodeType id, double[] lower, double[] upper, String crs ) {
-        super (id);
-        this.lower = lower;
-        this.upper = upper;
-        this.dim = lower.length;
-        this.crs = crs;
+    public BinaryInput( CodeType id, URL url, boolean isWebAccessible, String mimeType, String encoding ) {
+        super( id );
+        this.url = url;
+        this.isWebAccessible = isWebAccessible;
+        this.complexAttributes = new ComplexAttributes( mimeType, encoding, null );
     }
 
-    public double[] getLower() {
-        return lower;
+    public BinaryInput( CodeType id, InputStream inputStream, String mimeType, String encoding ) {
+        super( id );
+        this.inputStream = inputStream;
+        this.complexAttributes = new ComplexAttributes( mimeType, encoding, null );
     }
 
-    public double[] getUpper() {
-        return upper;
-    }
-
-    public int getDimension () {
-        return dim;
-    }
-    
     /**
-     * Get coordinate system of the bounding box
+     * Get the binary data as a stream
      * 
-     * @return crs as String
+     * @return an {@link InputStream} to the binary data
+     * @throws IOException
      */
-    public String getCrs() {
-        return crs;
+    public InputStream getDataStream()
+                            throws IOException {
+        if ( inputStream != null ) {
+            return inputStream;
+        }
+        return url.openStream();
+    }
+
+    public ComplexAttributes getAttributes() {
+        return complexAttributes;
+    }
+
+    public URL getWebAccessibleURL() {
+        return isWebAccessible ? url : null;
     }
 }

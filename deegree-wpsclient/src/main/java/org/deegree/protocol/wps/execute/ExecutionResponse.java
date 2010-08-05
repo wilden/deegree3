@@ -37,7 +37,7 @@ package org.deegree.protocol.wps.execute;
 
 import java.net.URL;
 
-import org.deegree.protocol.wps.execute.output.ExecutionOutput;
+import org.deegree.protocol.wps.output.ExecutionOutput;
 import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
 
 /**

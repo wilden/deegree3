@@ -1,4 +1,4 @@
-//$HeadURL$
+//$HeadURL: svn+ssh://mschneider@svn.wald.intevation.org/deegree/deegree3/branches/aionita/deegree-wpsclient/src/main/java/org/deegree/protocol/wps/execute/output/ExecuteOutput.java $
 /*----------------------------------------------------------------------------
  This file is part of deegree, http://deegree.org/
  Copyright (C) 2001-2009 by:
@@ -33,29 +33,28 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.input;
+package org.deegree.protocol.wps.output;
 
 import org.deegree.commons.tom.ows.CodeType;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * 
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * @author last edited by: $Author$
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
+ * @author last edited by: $Author: mschneider $
  * 
- * @version $Revision$, $Date$
+ * @version $Revision: 25694 $, $Date: 2010-08-04 21:45:33 +0200 (Mi, 04. Aug 2010) $
  */
-public class LiteralInput extends ExecutionInput {
+public class LiteralOutput extends ExecutionOutput {
 
-    private String value;
+    private final String value;
 
-    // optional
-    private String dataType;
+    private final String dataType;
 
-    // optional
-    private String uom;
+    private final String uom;
 
-    public LiteralInput( CodeType id, String value, String dataType, String uom ) {
+    public LiteralOutput( CodeType id, String value, String dataType, String uom ) {
         super( id );
         this.value = value;
         this.dataType = dataType;

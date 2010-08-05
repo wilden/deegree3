@@ -33,67 +33,59 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.input;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
+package org.deegree.protocol.wps.input;
 
 import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
 
 /**
  * The <code></code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
-public class BinaryInput extends ExecutionInput {
+public class LiteralInput extends ExecutionInput {
 
-    private ComplexAttributes complexAttributes;
+    private String value;
 
-    private URL url;
+    // optional
+    private String dataType;
 
-    private InputStream inputStream;
+    // optional
+    private String uom;
 
-    private boolean isWebAccessible;
-
-    public BinaryInput( CodeType id, URL url, boolean isWebAccessible, String mimeType, String encoding ) {
+    public LiteralInput( CodeType id, String value, String dataType, String uom ) {
         super( id );
-        this.url = url;
-        this.isWebAccessible = isWebAccessible;
-        this.complexAttributes = new ComplexAttributes( mimeType, encoding, null );
-    }
-
-    public BinaryInput( CodeType id, InputStream inputStream, String mimeType, String encoding ) {
-        super( id );
-        this.inputStream = inputStream;
-        this.complexAttributes = new ComplexAttributes( mimeType, encoding, null );
+        this.value = value;
+        this.dataType = dataType;
+        this.uom = uom;
     }
 
     /**
-     * Get the binary data as a stream
+     * Returns the value.
      * 
-     * @return an {@link InputStream} to the binary data
-     * @throws IOException
+     * @return the value, never <code>null</code>
      */
-    public InputStream getDataStream()
-                            throws IOException {
-        if ( inputStream != null ) {
-            return inputStream;
-        }
-        return url.openStream();
+    public String getValue() {
+        return value;
     }
 
-    public ComplexAttributes getAttributes() {
-        return complexAttributes;
+    /**
+     * Returns the data type.
+     * 
+     * @return the data type, may be <code>null</code> (unspecified)
+     */
+    public String getDataType() {
+        return dataType;
     }
 
-    public URL getWebAccessibleURL() {
-        return isWebAccessible ? url : null;
+    /**
+     * Returns the unit-of-measure.
+     * 
+     * @return the unit-of-measure, may be <code>null</code> (unspecified)
+     */
+    public String getUom() {
+        return uom;
     }
 }

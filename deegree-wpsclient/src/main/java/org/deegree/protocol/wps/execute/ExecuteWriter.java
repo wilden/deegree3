@@ -50,11 +50,11 @@ import org.apache.axiom.om.util.Base64;
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
-import org.deegree.protocol.wps.execute.input.BBoxInput;
-import org.deegree.protocol.wps.execute.input.BinaryInput;
-import org.deegree.protocol.wps.execute.input.ExecutionInput;
-import org.deegree.protocol.wps.execute.input.LiteralInput;
-import org.deegree.protocol.wps.execute.input.XMLInput;
+import org.deegree.protocol.wps.input.BBoxInput;
+import org.deegree.protocol.wps.input.BinaryInput;
+import org.deegree.protocol.wps.input.ExecutionInput;
+import org.deegree.protocol.wps.input.LiteralInput;
+import org.deegree.protocol.wps.input.XMLInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

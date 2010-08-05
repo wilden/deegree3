@@ -33,42 +33,33 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.input;
+package org.deegree.protocol.wps.output;
 
-import java.util.Map;
+import org.deegree.commons.tom.ows.CodeType;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * Abstract base class for output parameters returned by a process execution.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
-public class InputReference {
+public abstract class ExecutionOutput {
 
-    private Map<String, String> headers;
+    private CodeType id;
 
-    private String body;
-
-    private String bodyXlink;
-
-    private String xlink;
-
-    private String method;
-
-    public InputReference( Map<String, String> headers, String body, String bodyXlink, String xlink, String method ) {
-        this.headers = headers;
-        this.body = body;
-        this.bodyXlink = bodyXlink;
-        this.xlink = xlink;
-        this.method = method;
+    protected ExecutionOutput( CodeType id ) {
+        this.id = id;
     }
 
-    public String getXlink() {
-        return xlink;
+    /**
+     * Returns the parameter identifier.
+     * 
+     * @return the parameter identifier, never <code>null</code>
+     */
+    public CodeType getId() {
+        return id;
     }
-
 }

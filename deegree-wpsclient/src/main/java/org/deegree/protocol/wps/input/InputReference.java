@@ -1,4 +1,4 @@
-//$HeadURL: svn+ssh://mschneider@svn.wald.intevation.org/deegree/deegree3/branches/aionita/deegree-wpsclient/src/main/java/org/deegree/protocol/wps/execute/output/ExecuteOutput.java $
+//$HeadURL$
 /*----------------------------------------------------------------------------
  This file is part of deegree, http://deegree.org/
  Copyright (C) 2001-2009 by:
@@ -33,58 +33,42 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.output;
+package org.deegree.protocol.wps.input;
 
-import org.deegree.commons.tom.ows.CodeType;
+import java.util.Map;
 
 /**
- * 
+ * The <code></code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
- * @author last edited by: $Author: mschneider $
  * 
- * @version $Revision: 25694 $, $Date: 2010-08-04 21:45:33 +0200 (Mi, 04. Aug 2010) $
+ * @author last edited by: $Author$
+ * 
+ * @version $Revision$, $Date$
+ * 
  */
-public class LiteralOutput extends ExecutionOutput {
+public class InputReference {
 
-    private final String value;
+    private Map<String, String> headers;
 
-    private final String dataType;
+    private String body;
 
-    private final String uom;
+    private String bodyXlink;
 
-    public LiteralOutput( CodeType id, String value, String dataType, String uom ) {
-        super( id );
-        this.value = value;
-        this.dataType = dataType;
-        this.uom = uom;
+    private String xlink;
+
+    private String method;
+
+    public InputReference( Map<String, String> headers, String body, String bodyXlink, String xlink, String method ) {
+        this.headers = headers;
+        this.body = body;
+        this.bodyXlink = bodyXlink;
+        this.xlink = xlink;
+        this.method = method;
     }
 
-    /**
-     * Returns the value.
-     * 
-     * @return the value, never <code>null</code>
-     */
-    public String getValue() {
-        return value;
+    public String getXlink() {
+        return xlink;
     }
 
-    /**
-     * Returns the data type.
-     * 
-     * @return the data type, may be <code>null</code> (unspecified)
-     */
-    public String getDataType() {
-        return dataType;
-    }
-
-    /**
-     * Returns the unit-of-measure.
-     * 
-     * @return the unit-of-measure, may be <code>null</code> (unspecified)
-     */
-    public String getUom() {
-        return uom;
-    }
 }

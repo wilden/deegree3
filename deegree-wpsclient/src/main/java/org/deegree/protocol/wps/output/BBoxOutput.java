@@ -1,4 +1,4 @@
-//$HeadURL$
+//$HeadURL: svn+ssh://mschneider@svn.wald.intevation.org/deegree/deegree3/branches/aionita/deegree-wpsclient/src/main/java/org/deegree/protocol/wps/execute/output/ExecuteOutput.java $
 /*----------------------------------------------------------------------------
  This file is part of deegree, http://deegree.org/
  Copyright (C) 2001-2009 by:
@@ -33,39 +33,55 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.input;
-
-import java.net.URL;
+package org.deegree.protocol.wps.output;
 
 import org.deegree.commons.tom.ows.CodeType;
 
 /**
- * Abstract base class for input parameters provided for a process execution.
+ * Base class for output parameters returned by a process execution.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
- * @author last edited by: $Author$
+ * @author last edited by: $Author: mschneider $
  * 
- * @version $Revision$, $Date$
+ * @version $Revision: 25694 $, $Date: 2010-08-04 21:45:33 +0200 (Mi, 04. Aug 2010) $
  */
-public abstract class ExecutionInput {
+public class BBoxOutput extends ExecutionOutput {
 
-    private CodeType id;
+    private double[] lower;
 
-    protected ExecutionInput( CodeType id ) {
-        this.id = id;
+    private double[] upper;
+
+    private String crs;
+
+    private int dim;
+
+    public BBoxOutput( CodeType id, double[] lower, double[] upper, String crs ) {
+        super( id );
+        this.lower = lower;
+        this.upper = upper;
+        this.dim = lower.length;
+        this.crs = crs;
+    }
+
+    public double[] getLower() {
+        return lower;
+    }
+
+    public double[] getUpper() {
+        return upper;
+    }
+
+    public int getDimension() {
+        return dim;
     }
 
     /**
-     * Returns the parameter identifier.
+     * Get coordinate system of the bounding box
      * 
-     * @return the parameter identifier, never <code>null</code>
+     * @return crs as String
      */
-    public CodeType getId() {
-        return id;
-    }
-    
-    public URL getWebAccessibleURL() {
-        return null;
+    public String getCrs() {
+        return crs;
     }
 }

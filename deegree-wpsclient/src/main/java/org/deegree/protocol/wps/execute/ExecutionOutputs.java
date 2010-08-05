@@ -40,9 +40,9 @@ import java.util.Map;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.protocol.wps.ProcessExecution;
-import org.deegree.protocol.wps.execute.output.ComplexOutput;
-import org.deegree.protocol.wps.execute.output.ExecutionOutput;
-import org.deegree.protocol.wps.execute.output.LiteralOutput;
+import org.deegree.protocol.wps.output.ComplexOutput;
+import org.deegree.protocol.wps.output.ExecutionOutput;
+import org.deegree.protocol.wps.output.LiteralOutput;
 import org.deegree.services.wps.output.BoundingBoxOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

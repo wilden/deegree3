@@ -33,12 +33,14 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute.output;
+package org.deegree.protocol.wps.input;
+
+import java.net.URL;
 
 import org.deegree.commons.tom.ows.CodeType;
 
 /**
- * Abstract base class for output parameters returned by a process execution.
+ * Abstract base class for input parameters provided for a process execution.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
@@ -46,11 +48,11 @@ import org.deegree.commons.tom.ows.CodeType;
  * 
  * @version $Revision$, $Date$
  */
-public abstract class ExecutionOutput {
+public abstract class ExecutionInput {
 
     private CodeType id;
 
-    protected ExecutionOutput( CodeType id ) {
+    protected ExecutionInput( CodeType id ) {
         this.id = id;
     }
 
@@ -61,5 +63,9 @@ public abstract class ExecutionOutput {
      */
     public CodeType getId() {
         return id;
+    }
+    
+    public URL getWebAccessibleURL() {
+        return null;
     }
 }

@@ -61,6 +61,21 @@ public class BinaryInput extends ExecutionInput {
 
     private boolean isWebAccessible;
 
+    /**
+     * Creates a new {@link BinaryInput} instance.
+     * 
+     * @param id
+     *            parameter identifier, must not be <code>null</code>
+     * @param url
+     *            URL for accessing the binary resource, must not be <code>null</code>
+     * @param isWebAccessible
+     *            if true, the data will be submitted to the process as reference, otherwise it will be encoded in the
+     *            request
+     * @param mimeType
+     *            mime type of the binary resource, may be <code>null</code> (unspecified)
+     * @param encoding
+     *            encoding to be used for the binary data, may be <code>null</code> (unspecified)
+     */
     public BinaryInput( CodeType id, URL url, boolean isWebAccessible, String mimeType, String encoding ) {
         super( id );
         this.url = url;
@@ -68,6 +83,18 @@ public class BinaryInput extends ExecutionInput {
         this.complexAttributes = new ComplexFormat( mimeType, encoding, null );
     }
 
+    /**
+     * Creates a new {@link BinaryInput} instance.
+     * 
+     * @param id
+     *            parameter identifier, must not be <code>null</code>
+     * @param inputStream
+     *            binary stream, must not be <code>null</code>
+     * @param mimeType
+     *            mime type of the binary resource, may be <code>null</code> (unspecified)
+     * @param encoding
+     *            encoding to be used for the binary data, may be <code>null</code> (unspecified)
+     */
     public BinaryInput( CodeType id, InputStream inputStream, String mimeType, String encoding ) {
         super( id );
         this.inputStream = inputStream;
@@ -78,16 +105,17 @@ public class BinaryInput extends ExecutionInput {
      * Returns the format of the input.
      * 
      * @return the format of the input, never <code>null</code>
-     */    
+     */
     public ComplexFormat getFormat() {
         return complexAttributes;
     }
 
     /**
-     * Get the binary data as a stream
+     * Returns the value as a binary stream.
      * 
-     * @return an {@link InputStream} to the binary data
+     * @return the value as a binary stream, never <code>null</code>
      * @throws IOException
+     *             if accessing the data fails
      */
     public InputStream getAsBinaryStream()
                             throws IOException {

@@ -102,9 +102,9 @@ public class ProcessExecution {
 
     private final Process process;
 
-    private List<ExecutionInput> inputs;
+    private final List<ExecutionInput> inputs = new ArrayList<ExecutionInput>();
 
-    private List<OutputFormat> outputDefs;
+    private final List<OutputFormat> outputDefs = new ArrayList<OutputFormat>();
 
     private ResponseFormat responseFormat;
 
@@ -123,8 +123,6 @@ public class ProcessExecution {
     ProcessExecution( WPSClient client, Process process ) {
         this.client = client;
         this.process = process;
-        inputs = new ArrayList<ExecutionInput>();
-        outputDefs = new ArrayList<OutputFormat>();
     }
 
     /**
@@ -354,8 +352,7 @@ public class ProcessExecution {
                             throws IOException, OWSException, XMLStreamException {
 
         // needed, because ResponseDocument must be set in any case for async mode
-        if ( outputDefs == null || outputDefs.size() == 0 ) {
-            outputDefs = new ArrayList<OutputFormat>();
+        if ( outputDefs.isEmpty() ) {
             for ( OutputType output : process.getOutputTypes() ) {
                 OutputFormat outputDef = new OutputFormat( output.getId(), null, false, null, null, null );
                 outputDefs.add( outputDef );
@@ -432,6 +429,23 @@ public class ProcessExecution {
     }
 
     /**
+     * Returns the web-accessible URL for retrieving the execute response.
+     * <p>
+     * For asynchronous operation, this URL may provide access to a dynamic document that's changing until the process
+     * is finished.
+     * </p>
+     * 
+     * @return web-accessible URL, or <code>null</code> if the execution has not been started yet or no status location
+     *         is available
+     */
+    public URL getStatusLocation() {
+        if ( lastResponse == null ) {
+            return null;
+        }
+        return lastResponse.getStatusLocation();
+    }
+
+    /**
      * Returns the percentage of the process that has been completed.
      * 
      * @return the completed percentage of the process, or <code>null</code> if the execution has not been started yet
@@ -445,7 +459,9 @@ public class ProcessExecution {
     }
 
     /**
-     * @return creation time of the process execution, never <code>null</code>
+     * Returns the creation time for the process execution as reported by the server.
+     * 
+     * @return creation time, or <code>null</code> if the execution has not been started yet
      */
     public String getCreationTime() {
         if ( lastResponse == null ) {

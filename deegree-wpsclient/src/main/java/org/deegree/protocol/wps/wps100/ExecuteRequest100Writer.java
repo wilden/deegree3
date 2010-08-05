@@ -91,7 +91,8 @@ public class ExecuteRequest100Writer {
         this.writer = writer;
     }
 
-    public void write100( CodeType id, List<ExecutionInput> inputs, ResponseFormat responseFormat ) {
+    public void write100( CodeType id, List<ExecutionInput> inputs, ResponseFormat responseFormat )
+                            throws IOException {
         try {
             writer.writeStartDocument();
             writer.writeStartElement( wpsPrefix, "Execute", wpsNS );
@@ -129,18 +130,11 @@ public class ExecuteRequest100Writer {
             if ( outputs != null && outputs.size() > 0 ) {
                 writer.writeStartElement( wpsPrefix, "ResponseForm", wpsNS );
 
-                if ( !outputFormat.isRaw() ) {
+                if ( !outputFormat.returnRawOutput() ) {
                     writer.writeStartElement( wpsPrefix, "ResponseDocument", wpsNS );
-
-                    if ( outputFormat.isAsync() != null ) {
-                        writer.writeAttribute( "storeExecuteResponse", String.valueOf( outputFormat.isAsync() ) );
-                    }
-                    if ( outputFormat.includesRequestInfo() != null ) {
-                        writer.writeAttribute( "lineage", String.valueOf( outputFormat.includesRequestInfo() ) );
-                    }
-                    if ( outputFormat.updatesStatus() != null ) {
-                        writer.writeAttribute( "status", String.valueOf( outputFormat.updatesStatus() ) );
-                    }
+                    writer.writeAttribute( "storeExecuteResponse", String.valueOf( outputFormat.storeResponse() ) );
+                    writer.writeAttribute( "lineage", String.valueOf( outputFormat.includeInputs() ) );
+                    writer.writeAttribute( "status", String.valueOf( outputFormat.updateStatus() ) );
 
                     for ( OutputFormat outputDef : outputs ) {
                         writer.writeStartElement( wpsPrefix, "Output", wpsNS );
@@ -208,7 +202,7 @@ public class ExecuteRequest100Writer {
     }
 
     private void writeInputs( List<ExecutionInput> inputList )
-                            throws XMLStreamException {
+                            throws XMLStreamException, IOException {
         if ( inputList != null && inputList.size() > 0 ) {
             writer.writeStartElement( wpsPrefix, "DataInputs", wpsNS );
 

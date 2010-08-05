@@ -37,56 +37,96 @@ package org.deegree.protocol.wps.process.execute;
 
 import java.util.List;
 
-
 /**
- * The <code></code> class TODO add class documentation here.
+ * Encapsulates the requested settings for a process execution response.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
 public class ResponseFormat {
 
     private boolean rawOutput;
 
-    private Boolean asynch;
+    private boolean storeResponse;
 
-    private Boolean includeRequestInfo;
+    private boolean includeInputs;
 
-    private Boolean updateStatus;
+    private boolean updateStatus;
 
     private List<OutputFormat> outputDefs;
 
-    public ResponseFormat( boolean rawOutput, boolean asynch, boolean includeRequestInfo, boolean updateStatus,
+    /**
+     * Creates a new {@link ResponseFormat} instance.
+     * 
+     * @param rawOutput
+     *            true, if a raw response is requested, false means response document
+     * @param storeResponse
+     *            true, if the server should store the output response (and provide a web-accessible URL for it), false
+     *            otherwise
+     * @param includeInputs
+     *            true, if the input parameters should be repeated in the response (lineage), false otherwise
+     * @param updateStatus
+     *            true, if the server should provide updated response documents (asynchronous execution), false
+     *            otherwise
+     * @param outputDefs
+     *            the requested outputs, can be empty (indicates to return all outputs), but must not be
+     *            <code>null</code>
+     */
+    public ResponseFormat( boolean rawOutput, boolean storeResponse, boolean includeInputs, boolean updateStatus,
                            List<OutputFormat> outputDefs ) {
         this.rawOutput = rawOutput;
-        this.asynch = asynch;
-        this.includeRequestInfo = includeRequestInfo;
+        this.storeResponse = storeResponse;
+        this.includeInputs = includeInputs;
         this.updateStatus = updateStatus;
         this.outputDefs = outputDefs;
     }
 
-    public boolean isRaw() {
+    /**
+     * Returns whether the output should be "raw" (just one output parameter) instead of a response document.
+     * 
+     * @return true, if a raw response is requested, false means response document
+     */
+    public boolean returnRawOutput() {
         return rawOutput;
     }
 
-    public Boolean isAsync() {
-        return asynch;
+    /**
+     * Returns whether the server should store the output response (and provide a web-accessible URL in the response
+     * document).
+     * 
+     * @return true, if the server should store the output response, false otherwise
+     */
+    public boolean storeResponse() {
+        return storeResponse;
     }
 
-    public Boolean includesRequestInfo() {
-        return includeRequestInfo;
+    /**
+     * Returns whether the input parameters should be repeated in the response (lineage).
+     * 
+     * @return true, if the input parameters should be repeated, false otherwise
+     */
+    public boolean includeInputs() {
+        return includeInputs;
     }
 
-    public Boolean updatesStatus() {
+    /**
+     * Returns whether the server should provide updated response documents (asynchronous execution).
+     * 
+     * @return true, if the server should provide updated response documents, false otherwise
+     */
+    public boolean updateStatus() {
         return updateStatus;
     }
 
+    /**
+     * Returns the requested outputs.
+     * 
+     * @return the requested outputs, can be empty (indicates to return all outputs), but never <code>null</code>
+     */
     public List<OutputFormat> getOutputDefinitions() {
         return outputDefs;
     }
-
 }

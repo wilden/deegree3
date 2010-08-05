@@ -35,6 +35,8 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.input;
 
+import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+
 import java.io.IOException;
 import java.net.URL;
 
@@ -46,8 +48,6 @@ import javax.xml.stream.XMLStreamReader;
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.stax.StAXParsingHelper;
 import org.deegree.protocol.wps.param.ComplexFormat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link ExecutionInput} that encapsulates an XML value.
@@ -60,8 +60,6 @@ import org.slf4j.LoggerFactory;
  */
 public class XMLInput extends ExecutionInput {
 
-    private static Logger LOG = LoggerFactory.getLogger( XMLInput.class );
-
     private final ComplexFormat complexAttribs;
 
     private URL url;
@@ -70,24 +68,47 @@ public class XMLInput extends ExecutionInput {
 
     private boolean isWebAccessible;
 
-    public XMLInput( CodeType id, URL url, boolean isWebAcessible, String mimeType, String encoding, String schema ) {
+    /**
+     * Creates a new {@link XMLInput} instance.
+     * 
+     * @param id
+     *            parameter identifier, must not be <code>null</code>
+     * @param url
+     *            URL for accessing the XML resource, must not be <code>null</code>
+     * @param isWebAccessible
+     *            if true, the data will be submitted to the process as reference, otherwise it will be encoded in the
+     *            request
+     * @param mimeType
+     *            mime type of the XML resource, may be <code>null</code> (unspecified)
+     * @param encoding
+     *            encoding, may be <code>null</code> (unspecified)
+     * @param schema
+     *            XML schema, may be <code>null</code> (unspecified)
+     */
+    public XMLInput( CodeType id, URL url, boolean isWebAccessible, String mimeType, String encoding, String schema ) {
         super( id );
         this.url = url;
-        this.isWebAccessible = isWebAcessible;
+        this.isWebAccessible = isWebAccessible;
         this.complexAttribs = new ComplexFormat( mimeType, null, schema );
     }
 
     /**
+     * Creates a new {@link XMLInput} instance.
      * 
+     * @param id
+     *            parameter identifier, must not be <code>null</code>
      * @param reader
-     *            cursor must point at a <code>START_ELEMENT</code> event, position afterwards is undefined
+     *            xml stream that provides the data, must not be <code>null</code> and point to a START_ELEMENT event
      * @param mimeType
+     *            mime type of the XML resource, may be <code>null</code> (unspecified)
      * @param encoding
+     *            encoding, may be <code>null</code> (unspecified)
      * @param schema
+     *            XML schema, may be <code>null</code> (unspecified)
      */
     public XMLInput( CodeType id, XMLStreamReader reader, String mimeType, String encoding, String schema ) {
         super( id );
-        if ( reader.getEventType() != XMLStreamConstants.START_ELEMENT ) {
+        if ( reader.getEventType() != START_ELEMENT ) {
             String msg = "The given XML stream does not point to a START_ELEMENT event.";
             throw new IllegalArgumentException( msg );
         }
@@ -106,28 +127,22 @@ public class XMLInput extends ExecutionInput {
     }
 
     /**
-     * Gets the xml data as {@link XMLStreamReader}. In case the xml stream begins with the START_DOCUMENT event, the
-     * returning stream will have skipped it.
+     * Returns the XML value as an {@link XMLStreamReader}.
      * 
-     * @return an {@link XMLStreamReader} instance, positioned after the START_DOCUMENT element
+     * @return an xml stream, current event is START_ELEMENT
+     * @throws IOException
+     *             if accessing the value fails
+     * @throws XMLStreamException
      */
-    public XMLStreamReader getAsXMLStream() {
-        try {
-            if ( reader == null ) {
-                XMLInputFactory inFactory = XMLInputFactory.newInstance();
-                reader = inFactory.createXMLStreamReader( url.openStream() );
-            }
-            if ( reader.getEventType() == XMLStreamConstants.START_DOCUMENT ) {
-                StAXParsingHelper.nextElement( reader );
-            }
-        } catch ( XMLStreamException e ) {
-            // TODO
-            e.printStackTrace();
-        } catch ( IOException e ) {
-            // TODO
-            e.printStackTrace();
+    public XMLStreamReader getAsXMLStream()
+                            throws XMLStreamException, IOException {
+        if ( reader == null ) {
+            XMLInputFactory inFactory = XMLInputFactory.newInstance();
+            reader = inFactory.createXMLStreamReader( url.openStream() );
         }
-
+        if ( reader.getEventType() == XMLStreamConstants.START_DOCUMENT ) {
+            StAXParsingHelper.nextElement( reader );
+        }
         return reader;
     }
 

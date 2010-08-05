@@ -41,6 +41,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamReader;
 
 import org.apache.axiom.om.OMElement;
 import org.deegree.commons.tom.ows.CodeType;
@@ -112,8 +113,49 @@ import org.slf4j.LoggerFactory;
  *   XMLStreamReader xmlStream = bufferedGeometry.getAsXMLStream();
  * ...
  * </pre>
- *
- * <h4>Providing input</h4>
+ * 
+ * <h4>Providing input</h4>Input is straightforwardly specified for the <b>literal and bbox cases</b>: <br/>
+ * <br/> {@link ProcessExecution#addLiteralInput(String, String, String, String, String)} respectively <br/>
+ * <br/> {@link ProcessExecution#addBBoxInput(String, String, double[], double[], String)}
+ * 
+ * <pre>
+ * ...
+ *   execution.addLiteralInput( &quot;BufferDistance&quot;, null, &quot;0.1&quot;, &quot;double&quot;, &quot;unity&quot; );
+ *   execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
+ * ...
+ * </pre>
+ * 
+ * For complex data however, the are methods that provide <b>XML and binary data separately</b>. One variant of these
+ * provides an URL and whether it is web accessible (that will be translated into a Reference element in the WPS
+ * request), or is just a local URL.<br/>
+ * <br/> {@link ProcessExecution#addXMLInput(String, String, URL, boolean, String, String, String)} and respectively <br/>
+ * <br/> {@link ProcessExecution#addBinaryInput(String, String, URL, boolean, String, String)}
+ * 
+ * <pre>
+ * ...
+ *   execution.addXMLInput( "XMLInput1", null, new URL( REMOTE_XML_INPUT ), true, "text/xml", null, null );
+ *   // OR, from a local file
+ *   execution.addXMLInput( "XMLInput2", null, new URL( LOCAL_XML_INPUT ), false, "text/xml", null, null );
+ *   
+ *   // and for binary data
+ *   execution.addBinaryInput( "BinaryInput1", null, new URL( LOCAL_BINARY_INPUT ), false, "image/png", null );
+ *   // OR, from the web
+ *   execution.addBinaryInput( "BinaryInput2", null, new URL( REMOTE_XML_INPUT ), true, "image/png", null );
+ * ...
+ * </pre>
+ * 
+ * Alternatively, one can simply provide a stream. In the case of XML it will be a {@link XMLStreamReader}, while for
+ * the binary data expected will be an {@link InputStream}.<br/>
+ * <br/> {@link ProcessExecution#addXMLInput(String, String, XMLStreamReader, String, String, String)} respectively <br/>
+ * <br/> {@link ProcessExecution#addBinaryInput(String, String, java.io.InputStream, String, String)}
+ * 
+ * <pre>
+ * ...
+ *   execution.addXMLInput( "XMLInput", null, reader, "text/xml", null, null );
+ *   // respectively, in the case of binary input
+ *   execution.addBinaryInput( "BinaryInput", null, is, "image/png", null );
+ * ...
+ * </pre>
  * 
  * <h4>Controlling output</h4>
  * 

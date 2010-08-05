@@ -77,8 +77,8 @@ import org.slf4j.LoggerFactory;
  * service, such as title, abstract, provider etc.
  * 
  * <h4>Getting process information</h4> The method {@link #getProcesses()} allows to find out about the processes
- * offered by the service. Additionally (if one knows the identifier of a process beforehand, one can use
- * {@link #getProcess(String, String)} to retrieve a specific process). The {@link Process} class allows to execute a
+ * offered by the service. Additionally (if one knows the identifier of a process beforehand), one can use
+ * {@link #getProcess(String, String)} to retrieve a specific process. The {@link Process} class allows to execute a
  * process and offers methods to access detail information such as title, abstract, input parameter types and output
  * parameters types:
  * 

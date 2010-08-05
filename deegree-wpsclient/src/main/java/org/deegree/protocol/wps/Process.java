@@ -45,7 +45,7 @@ import org.deegree.commons.tom.ows.LanguageString;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.protocol.wps.describeprocess.ProcessDetails;
 import org.deegree.protocol.wps.describeprocess.input.InputType;
-import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
+import org.deegree.protocol.wps.describeprocess.output.OutputType;
 import org.deegree.protocol.wps.getcapabilities.ProcessInfo;
 import org.deegree.services.controller.ows.OWSException;
 import org.slf4j.Logger;
@@ -168,10 +168,10 @@ public class Process {
      * @throws OWSException
      *             if the server replied with an exception
      */
-    public OutputDescription[] getOutputTypes()
+    public OutputType[] getOutputTypes()
                             throws IOException, OWSException {
-        Collection<OutputDescription> collection = getProcessDetails().getOutputs().values();
-        return collection.toArray( new OutputDescription[collection.size()] );
+        Collection<OutputType> collection = getProcessDetails().getOutputs().values();
+        return collection.toArray( new OutputType[collection.size()] );
     }
 
     /**
@@ -188,7 +188,7 @@ public class Process {
      * @throws OWSException
      *             if the server replied with an exception
      */
-    public OutputDescription getOutputType( String id, String idCodeSpace )
+    public OutputType getOutputType( String id, String idCodeSpace )
                             throws OWSException, IOException {
         return getProcessDetails().getOutputs().get( new CodeType( id, idCodeSpace ) );
     }

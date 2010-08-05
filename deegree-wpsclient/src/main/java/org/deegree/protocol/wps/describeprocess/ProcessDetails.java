@@ -61,7 +61,6 @@ import org.deegree.protocol.wps.describeprocess.input.LiteralInputType;
 import org.deegree.protocol.wps.describeprocess.output.BBoxOutputType;
 import org.deegree.protocol.wps.describeprocess.output.ComplexOutputType;
 import org.deegree.protocol.wps.describeprocess.output.LiteralOutputType;
-import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
 import org.deegree.protocol.wps.describeprocess.output.OutputType;
 import org.deegree.services.jaxb.wps.Range;
 
@@ -88,7 +87,7 @@ public class ProcessDetails {
 
     private final Map<CodeType, InputType> inputs;
 
-    private final Map<CodeType, OutputDescription> outputs;
+    private final Map<CodeType, OutputType> outputs;
 
     private final boolean storeSupported;
 
@@ -126,7 +125,7 @@ public class ProcessDetails {
      * 
      * @return the output parameter descriptions, never <code>null</code>
      */
-    public Map<CodeType, OutputDescription> getOutputs() {
+    public Map<CodeType, OutputType> getOutputs() {
         return outputs;
     }
 
@@ -147,43 +146,43 @@ public class ProcessDetails {
         return idToInputType;
     }
 
-    private Map<CodeType, OutputDescription> parseOutputs() {
+    private Map<CodeType, OutputType> parseOutputs() {
         XPath xpath = new XPath( "/wps:ProcessDescriptions/ProcessDescription/ProcessOutputs/Output", nsContext );
         List<OMElement> outputs = omResponse.getElements( omResponse.getRootElement(), xpath );
-        Map<CodeType, OutputDescription> idToOutputType = new HashMap<CodeType, OutputDescription>();
+        Map<CodeType, OutputType> idToOutputType = new HashMap<CodeType, OutputType>();
         for ( OMElement output : outputs ) {
             CodeType id = parseId( output );
             LanguageString outputTitle = parseLanguageString( output, "Title" );
             LanguageString outputAbstract = parseLanguageString( output, "Abstract" );
-
-            OutputType outputData = parseOutputData( output );
-            OutputDescription outputDescrib = new OutputDescription( id, outputTitle, outputAbstract, outputData );
+            OutputType outputDescrib = parseOutputData( output, id, outputTitle, outputAbstract );
             idToOutputType.put( id, outputDescrib );
         }
         return idToOutputType;
     }
 
-    private OutputType parseOutputData( OMElement output ) {
+    private OutputType parseOutputData( OMElement output, CodeType id, LanguageString outputTitle,
+                                               LanguageString outputAbstract ) {
         OutputType outputData = null;
         OMElement complexData = output.getFirstChildWithName( new QName( null, "ComplexOutput" ) );
         if ( complexData != null ) {
-            outputData = parseComplexOutput( complexData );
+            outputData = parseComplexOutput( complexData, id, outputTitle, outputAbstract );
         }
 
         OMElement literalData = output.getFirstChildWithName( new QName( null, "LiteralOutput" ) );
         if ( literalData != null ) {
-            outputData = parseLiteralOutput( literalData );
+            outputData = parseLiteralOutput( literalData, id, outputTitle, outputAbstract );
         }
 
         OMElement bboxData = output.getFirstChildWithName( new QName( null, "BoundingBoxOutput" ) );
         if ( bboxData != null ) {
-            outputData = parseBBoxOutput( bboxData );
+            outputData = parseBBoxOutput( bboxData, id, outputTitle, outputAbstract );
         }
 
         return outputData;
     }
 
-    private OutputType parseBBoxOutput( OMElement bboxData ) {
+    private BBoxOutputType parseBBoxOutput( OMElement bboxData, CodeType id, LanguageString outputTitle,
+                                            LanguageString outputAbstract ) {
         XPath xpath = new XPath( "Default/CRS", nsContext );
         String defaultCrs = omResponse.getElement( bboxData, xpath ).getText();
 
@@ -194,10 +193,11 @@ public class ProcessDetails {
             supportedCrs[i] = omSupported.get( i ).getText();
         }
 
-        return new BBoxOutputType( defaultCrs, supportedCrs );
+        return new BBoxOutputType( id, outputTitle, outputAbstract, defaultCrs, supportedCrs );
     }
 
-    private LiteralOutputType parseLiteralOutput( OMElement omLiteral ) {
+    private LiteralOutputType parseLiteralOutput( OMElement omLiteral, CodeType id, LanguageString outputTitle,
+                                                  LanguageString outputAbstract ) {
         OMElement omDataType = omLiteral.getFirstChildWithName( new QName( owsNS, "DataType" ) );
         ValueWithRef<String> dataType = null;
         if ( omDataType != null ) {
@@ -249,10 +249,11 @@ public class ProcessDetails {
                 supportedUoms[i] = new ValueWithRef<String>( omSupp.getText(), supportedRef );
             }
         }
-        return new LiteralOutputType( dataType, defaultUom, supportedUoms );
+        return new LiteralOutputType( id, outputTitle, outputAbstract, dataType, defaultUom, supportedUoms );
     }
 
-    private OutputType parseComplexOutput( OMElement omComplex ) {
+    private ComplexOutputType parseComplexOutput( OMElement omComplex, CodeType id, LanguageString outputTitle,
+                                                  LanguageString outputAbstract ) {
         XPath xpath = new XPath( "Default/Format", nsContext );
         OMElement omDefault = omResponse.getElement( omComplex, xpath );
         String mimeType = omDefault.getFirstChildWithName( new QName( null, "MimeType" ) ).getText();
@@ -287,11 +288,11 @@ public class ProcessDetails {
             }
             supportedFormats[i] = new ComplexAttributes( mimeType, encoding, schema );
         }
-        return new ComplexOutputType( defaultFormat, supportedFormats );
+        return new ComplexOutputType( id, outputTitle, outputAbstract, defaultFormat, supportedFormats );
     }
 
-    private InputType parseData( OMElement input, CodeType id, LanguageString inputTitle,
-                                        LanguageString inputAbstract, String minOccurs, String maxOccurs ) {
+    private InputType parseData( OMElement input, CodeType id, LanguageString inputTitle, LanguageString inputAbstract,
+                                 String minOccurs, String maxOccurs ) {
         InputType inputData = null;
 
         OMElement complexData = input.getFirstChildWithName( new QName( null, "ComplexData" ) );
@@ -313,7 +314,7 @@ public class ProcessDetails {
     }
 
     private BBoxInputType parseBBoxData( OMElement input, CodeType id, LanguageString inputTitle,
-                                     LanguageString inputAbstract, String minOccurs, String maxOccurs ) {
+                                         LanguageString inputAbstract, String minOccurs, String maxOccurs ) {
         XPath xpath = new XPath( "Default/CRS", nsContext );
         String defaultCRS = omResponse.getElement( input, xpath ).getText();
         xpath = new XPath( "Supported/CRS", nsContext );
@@ -323,11 +324,11 @@ public class ProcessDetails {
             supportedCRSs[i] = omSupported.get( i ).getText();
         }
 
-        return new BBoxInputType(id, inputTitle, inputAbstract, minOccurs, maxOccurs, defaultCRS, supportedCRSs );
+        return new BBoxInputType( id, inputTitle, inputAbstract, minOccurs, maxOccurs, defaultCRS, supportedCRSs );
     }
 
     private LiteralInputType parseLiteralData( OMElement input, CodeType id, LanguageString inputTitle,
-                                        LanguageString inputAbstract, String minOccurs, String maxOccurs ) {
+                                               LanguageString inputAbstract, String minOccurs, String maxOccurs ) {
         OMElement omDataType = input.getFirstChildWithName( new QName( owsNS, "DataType" ) );
         String dataTypeStr = omDataType.getText();
         String dataTypeRefStr = omDataType.getAttributeValue( new QName( owsNS, "reference" ) );
@@ -459,7 +460,7 @@ public class ProcessDetails {
     }
 
     private InputType parseComplexData( OMElement input, CodeType id, LanguageString inputTitle,
-                                               LanguageString inputAbstract, String minOccurs, String maxOccurs ) {
+                                        LanguageString inputAbstract, String minOccurs, String maxOccurs ) {
         XPath xpath = new XPath( "Default/Format", nsContext );
         OMElement omDefaultFormat = omResponse.getElement( input, xpath );
         String mimeType = omDefaultFormat.getFirstChildWithName( new QName( null, "MimeType" ) ).getText();

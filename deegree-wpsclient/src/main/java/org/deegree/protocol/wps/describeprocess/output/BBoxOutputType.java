@@ -35,6 +35,10 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.describeprocess.output;
 
+import org.deegree.commons.tom.ows.CodeType;
+import org.deegree.commons.tom.ows.LanguageString;
+import org.deegree.protocol.wps.describeprocess.ValueWithRef;
+
 /**
  * The <code></code> class TODO add class documentation here.
  * 
@@ -45,13 +49,15 @@ package org.deegree.protocol.wps.describeprocess.output;
  * @version $Revision$, $Date$
  * 
  */
-public class BBoxOutputType implements OutputType {
+public class BBoxOutputType extends OutputType {
 
     private String defaultCrs;
 
     private String[] supportedCrs;
 
-    public BBoxOutputType( String defaultCrs, String[] supportedCrs ) {
+    public BBoxOutputType( CodeType id, LanguageString outputTitle, LanguageString outputAbstract, String defaultCrs,
+                           String[] supportedCrs ) {
+        super( id, outputTitle, outputAbstract );
         this.defaultCrs = defaultCrs;
         this.supportedCrs = supportedCrs;
     }

@@ -35,6 +35,8 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.describeprocess.output;
 
+import org.deegree.commons.tom.ows.CodeType;
+import org.deegree.commons.tom.ows.LanguageString;
 import org.deegree.protocol.wps.describeprocess.ValueWithRef;
 
 /**
@@ -47,7 +49,7 @@ import org.deegree.protocol.wps.describeprocess.ValueWithRef;
  * @version $Revision$, $Date$
  * 
  */
-public class LiteralOutputType implements OutputType {
+public class LiteralOutputType extends OutputType {
 
     private ValueWithRef<String> dataType;
 
@@ -55,8 +57,10 @@ public class LiteralOutputType implements OutputType {
 
     private ValueWithRef<String>[] supportedUoms;
 
-    public LiteralOutputType( ValueWithRef<String> dataType, ValueWithRef<String> defaultUom,
-                          ValueWithRef<String>[] supportedUoms ) {
+    public LiteralOutputType( CodeType id, LanguageString outputTitle, LanguageString outputAbstract,
+                              ValueWithRef<String> dataType, ValueWithRef<String> defaultUom,
+                              ValueWithRef<String>[] supportedUoms ) {
+        super( id, outputTitle, outputAbstract );
         this.dataType = dataType;
         this.defaultUom = defaultUom;
         this.supportedUoms = supportedUoms;

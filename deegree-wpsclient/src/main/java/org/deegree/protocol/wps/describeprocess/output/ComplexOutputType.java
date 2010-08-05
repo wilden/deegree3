@@ -35,6 +35,8 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.describeprocess.output;
 
+import org.deegree.commons.tom.ows.CodeType;
+import org.deegree.commons.tom.ows.LanguageString;
 import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
 
 /**
@@ -47,13 +49,15 @@ import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
  * @version $Revision$, $Date$
  * 
  */
-public class ComplexOutputType implements OutputType {
+public class ComplexOutputType extends OutputType {
 
     private ComplexAttributes defaultFormat;
 
     private ComplexAttributes[] supportedFormats;
 
-    public ComplexOutputType( ComplexAttributes defaultFormat, ComplexAttributes[] supportedFormats ) {
+    public ComplexOutputType( CodeType id, LanguageString outputTitle, LanguageString outputAbstract,
+                              ComplexAttributes defaultFormat, ComplexAttributes[] supportedFormats ) {
+        super( id, outputTitle, outputAbstract );
         this.defaultFormat = defaultFormat;
         this.supportedFormats = supportedFormats;
     }

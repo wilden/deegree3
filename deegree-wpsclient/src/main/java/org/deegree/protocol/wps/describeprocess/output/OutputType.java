@@ -35,6 +35,9 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.describeprocess.output;
 
+import org.deegree.commons.tom.ows.CodeType;
+import org.deegree.commons.tom.ows.LanguageString;
+
 /**
  * The <code></code> class TODO add class documentation here.
  * 
@@ -45,6 +48,37 @@ package org.deegree.protocol.wps.describeprocess.output;
  * @version $Revision$, $Date$
  * 
  */
-public interface OutputType {
-    // marker interface
+public abstract class OutputType {
+
+    private final CodeType id;
+
+    private final LanguageString outputTitle;
+
+    private final LanguageString outputAbstract;
+
+    protected OutputType( CodeType id, LanguageString outputTitle, LanguageString outputAbstract) {
+        this.id = id;
+        this.outputTitle = outputTitle;
+        this.outputAbstract = outputAbstract;
+    }
+
+    public CodeType getId() {
+        return id;
+    }
+
+    /**
+     * 
+     * @return title of the output
+     */
+    public LanguageString getTitle() {
+        return outputTitle;
+    }
+
+    /**
+     * 
+     * @return abstract of the output
+     */
+    public LanguageString getAbstract() {
+        return outputAbstract;
+    }
 }

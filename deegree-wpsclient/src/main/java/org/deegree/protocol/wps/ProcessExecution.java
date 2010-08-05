@@ -57,7 +57,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.XMLAdapter;
-import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
+import org.deegree.protocol.wps.describeprocess.output.OutputType;
 import org.deegree.protocol.wps.execute.ExceptionReport;
 import org.deegree.protocol.wps.execute.ExecuteWriter;
 import org.deegree.protocol.wps.execute.ExecutionOutputs;
@@ -352,7 +352,7 @@ public class ProcessExecution {
         // needed, because ResponseDocument must be set in any case for async mode
         if ( outputDefs == null || outputDefs.size() == 0 ) {
             outputDefs = new ArrayList<OutputDefinition>();
-            for ( OutputDescription output : process.getOutputTypes() ) {
+            for ( OutputType output : process.getOutputTypes() ) {
                 OutputDefinition outputDef = new OutputDefinition( output.getId(), null, false, null, null, null );
                 outputDefs.add( outputDef );
             }

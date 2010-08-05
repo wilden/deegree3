@@ -60,7 +60,7 @@ import org.deegree.protocol.wps.describeprocess.input.LiteralInputType;
 import org.deegree.protocol.wps.describeprocess.output.BBoxOutputType;
 import org.deegree.protocol.wps.describeprocess.output.ComplexOutputType;
 import org.deegree.protocol.wps.describeprocess.output.LiteralOutputType;
-import org.deegree.protocol.wps.describeprocess.output.OutputDescription;
+import org.deegree.protocol.wps.describeprocess.output.OutputType;
 import org.deegree.protocol.wps.execute.ExecutionOutputs;
 import org.deegree.protocol.wps.execute.output.BBoxOutput;
 import org.deegree.protocol.wps.execute.output.ComplexOutput;
@@ -137,8 +137,8 @@ public class WPSClientTest {
         Assert.assertEquals( "unity", literalInput.getSupportedUoms()[0].getValue() );
         Assert.assertEquals( true, literalInput.isAnyValue() );
 
-        OutputDescription output = p1.getOutputType( "BufferedGeometry", null );
-        ComplexOutputType complexData = (ComplexOutputType) output.getOutputData();
+        OutputType output = p1.getOutputType( "BufferedGeometry", null );
+        ComplexOutputType complexData = (ComplexOutputType) output;
         Assert.assertEquals( "UTF-8", complexData.getDefaultFormat().getEncoding() );
         Assert.assertEquals( "text/xml", complexData.getDefaultFormat().getMimeType() );
         Assert.assertEquals( "http://schemas.opengis.net/gml/3.1.1/base/gml.xsd",
@@ -168,8 +168,8 @@ public class WPSClientTest {
         Assert.assertEquals( "http://schemas.opengis.net/gml/3.1.1/base/gml.xsd",
                              complexData.getSupportedFormats()[0].getSchema() );
 
-        OutputDescription output = p2.getOutputType( "Crosses", null );
-        LiteralOutputType literalOut = (LiteralOutputType) output.getOutputData();
+        OutputType output = p2.getOutputType( "Crosses", null );
+        LiteralOutputType literalOut = (LiteralOutputType) output;
         Assert.assertEquals( "boolean", literalOut.getDataType().getValue() );
         Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#boolean", literalOut.getDataType().getRef().toString() );
     }
@@ -209,26 +209,26 @@ public class WPSClientTest {
         Assert.assertEquals( "image/png", binaryData.getSupportedFormats()[0].getMimeType() );
         Assert.assertEquals( "base64", binaryData.getSupportedFormats()[0].getEncoding() );
 
-        OutputDescription firstOutput = p2.getOutputType( "LiteralOutput", null );
+        OutputType firstOutput = p2.getOutputType( "LiteralOutput", null );
         Assert.assertEquals( "A literal output parameter", firstOutput.getTitle().getString() );
-        LiteralOutputType literalData = (LiteralOutputType) firstOutput.getOutputData();
+        LiteralOutputType literalData = (LiteralOutputType) firstOutput;
         Assert.assertEquals( "integer", literalData.getDataType().getValue() );
         Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#integer", literalData.getDataType().getRef().toString() );
         Assert.assertEquals( "seconds", literalData.getDefaultUom().getValue() );
         Assert.assertEquals( "seconds", literalData.getSupportedUoms()[0].getValue() );
 
-        OutputDescription secondOutput = p2.getOutputType( "BBOXOutput", null );
-        BBoxOutputType bboxOutput = (BBoxOutputType) secondOutput.getOutputData();
+        OutputType secondOutput = p2.getOutputType( "BBOXOutput", null );
+        BBoxOutputType bboxOutput = (BBoxOutputType) secondOutput;
         Assert.assertEquals( "EPSG:4326", bboxOutput.getDefaultCrs() );
         Assert.assertEquals( "EPSG:4326", bboxOutput.getSupportedCrs()[0] );
 
-        OutputDescription thirdOutput = p2.getOutputType( "XMLOutput", null );
-        ComplexOutputType xmlOutput = (ComplexOutputType) thirdOutput.getOutputData();
+        OutputType thirdOutput = p2.getOutputType( "XMLOutput", null );
+        ComplexOutputType xmlOutput = (ComplexOutputType) thirdOutput;
         Assert.assertEquals( "text/xml", xmlOutput.getDefaultFormat().getMimeType() );
         Assert.assertEquals( "text/xml", xmlOutput.getSupportedFormats()[0].getMimeType() );
 
-        OutputDescription fourthOutput = p2.getOutputType( "BinaryOutput", null );
-        ComplexOutputType binaryOutput = (ComplexOutputType) fourthOutput.getOutputData();
+        OutputType fourthOutput = p2.getOutputType( "BinaryOutput", null );
+        ComplexOutputType binaryOutput = (ComplexOutputType) fourthOutput;
         Assert.assertEquals( "text/xml", xmlOutput.getDefaultFormat().getMimeType() );
         Assert.assertEquals( "text/xml", xmlOutput.getSupportedFormats()[0].getMimeType() );
     }
@@ -385,7 +385,7 @@ public class WPSClientTest {
         Process proc = wpsClient.getProcess( "ParameterDemoProcess", null );
 
         ProcessExecution execution = proc.prepareExecution();
-        execution.addLiteralInput( "LiteralInput", null, "10", "integer", "seconds" );
+        execution.addLiteralInput( "LiteralInput", null, "5", "integer", "seconds" );
         execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
         execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), false, "text/xml", null, null );
         execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), false, "image/png", null );

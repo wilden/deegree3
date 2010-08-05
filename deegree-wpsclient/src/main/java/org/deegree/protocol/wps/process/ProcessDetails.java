@@ -101,6 +101,12 @@ public class ProcessDetails {
         nsContext.addNamespace( owsPrefix, owsNS );
     }
 
+    /**
+     * Creates a new {@link ProcessDetails} instance.
+     * 
+     * @param describeResponse
+     *            wps:ProcessDescriptions document containing a single ProcessDescription, must not be <code>null</code>
+     */
     public ProcessDetails( XMLAdapter describeResponse ) {
         this.omResponse = describeResponse;
         this.inputs = parseInputs();
@@ -163,7 +169,7 @@ public class ProcessDetails {
     }
 
     private OutputType parseOutputData( OMElement output, CodeType id, LanguageString outputTitle,
-                                               LanguageString outputAbstract ) {
+                                        LanguageString outputAbstract ) {
         OutputType outputData = null;
         OMElement complexData = output.getFirstChildWithName( new QName( null, "ComplexOutput" ) );
         if ( complexData != null ) {
@@ -201,54 +207,30 @@ public class ProcessDetails {
     private LiteralOutputType parseLiteralOutput( OMElement omLiteral, CodeType id, LanguageString outputTitle,
                                                   LanguageString outputAbstract ) {
         OMElement omDataType = omLiteral.getFirstChildWithName( new QName( owsNS, "DataType" ) );
-        ValueWithRef<String> dataType = null;
+        ValueWithRef dataType = null;
         if ( omDataType != null ) {
             String dataTypeStr = omDataType.getText();
             String dataTypeRefStr = omDataType.getAttributeValue( new QName( owsNS, "reference" ) );
-            URI dataTypeRef = null;
-            if ( dataTypeRefStr != null ) {
-                try {
-                    dataTypeRef = new URI( dataTypeRefStr );
-                } catch ( URISyntaxException e ) {
-                    // dataTypeRef stays null
-                }
-            }
-            dataType = new ValueWithRef<String>( dataTypeStr, dataTypeRef );
+            dataType = new ValueWithRef( dataTypeStr, dataTypeRefStr );
         }
 
         XPath xpath = new XPath( "UOMs/Default/ows:UOM", nsContext );
         OMElement omDefault = omResponse.getElement( omLiteral, xpath );
-        ValueWithRef<String> defaultUom = null;
+        ValueWithRef defaultUom = null;
         if ( omDefault != null ) {
             String defaultUomStr = omDefault.getText();
             String defaultUomRefStr = omDefault.getAttributeValue( new QName( owsNS, "reference" ) );
-            URI defaultUomRef = null;
-            if ( defaultUomRefStr != null ) {
-                try {
-                    defaultUomRef = new URI( defaultUomRefStr );
-                } catch ( URISyntaxException e ) {
-                    // defaultUomRef stays null
-                }
-            }
-            defaultUom = new ValueWithRef<String>( defaultUomStr, defaultUomRef );
+            defaultUom = new ValueWithRef( defaultUomStr, defaultUomRefStr );
         }
         xpath = new XPath( "UOMs/Supported/ows:UOM", nsContext );
         List<OMElement> omSupported = omResponse.getElements( omLiteral, xpath );
-        ValueWithRef<String>[] supportedUoms = null;
+        ValueWithRef[] supportedUoms = null;
         if ( omSupported != null ) {
             supportedUoms = new ValueWithRef[omSupported.size()];
             for ( int i = 0; i < omSupported.size(); i++ ) {
                 OMElement omSupp = omSupported.get( i );
                 String supportedRefStr = omSupp.getAttributeValue( new QName( owsNS, "reference" ) );
-                URI supportedRef = null;
-                if ( supportedRefStr != null ) {
-                    try {
-                        supportedRef = new URI( supportedRefStr );
-                    } catch ( URISyntaxException e ) {
-                        // omSupportedRef stays null
-                    }
-                }
-                supportedUoms[i] = new ValueWithRef<String>( omSupp.getText(), supportedRef );
+                supportedUoms[i] = new ValueWithRef( omSupp.getText(), supportedRefStr );
             }
         }
         return new LiteralOutputType( id, outputTitle, outputAbstract, dataType, defaultUom, supportedUoms );
@@ -334,48 +316,26 @@ public class ProcessDetails {
         OMElement omDataType = input.getFirstChildWithName( new QName( owsNS, "DataType" ) );
         String dataTypeStr = omDataType.getText();
         String dataTypeRefStr = omDataType.getAttributeValue( new QName( owsNS, "reference" ) );
-        URI dataTypeRef = null;
-        try {
-            dataTypeRef = new URI( dataTypeRefStr );
-        } catch ( URISyntaxException e1 ) {
-            // dataTypeRef stays null
-        }
-        ValueWithRef<String> dataType = new ValueWithRef<String>( dataTypeStr, dataTypeRef );
+        ValueWithRef dataType = new ValueWithRef( dataTypeStr, dataTypeRefStr );
 
         XPath xpath = new XPath( "UOMs/Default/ows:UOM", nsContext );
         OMElement omDefaultUom = omResponse.getElement( input, xpath );
-        ValueWithRef<String> defaultUom = null;
+        ValueWithRef defaultUom = null;
         if ( omDefaultUom != null ) {
             String defaultUomRefStr = omDefaultUom.getAttributeValue( new QName( owsNS, "reference" ) );
-            URI defaultUomRef = null;
-            if ( defaultUomRefStr != null ) {
-                try {
-                    defaultUomRef = new URI( defaultUomRefStr );
-                } catch ( URISyntaxException e ) {
-                    // defaultUomRef stays null
-                }
-            }
-            defaultUom = new ValueWithRef<String>( omDefaultUom.getText(), defaultUomRef );
+            defaultUom = new ValueWithRef( omDefaultUom.getText(), defaultUomRefStr );
         }
 
         xpath = new XPath( "UOMs/Supported/ows:UOM", nsContext );
         List<OMElement> omSupported = omResponse.getElements( input, xpath );
-        ValueWithRef<String>[] supportedUom = null;
+        ValueWithRef[] supportedUom = null;
         if ( omSupported != null ) {
             supportedUom = new ValueWithRef[omSupported.size()];
             for ( int i = 0; i < omSupported.size(); i++ ) {
                 OMElement omSupport = omSupported.get( i );
                 String supported = omSupport.getText();
                 String supportedRefStr = omSupport.getAttributeValue( new QName( owsNS, "reference" ) );
-                URI supportedRef = null;
-                if ( supportedRefStr != null ) {
-                    try {
-                        supportedRef = new URI( supportedRefStr );
-                    } catch ( URISyntaxException e ) {
-                        // supportedRef stays null
-                    }
-                }
-                supportedUom[i] = new ValueWithRef<String>( supported, supportedRef );
+                supportedUom[i] = new ValueWithRef( supported, supportedRefStr );
             }
         }
 
@@ -425,28 +385,12 @@ public class ProcessDetails {
         }
 
         OMElement omValuesReference = input.getFirstChildWithName( new QName( owsNS, "ValuesReference" ) );
-        ValueWithRef<URI> valuesRef = null;
+        ValueWithRef valuesRef = null;
         if ( omValuesReference != null ) {
             String valueRefStr = omValuesReference.getAttributeValue( new QName( owsNS, "reference" ) );
             String valueFormStr = omValuesReference.getAttributeValue( new QName( null, "valuesForm" ) );
 
-            URI valueRefUri = null;
-            if ( valueRefStr != null ) {
-                try {
-                    valueRefUri = new URI( valueRefStr );
-                } catch ( URISyntaxException e ) {
-                    // valueRefUri stays null
-                }
-            }
-            URI valueFormStrUri = null;
-            if ( valueFormStr != null ) {
-                try {
-                    valueFormStrUri = new URI( valueFormStr );
-                } catch ( URISyntaxException e ) {
-                    // valueFormStrUri stays null
-                }
-            }
-            valuesRef = new ValueWithRef<URI>( valueRefUri, valueFormStrUri );
+            valuesRef = new ValueWithRef( valueRefStr, valueFormStr );
         }
 
         String[] valuesArray = null;

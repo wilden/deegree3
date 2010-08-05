@@ -35,7 +35,6 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.input.type;
 
-import java.net.URI;
 import java.net.URL;
 
 import org.deegree.commons.tom.ows.CodeType;
@@ -55,11 +54,11 @@ import org.deegree.services.jaxb.wps.Range;
  */
 public class LiteralInputType extends InputType {
 
-    private ValueWithRef<String> dataType;
+    private ValueWithRef dataType;
 
-    private ValueWithRef<String> defaultUom;
+    private ValueWithRef defaultUom;
 
-    private ValueWithRef<String>[] supportedUoms;
+    private ValueWithRef[] supportedUoms;
 
     private String[] allowedValues;
 
@@ -71,13 +70,13 @@ public class LiteralInputType extends InputType {
 
     private boolean anyValue;
 
-    private ValueWithRef<URI> reference;
+    private ValueWithRef reference;
 
     public LiteralInputType( CodeType id, LanguageString inputTitle, LanguageString inputAbstract, String minOccurs,
-                             String maxOccurs, ValueWithRef<String> dataType, ValueWithRef<String> defaultUom,
+                             String maxOccurs, ValueWithRef dataType, ValueWithRef defaultUom,
                              ValueWithRef[] supportedUoms, String[] allowedValues, Range[] range, boolean anyValue,
-                             ValueWithRef<URI> reference ) {
-        super (id, inputTitle, inputAbstract, minOccurs, maxOccurs);
+                             ValueWithRef reference ) {
+        super( id, inputTitle, inputAbstract, minOccurs, maxOccurs );
         this.dataType = dataType;
         this.defaultUom = defaultUom;
         this.supportedUoms = supportedUoms;
@@ -109,7 +108,7 @@ public class LiteralInputType extends InputType {
      * 
      * @return the data type of the literal input
      */
-    public ValueWithRef<String> getDataType() {
+    public ValueWithRef getDataType() {
         return dataType;
     }
 
@@ -119,7 +118,7 @@ public class LiteralInputType extends InputType {
      * 
      * @return default Unit-of-measure for the literal input
      */
-    public ValueWithRef<String> getDefaultUom() {
+    public ValueWithRef getDefaultUom() {
         return defaultUom;
     }
 
@@ -129,7 +128,7 @@ public class LiteralInputType extends InputType {
      * 
      * @return an array of supported Unit-of-measure instance for the literal input
      */
-    public ValueWithRef<String>[] getSupportedUoms() {
+    public ValueWithRef[] getSupportedUoms() {
         return supportedUoms;
     }
 

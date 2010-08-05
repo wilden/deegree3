@@ -35,8 +35,6 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.param;
 
-import java.net.URI;
-
 /**
  * The <code>ValueWithRef</code> class encapsulates a value and a reference that are used as together throughout the
  * describe process API.
@@ -48,13 +46,13 @@ import java.net.URI;
  * @version $Revision$, $Date$
  * 
  */
-public class ValueWithRef<T> {
+public class ValueWithRef {
 
-    private T value;
+    private String value;
 
-    private URI ref;
+    private String ref;
 
-    public ValueWithRef( T value, URI ref ) {
+    public ValueWithRef( String value, String ref ) {
         this.value = value;
         this.ref = ref;
     }
@@ -64,7 +62,7 @@ public class ValueWithRef<T> {
      * 
      * @return the value
      */
-    public T getValue() {
+    public String getValue() {
         return value;
     }
 
@@ -73,8 +71,7 @@ public class ValueWithRef<T> {
      * 
      * @return
      */
-    public URI getRef() {
+    public String getRef() {
         return ref;
     }
-
 }

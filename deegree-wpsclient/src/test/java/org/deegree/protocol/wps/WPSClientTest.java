@@ -48,11 +48,9 @@ import java.util.Arrays;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.deegree.commons.xml.CommonNamespaces;
 import org.deegree.commons.xml.NamespaceContext;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.XPath;
-import org.deegree.protocol.wfs.WFSConstants;
 import org.deegree.protocol.wps.input.type.BBoxInputType;
 import org.deegree.protocol.wps.input.type.ComplexInputType;
 import org.deegree.protocol.wps.input.type.InputType;
@@ -286,7 +284,7 @@ public class WPSClientTest {
         ComplexOutput output = (ComplexOutput) response.get( 0 );
         XMLStreamReader reader = output.getAsXMLStream();
         XMLAdapter searchableXML = new XMLAdapter( reader );
-        System.out.println ("HUHU: " + searchableXML.getRootElement());
+        System.out.println( "HUHU: " + searchableXML.getRootElement() );
         NamespaceContext nsContext = new NamespaceContext();
         nsContext.addNamespace( "wps", WPSConstants.WPS_100_NS );
         nsContext.addNamespace( "gml", "http://www.opengis.net/gml" );
@@ -375,8 +373,8 @@ public class WPSClientTest {
         XPath xpath = new XPath( "/wfs:WFS_Capabilities/wfs:FeatureTypeList/wfs:FeatureType[1]/wfs:Name", nsContext );
         String pos = searchableXML.getRequiredNodeAsString( searchableXML.getRootElement(), xpath );
         Assert.assertEquals( "app:Springs", pos );
-        
-        //TODO test the binary output
+
+        // TODO test the binary output
     }
 
     @Test

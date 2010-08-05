@@ -51,15 +51,14 @@ import org.deegree.protocol.wps.param.ValueWithRef;
  */
 public class LiteralOutputType extends OutputType {
 
-    private ValueWithRef<String> dataType;
+    private ValueWithRef dataType;
 
-    private ValueWithRef<String> defaultUom;
+    private ValueWithRef defaultUom;
 
-    private ValueWithRef<String>[] supportedUoms;
+    private ValueWithRef[] supportedUoms;
 
     public LiteralOutputType( CodeType id, LanguageString outputTitle, LanguageString outputAbstract,
-                              ValueWithRef<String> dataType, ValueWithRef<String> defaultUom,
-                              ValueWithRef<String>[] supportedUoms ) {
+                              ValueWithRef dataType, ValueWithRef defaultUom, ValueWithRef[] supportedUoms ) {
         super( id, outputTitle, outputAbstract );
         this.dataType = dataType;
         this.defaultUom = defaultUom;
@@ -70,7 +69,7 @@ public class LiteralOutputType extends OutputType {
      * 
      * @return the data type as {@link ValueWithRef} for this literal
      */
-    public ValueWithRef<String> getDataType() {
+    public ValueWithRef getDataType() {
         return dataType;
     }
 
@@ -78,7 +77,7 @@ public class LiteralOutputType extends OutputType {
      * 
      * @return the default unit-of-measure used, as {@link ValueWithRef}
      */
-    public ValueWithRef<String> getDefaultUom() {
+    public ValueWithRef getDefaultUom() {
         return defaultUom;
     }
 
@@ -86,8 +85,7 @@ public class LiteralOutputType extends OutputType {
      * 
      * @return the supported units-of-measure used, as an array of {@link ValueWithRef}
      */
-    public ValueWithRef<String>[] getSupportedUoms() {
+    public ValueWithRef[] getSupportedUoms() {
         return supportedUoms;
     }
-
 }

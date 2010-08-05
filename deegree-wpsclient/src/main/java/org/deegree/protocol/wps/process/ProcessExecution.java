@@ -33,7 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps;
+package org.deegree.protocol.wps.process;
 
 import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.FAILED;
 import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.SUCCEEDED;
@@ -57,6 +57,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.XMLAdapter;
+import org.deegree.protocol.wps.WPSClient;
 import org.deegree.protocol.wps.execute.ExceptionReport;
 import org.deegree.protocol.wps.execute.ExecutionOutputs;
 import org.deegree.protocol.wps.execute.ExecutionResponse;

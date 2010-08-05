@@ -39,10 +39,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.ProcessExecution;
 import org.deegree.protocol.wps.output.ComplexOutput;
 import org.deegree.protocol.wps.output.ExecutionOutput;
 import org.deegree.protocol.wps.output.LiteralOutput;
+import org.deegree.protocol.wps.process.ProcessExecution;
 import org.deegree.services.wps.output.BoundingBoxOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

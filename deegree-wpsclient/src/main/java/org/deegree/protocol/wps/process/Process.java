@@ -33,7 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps;
+package org.deegree.protocol.wps.process;
 
 import java.io.IOException;
 import java.net.URL;
@@ -43,10 +43,9 @@ import java.util.Collection;
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
 import org.deegree.commons.xml.XMLAdapter;
+import org.deegree.protocol.wps.WPSClient;
 import org.deegree.protocol.wps.input.type.InputType;
 import org.deegree.protocol.wps.output.type.OutputType;
-import org.deegree.protocol.wps.process.ProcessDetails;
-import org.deegree.protocol.wps.process.ProcessInfo;
 import org.deegree.services.controller.ows.OWSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

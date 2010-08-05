@@ -65,6 +65,8 @@ import org.deegree.protocol.wps.output.type.BBoxOutputType;
 import org.deegree.protocol.wps.output.type.ComplexOutputType;
 import org.deegree.protocol.wps.output.type.LiteralOutputType;
 import org.deegree.protocol.wps.output.type.OutputType;
+import org.deegree.protocol.wps.process.Process;
+import org.deegree.protocol.wps.process.ProcessExecution;
 import org.deegree.services.controller.ows.OWSException;
 import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
 import org.deegree.services.jaxb.main.ServiceIdentificationType;

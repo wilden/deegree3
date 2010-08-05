@@ -44,6 +44,8 @@ import javax.xml.namespace.QName;
 
 import org.apache.axiom.om.OMElement;
 import org.deegree.commons.tom.ows.CodeType;
+import org.deegree.protocol.wps.process.Process;
+import org.deegree.protocol.wps.process.ProcessExecution;
 import org.deegree.protocol.wps.process.ProcessInfo;
 import org.deegree.protocol.wps.wps100.WPS100CapabilitiesAdapter;
 import org.deegree.services.controller.ows.OWSException;
@@ -146,7 +148,7 @@ import org.slf4j.LoggerFactory;
  * <li>Supported protocol versions: WPS 1.0.0</li>
  * <li>The implementation is thread-safe, a single {@link WPSClient} instance can be shared among multiple threads.</li>
  * </ul>
- *
+ * 
  * <h4>TODOs</h4>
  * <ul>
  * <li>Handle raw output in the ResponseReader.</li>
@@ -297,7 +299,7 @@ public class WPSClient {
      * @return the <code>DescribeProcess</code> URL, may be <code>null</code> (if the server doesn't provide a binding
      *         for the specified request method)
      */
-    URL getDescribeProcessURL( boolean post ) {
+    public URL getDescribeProcessURL( boolean post ) {
         return describeProcessURLs[post ? 1 : 0];
     }
 
@@ -310,7 +312,7 @@ public class WPSClient {
      * @return the <code>Execute</code> URL, may be <code>null</code> (if the server doesn't provide a binding for the
      *         specified request method)
      */
-    URL getExecuteURL( boolean post ) {
+    public URL getExecuteURL( boolean post ) {
         return executeURLs[post ? 1 : 0];
     }
 }

@@ -250,11 +250,13 @@ public class WPSClient {
 
     /**
      * Returns the WPS protocol version in use.
+     * <p>
+     * NOTE: Currently, this is always "1.0.0" (as the client only supports this version).
+     * </p>
      * 
      * @return the WPS protocol version in use, never <code>null</code>
      */
     public String getServiceVersion() {
-        // currently, this is always "1.0.0" (as the client only supports this version)
         return "1.0.0";
     }
 

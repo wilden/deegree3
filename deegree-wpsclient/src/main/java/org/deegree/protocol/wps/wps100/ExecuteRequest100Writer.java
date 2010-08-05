@@ -61,7 +61,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Generates WPS Execute request documents.
+ * Generates WPS 1.0.0 Execute request documents.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
@@ -85,37 +85,47 @@ public class ExecuteRequest100Writer {
 
     private static final String xsiNS = "http://www.w3.org/2001/XMLSchema-instance";
 
-    private static XMLStreamWriter writer;
+    private final XMLStreamWriter writer;
 
+    /**
+     * Creates a new {@link ExecuteRequest100Writer} instance.
+     * 
+     * @param writer
+     *            xml stream to write to, must not be <code>null</code> and empty
+     */
     public ExecuteRequest100Writer( XMLStreamWriter writer ) {
         this.writer = writer;
     }
 
+    /**
+     * @param id
+     * @param inputs
+     * @param responseFormat
+     * @throws IOException
+     * @throws XMLStreamException
+     */
     public void write100( CodeType id, List<ExecutionInput> inputs, ResponseFormat responseFormat )
-                            throws IOException {
-        try {
-            writer.writeStartDocument();
-            writer.writeStartElement( wpsPrefix, "Execute", wpsNS );
-            writer.writeAttribute( "service", "WPS" );
-            writer.writeAttribute( "version", "1.0.0" );
-            String schemaLocation = "http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsExecute_request.xsd";
-            writer.writeAttribute( "xsi", "http://www.w3.org/2001/XMLSchema-instance", "schemaLocation", schemaLocation );
+                            throws IOException, XMLStreamException {
 
-            writer.writeNamespace( wpsPrefix, wpsNS );
-            writer.writeNamespace( owsPrefix, owsNS );
-            writer.writeNamespace( xsiPrefix, xsiNS );
-            writer.writeNamespace( XLINK_PREFIX, XLNNS );
+        writer.writeStartDocument( "UTF-8", "1.0" );
+        writer.writeStartElement( wpsPrefix, "Execute", wpsNS );
+        writer.writeAttribute( "service", "WPS" );
+        writer.writeAttribute( "version", "1.0.0" );
+        String schemaLocation = "http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsExecute_request.xsd";
+        writer.writeAttribute( "xsi", "http://www.w3.org/2001/XMLSchema-instance", "schemaLocation", schemaLocation );
 
-            writeHeader( id );
-            writeInputs( inputs );
-            writeOutputs( responseFormat );
+        writer.writeNamespace( wpsPrefix, wpsNS );
+        writer.writeNamespace( owsPrefix, owsNS );
+        writer.writeNamespace( xsiPrefix, xsiNS );
+        writer.writeNamespace( XLINK_PREFIX, XLNNS );
 
-            writer.writeEndElement();
-            writer.writeEndDocument();
-        } catch ( XMLStreamException e ) {
-            LOG.error( "Error while writing the Execute request. " + e.getMessage() );
-            e.printStackTrace();
-        }
+        writeHeader( id );
+        writeInputs( inputs );
+        writeOutputs( responseFormat );
+
+        writer.writeEndElement();
+        writer.writeEndDocument();
+
     }
 
     /**

@@ -43,14 +43,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Map.Entry;
 
-import javax.xml.namespace.NamespaceContext;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
@@ -77,14 +71,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * Parser for WPS 1.0.0 execute response documents.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
 public class ExecuteResponse100Reader {
 
@@ -319,7 +312,7 @@ public class ExecuteResponse100Reader {
                 } else {
                     LOG.warn( "The encoding of binary data (found at response location "
                               + reader.getLocation()
-                              + ") is not base64. Currently only from this format the decoding can be performed. Skipping the data." );
+                              + ") is not base64. Currently only for this format the decoding can be performed. Skipping the data." );
                 }
             }
             tmpSink.close();
@@ -366,6 +359,7 @@ public class ExecuteResponse100Reader {
      */
     private ExecutionStatus parseStatus()
                             throws XMLStreamException {
+
         ExecutionState state = null;
         String statusMsg = null;
         Integer percent = null;
@@ -382,11 +376,9 @@ public class ExecuteResponse100Reader {
         if ( "ProcessAccepted".equals( localName ) ) {
             state = ExecutionState.ACCEPTED;
             statusMsg = reader.getElementText();
-
         } else if ( "ProcessSucceeded".equals( localName ) ) {
             state = ExecutionState.SUCCEEDED;
             statusMsg = reader.getElementText();
-
         } else if ( "ProcessStarted".equals( localName ) ) {
             state = ExecutionState.STARTED;
             String percentStr = reader.getAttributeValue( null, "percentCompleted" );
@@ -395,7 +387,6 @@ public class ExecuteResponse100Reader {
             }
             statusMsg = reader.getElementText();
             StAXParsingHelper.nextElement( reader );
-
         } else if ( "ProcessPaused".equals( localName ) ) {
             state = ExecutionState.PAUSED;
             String percentStr = reader.getAttributeValue( null, "percentCompleted" );
@@ -404,41 +395,11 @@ public class ExecuteResponse100Reader {
             }
             statusMsg = reader.getElementText();
             StAXParsingHelper.nextElement( reader );
-
         } else if ( "ProcessFailed".equals( localName ) ) {
+            state = ExecutionState.FAILED;
             exceptionReport = OWSExceptionReader.parseException( reader );
         }
         StAXParsingHelper.nextElement( reader ); // </Status>
         return new ExecutionStatus( state, statusMsg, percent, creationTime, exceptionReport );
     }
-
-    class XMLDataNamespaceContext implements NamespaceContext {
-
-        private Map<String, String> nsMap = new HashMap<String, String>();
-
-        public void addNamespace( String prefix, String ns ) {
-            nsMap.put( prefix, ns );
-        }
-
-        @Override
-        public String getNamespaceURI( String prefix ) {
-            return nsMap.get( prefix );
-        }
-
-        @Override
-        public String getPrefix( String ns ) {
-            Set<Entry<String, String>> entrySet = nsMap.entrySet();
-            for ( Entry<String, String> entry : entrySet ) {
-                if ( entry.getValue().equals( ns ) ) {
-                    return entry.getKey();
-                }
-            }
-            return null;
-        }
-
-        @Override
-        public Iterator getPrefixes( String arg0 ) {
-            return nsMap.entrySet().iterator();
-        }
-    };
 }

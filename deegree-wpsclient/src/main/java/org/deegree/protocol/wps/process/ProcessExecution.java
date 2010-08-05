@@ -39,6 +39,7 @@ import static org.deegree.services.controller.wps.ProcessExecution.ExecutionStat
 import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.SUCCEEDED;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,7 +57,6 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.commons.utils.io.LoggingInputStream;
 import org.deegree.commons.xml.stax.StAXParsingHelper;
 import org.deegree.protocol.ows.OWSExceptionReader;
 import org.deegree.protocol.wps.WPSClient;
@@ -489,23 +489,33 @@ public class ProcessExecution {
         // logWriter.close();
         // LOG.debug( "WPS request can be found at " + logFile.toString() );
         // }
-
-        XMLStreamWriter writer = outFactory.createXMLStreamWriter( conn.getOutputStream() );
-        ExecuteRequest100Writer executer = new ExecuteRequest100Writer( writer );
-        executer.write100( process.getId(), inputs, responseFormat );
-        writer.close();
-
+        OutputStream os = conn.getOutputStream();
         XMLInputFactory inFactory = XMLInputFactory.newInstance();
 
-        InputStream responseStream = conn.getInputStream();
-
         if ( LOG.isDebugEnabled() ) {
-            File logFile = File.createTempFile( "wpsclient", "response" );
-            OutputStream logStream = new FileOutputStream( logFile );
-            responseStream = new LoggingInputStream( responseStream, logStream );
-            LOG.debug( "WPS response can be found at " + logFile.toString() );
-        }
+            File logFile = File.createTempFile( "wpsclient", "request.xml" );
+            XMLStreamWriter logWriter = outFactory.createXMLStreamWriter( new FileOutputStream( logFile ) );
+            ExecuteRequest100Writer executer = new ExecuteRequest100Writer( logWriter );
+            executer.write100( process.getId(), inputs, responseFormat );
+            logWriter.close();
+            LOG.debug( "WPS request can be found at " + logFile );
 
+            InputStream is = new FileInputStream( logFile );
+            byte[] buffer = new byte[1024];
+            int read = 0;
+            while ( ( read = is.read( buffer ) ) != -1 ) {
+                os.write( buffer, 0, read );
+            }
+            is.close();
+            os.close();
+        } else {
+            XMLStreamWriter writer = outFactory.createXMLStreamWriter( os );
+            ExecuteRequest100Writer executer = new ExecuteRequest100Writer( writer );
+            executer.write100( process.getId(), inputs, responseFormat );
+            writer.close();
+        }
+        
+        InputStream responseStream = conn.getInputStream();        
         String outputContent = conn.getContentType();
         if ( outputContent.startsWith( "text/xml" ) || outputContent.startsWith( "application/xml" ) ) {
 

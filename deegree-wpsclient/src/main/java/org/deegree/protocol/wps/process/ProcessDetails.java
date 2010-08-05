@@ -33,7 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.describeprocess;
+package org.deegree.protocol.wps.process;
 
 import static org.deegree.protocol.wps.WPSConstants.WPS_100_NS;
 import static org.deegree.protocol.wps.WPSConstants.WPS_PREFIX;
@@ -54,6 +54,8 @@ import org.deegree.commons.tom.ows.LanguageString;
 import org.deegree.commons.xml.NamespaceContext;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.XPath;
+import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
+import org.deegree.protocol.wps.describeprocess.ValueWithRef;
 import org.deegree.protocol.wps.input.type.BBoxInputType;
 import org.deegree.protocol.wps.input.type.ComplexInputType;
 import org.deegree.protocol.wps.input.type.InputType;

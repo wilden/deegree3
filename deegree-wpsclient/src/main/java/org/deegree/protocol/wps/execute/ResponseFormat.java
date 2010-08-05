@@ -58,10 +58,10 @@ public class ResponseFormat {
 
     private Boolean updateStatus;
 
-    private List<OutputDefinition> outputDefs;
+    private List<OutputFormat> outputDefs;
 
     public ResponseFormat( boolean rawOutput, boolean asynch, boolean includeRequestInfo, boolean updateStatus,
-                           List<OutputDefinition> outputDefs ) {
+                           List<OutputFormat> outputDefs ) {
         this.rawOutput = rawOutput;
         this.asynch = asynch;
         this.includeRequestInfo = includeRequestInfo;
@@ -85,7 +85,7 @@ public class ResponseFormat {
         return updateStatus;
     }
 
-    public List<OutputDefinition> getOutputDefinitions() {
+    public List<OutputFormat> getOutputDefinitions() {
         return outputDefs;
     }
 

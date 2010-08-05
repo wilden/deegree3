@@ -33,7 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute;
+package org.deegree.protocol.wps.wps100;
 
 import static org.deegree.commons.xml.CommonNamespaces.XLINK_PREFIX;
 import static org.deegree.commons.xml.CommonNamespaces.XLNNS;
@@ -50,6 +50,8 @@ import org.apache.axiom.om.util.Base64;
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
+import org.deegree.protocol.wps.execute.OutputFormat;
+import org.deegree.protocol.wps.execute.ResponseFormat;
 import org.deegree.protocol.wps.input.BBoxInput;
 import org.deegree.protocol.wps.input.BinaryInput;
 import org.deegree.protocol.wps.input.ExecutionInput;
@@ -67,9 +69,9 @@ import org.slf4j.LoggerFactory;
  * 
  * @version $Revision$, $Date$
  */
-public class ExecuteWriter {
+public class ExecuteRequest100Writer {
 
-    private static Logger LOG = LoggerFactory.getLogger( ExecuteWriter.class );
+    private static Logger LOG = LoggerFactory.getLogger( ExecuteRequest100Writer.class );
 
     private static final String wpsPrefix = "wps";
 
@@ -85,7 +87,7 @@ public class ExecuteWriter {
 
     private static XMLStreamWriter writer;
 
-    public ExecuteWriter( XMLStreamWriter writer ) {
+    public ExecuteRequest100Writer( XMLStreamWriter writer ) {
         this.writer = writer;
     }
 
@@ -122,7 +124,7 @@ public class ExecuteWriter {
     private void writeOutputs( ResponseFormat outputFormat )
                             throws XMLStreamException {
         if ( outputFormat != null ) {
-            List<OutputDefinition> outputs = outputFormat.getOutputDefinitions();
+            List<OutputFormat> outputs = outputFormat.getOutputDefinitions();
 
             if ( outputs != null && outputs.size() > 0 ) {
                 writer.writeStartElement( wpsPrefix, "ResponseForm", wpsNS );
@@ -140,7 +142,7 @@ public class ExecuteWriter {
                         writer.writeAttribute( "status", String.valueOf( outputFormat.updatesStatus() ) );
                     }
 
-                    for ( OutputDefinition outputDef : outputs ) {
+                    for ( OutputFormat outputDef : outputs ) {
                         writer.writeStartElement( wpsPrefix, "Output", wpsNS );
                         if ( outputDef.isReference() ) {
                             writer.writeAttribute( "asReference", "true" );

@@ -33,7 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute;
+package org.deegree.protocol.wps.wps100;
 
 import static javax.xml.stream.XMLStreamConstants.END_DOCUMENT;
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
@@ -64,6 +64,9 @@ import org.deegree.commons.utils.io.StreamBufferStore;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.stax.StAXParsingHelper;
 import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
+import org.deegree.protocol.wps.execute.ExceptionReport;
+import org.deegree.protocol.wps.execute.ExecutionResponse;
+import org.deegree.protocol.wps.execute.ExecutionStatus;
 import org.deegree.protocol.wps.output.BBoxOutput;
 import org.deegree.protocol.wps.output.ComplexOutput;
 import org.deegree.protocol.wps.output.ExecutionOutput;
@@ -83,9 +86,9 @@ import org.slf4j.LoggerFactory;
  * @version $Revision$, $Date$
  * 
  */
-public class ResponseReader {
+public class ExecuteResponse100Reader {
 
-    private static Logger LOG = LoggerFactory.getLogger( ResponseReader.class );
+    private static Logger LOG = LoggerFactory.getLogger( ExecuteResponse100Reader.class );
 
     private XMLStreamReader reader;
 
@@ -95,7 +98,7 @@ public class ResponseReader {
 
     private static final String xmlNS = "http://www.w3.org/XML/1998/namespace";
 
-    public ResponseReader( XMLStreamReader reader ) {
+    public ExecuteResponse100Reader( XMLStreamReader reader ) {
         this.reader = reader;
     }
 

@@ -48,7 +48,7 @@ import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
  * @version $Revision$, $Date$
  * 
  */
-public class OutputDefinition {
+public class OutputFormat {
 
     private CodeType id;
 
@@ -58,7 +58,7 @@ public class OutputDefinition {
 
     private boolean asRef;
 
-    public OutputDefinition( CodeType id, String uom, boolean asRef, String mimeType, String encoding, String schema ) {
+    public OutputFormat( CodeType id, String uom, boolean asRef, String mimeType, String encoding, String schema ) {
         this.id = id;
         this.uom = uom;
         this.asRef = asRef;

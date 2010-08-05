@@ -58,18 +58,18 @@ import javax.xml.stream.XMLStreamWriter;
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.protocol.wps.execute.ExceptionReport;
-import org.deegree.protocol.wps.execute.ExecuteWriter;
 import org.deegree.protocol.wps.execute.ExecutionOutputs;
 import org.deegree.protocol.wps.execute.ExecutionResponse;
-import org.deegree.protocol.wps.execute.OutputDefinition;
+import org.deegree.protocol.wps.execute.OutputFormat;
 import org.deegree.protocol.wps.execute.ResponseFormat;
-import org.deegree.protocol.wps.execute.ResponseReader;
 import org.deegree.protocol.wps.input.BBoxInput;
 import org.deegree.protocol.wps.input.BinaryInput;
 import org.deegree.protocol.wps.input.ExecutionInput;
 import org.deegree.protocol.wps.input.LiteralInput;
 import org.deegree.protocol.wps.input.XMLInput;
 import org.deegree.protocol.wps.output.type.OutputType;
+import org.deegree.protocol.wps.wps100.ExecuteRequest100Writer;
+import org.deegree.protocol.wps.wps100.ExecuteResponse100Reader;
 import org.deegree.services.controller.ows.OWSException;
 import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
 import org.slf4j.Logger;
@@ -99,7 +99,7 @@ public class ProcessExecution {
 
     private List<ExecutionInput> inputs;
 
-    private List<OutputDefinition> outputDefs;
+    private List<OutputFormat> outputDefs;
 
     private ResponseFormat responseFormat;
 
@@ -119,7 +119,7 @@ public class ProcessExecution {
         this.client = client;
         this.process = process;
         inputs = new ArrayList<ExecutionInput>();
-        outputDefs = new ArrayList<OutputDefinition>();
+        outputDefs = new ArrayList<OutputFormat>();
     }
 
     /**
@@ -285,7 +285,7 @@ public class ProcessExecution {
      */
     public void addOutput( String id, String idCodeSpace, String uom, boolean asRef, String mimeType, String encoding,
                            String schema ) {
-        outputDefs.add( new OutputDefinition( new CodeType( id ), uom, asRef, mimeType, encoding, schema ) );
+        outputDefs.add( new OutputFormat( new CodeType( id ), uom, asRef, mimeType, encoding, schema ) );
         rawOutput = false;
     }
 
@@ -351,9 +351,9 @@ public class ProcessExecution {
 
         // needed, because ResponseDocument must be set in any case for async mode
         if ( outputDefs == null || outputDefs.size() == 0 ) {
-            outputDefs = new ArrayList<OutputDefinition>();
+            outputDefs = new ArrayList<OutputFormat>();
             for ( OutputType output : process.getOutputTypes() ) {
-                OutputDefinition outputDef = new OutputDefinition( output.getId(), null, false, null, null, null );
+                OutputFormat outputDef = new OutputFormat( output.getId(), null, false, null, null, null );
                 outputDefs.add( outputDef );
             }
         }
@@ -404,7 +404,7 @@ public class ProcessExecution {
             XMLInputFactory inFactory = XMLInputFactory.newInstance();
             InputStream is = statusLocation.openStream();
             XMLStreamReader xmlReader = inFactory.createXMLStreamReader( is );
-            ResponseReader reader = new ResponseReader( xmlReader );
+            ExecuteResponse100Reader reader = new ExecuteResponse100Reader( xmlReader );
             lastResponse = reader.parse100();
         }
         return lastResponse.getStatus().getState();
@@ -487,7 +487,7 @@ public class ProcessExecution {
 //        }
 
         XMLStreamWriter writer = outFactory.createXMLStreamWriter( conn.getOutputStream() );
-        ExecuteWriter executer = new ExecuteWriter( writer );
+        ExecuteRequest100Writer executer = new ExecuteRequest100Writer( writer );
         executer.write100( process.getId(), inputs, responseFormat );
         writer.close();
 
@@ -507,7 +507,7 @@ public class ProcessExecution {
             reader = XMLInputFactory.newInstance().createXMLStreamReader( new FileInputStream( logFile ) );
         }
 
-        ResponseReader responseReader = new ResponseReader( reader );
+        ExecuteResponse100Reader responseReader = new ExecuteResponse100Reader( reader );
         lastResponse = responseReader.parse100();
         reader.close();
 

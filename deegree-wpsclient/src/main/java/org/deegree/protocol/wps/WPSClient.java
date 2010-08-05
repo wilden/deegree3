@@ -44,8 +44,8 @@ import javax.xml.namespace.QName;
 
 import org.apache.axiom.om.OMElement;
 import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.getcapabilities.ProcessInfo;
-import org.deegree.protocol.wps.getcapabilities.WPS100CapabilitiesAdapter;
+import org.deegree.protocol.wps.process.ProcessInfo;
+import org.deegree.protocol.wps.wps100.WPS100CapabilitiesAdapter;
 import org.deegree.services.controller.ows.OWSException;
 import org.deegree.services.jaxb.main.DeegreeServicesMetadataType;
 import org.slf4j.Logger;

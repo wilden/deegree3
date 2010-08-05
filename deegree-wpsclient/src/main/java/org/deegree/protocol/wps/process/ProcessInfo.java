@@ -33,7 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.getcapabilities;
+package org.deegree.protocol.wps.process;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
@@ -68,7 +68,7 @@ public class ProcessInfo {
      * @param version
      *            the version of the process, must not be <code>null</code>
      */
-    ProcessInfo( CodeType id, LanguageString title, LanguageString processAbstract, String version ) {
+    public ProcessInfo( CodeType id, LanguageString title, LanguageString processAbstract, String version ) {
         this.version = version;
         this.id = id;
         this.title = title;

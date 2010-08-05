@@ -33,7 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.getcapabilities;
+package org.deegree.protocol.wps.wps100;
 
 import static org.deegree.commons.xml.CommonNamespaces.OWS_11_NS;
 import static org.deegree.commons.xml.CommonNamespaces.XLNNS;
@@ -52,6 +52,7 @@ import org.deegree.commons.xml.NamespaceContext;
 import org.deegree.commons.xml.XPath;
 import org.deegree.protocol.ows.OWS110CapabilitiesAdapter;
 import org.deegree.protocol.wps.WPSClient;
+import org.deegree.protocol.wps.process.ProcessInfo;
 
 /**
  * Provides access to the relevant information from a WPS 1.0.0 capabilities document.

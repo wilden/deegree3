@@ -39,15 +39,13 @@ import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
 
 /**
- * The <code>InputDescription</code> class represents the input properties of a process parameter. It is filled out from
- * a DescribeProcess response.
+ * Abstract base class for definitions of process input parameters.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
 public abstract class InputType {
 
@@ -61,8 +59,22 @@ public abstract class InputType {
 
     private String maxOccurs;
 
+    /**
+     * Creates a new {@link InputType} instance.
+     * 
+     * @param id
+     *            parameter identifier, must not be <code>null</code>
+     * @param inputTitle
+     *            parameter title, must not be <code>null</code>
+     * @param inputAbstract
+     *            abstract for the parameter, can be <code>null</code>
+     * @param minOccurs
+     *            minimum number of times the parameter must be present, may be <code>null</code> (defaults to 1 time)
+     * @param maxOccurs
+     *            maximum number of times the parameter may be present, may be <code>null</code> (defaults to 1 time)
+     */
     protected InputType( CodeType id, LanguageString inputTitle, LanguageString inputAbstract, String minOccurs,
-                                String maxOccurs ) {
+                         String maxOccurs ) {
         this.id = id;
         this.inputTitle = inputTitle;
         this.inputAbstract = inputAbstract;
@@ -71,36 +83,46 @@ public abstract class InputType {
     }
 
     /**
+     * Returns the parameter identifier.
      * 
-     * @return the title for this input
+     * @return the parameter identifier, never <code>null</code>
+     */
+    public CodeType getId() {
+        return id;
+    }
+
+    /**
+     * Returns the parameter title.
+     * 
+     * @return the parameter title, never <code>null</code>
      */
     public LanguageString getTitle() {
         return inputTitle;
     }
 
     /**
+     * Returns the abstract for the parameter.
      * 
-     * @return the abstract entry for this input
+     * @return the abstract for the parameter, can be <code>null</code>
      */
     public LanguageString getAbstract() {
         return inputAbstract;
     }
 
     /**
-     * Returns the least number of occurrences possible for this input parameter in the process. Can be "0" (no
-     * occurrence possible), more, or null (meaning that it can appear no more than maxOccurs, if that is specified):
+     * Returns minimum number of times the parameter must be present.
      * 
-     * @return minimum occurrences of this parameter
+     * @return minimum occurrences of this parameter, may be <code>null</code> (defaults to 1 time)
      */
     public String getMinOccurs() {
         return minOccurs;
     }
 
     /**
-     * Returns the maximum number of occurrences possible for this input parameter in the process. Can be "unbounded"
-     * (can appear infinitely many times) or a smaller strictly positive integer value (given as string).
+     * Returns the maximum number of times the parameter may be present.
      * 
-     * @return maximum number of occurrences of this parameter
+     * @return maximum number of times the parameter may be present, may be <code>null</code> (defaults to 1 time) or
+     *         "unbounded"
      */
     public String getMaxOccurs() {
         return maxOccurs;

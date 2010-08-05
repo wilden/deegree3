@@ -52,6 +52,12 @@ public abstract class ExecutionInput {
 
     private CodeType id;
 
+    /**
+     * Creates a new {@link ExecutionInput} instance.
+     * 
+     * @param id
+     *            parameter identifier, must not be <code>null</code>
+     */
     protected ExecutionInput( CodeType id ) {
         this.id = id;
     }
@@ -64,7 +70,12 @@ public abstract class ExecutionInput {
     public CodeType getId() {
         return id;
     }
-    
+
+    /**
+     * Returns the web-accessible URL for retrieving the input value.
+     * 
+     * @return web-accessible URL, can be <code>null</code> (not web-acessible)
+     */
     public URL getWebAccessibleURL() {
         return null;
     }

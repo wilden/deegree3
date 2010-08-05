@@ -229,7 +229,7 @@ public class ExecuteRequest100Writer {
                         XMLInput complexInput = (XMLInput) dataInput;
                         writer.writeStartElement( wpsPrefix, "ComplexData", wpsNS );
 
-                        writeComplexAttributes( complexInput.getComplexAttributes() );
+                        writeComplexAttributes( complexInput.getFormat() );
 
                         XMLStreamReader xmldata = complexInput.getAsXMLStream();
 
@@ -244,9 +244,9 @@ public class ExecuteRequest100Writer {
                             writer.writeStartElement( wpsPrefix, "ComplexData", wpsNS );
                             byte[] buffer = new byte[1024];
                             int read = -1;
-                            InputStream is = binaryInput.getDataStream();
+                            InputStream is = binaryInput.getAsBinaryStream();
                             while ( ( read = is.read( buffer ) ) != -1 ) {
-                                if ( !"base64".equals( binaryInput.getAttributes().getEncoding() ) ) {
+                                if ( !"base64".equals( binaryInput.getFormat().getEncoding() ) ) {
                                     String encoded = Base64.encode( buffer, 0, read );
                                     writer.writeCharacters( encoded );
                                 } else {

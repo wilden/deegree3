@@ -49,7 +49,7 @@ import org.deegree.commons.xml.stax.StAXParsingHelper;
 import org.deegree.protocol.wps.param.ComplexFormat;
 
 /**
- * {@link ExecutionOutput} that encapsulates an XML or binary value.
+ * {@link ExecutionOutput} that encapsulates an XML or a binary value.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
@@ -66,13 +66,18 @@ public class ComplexOutput extends ExecutionOutput {
     private final StreamBufferStore store;
 
     /**
-     * Creates a new {@link ComplexOutput} instance
+     * Creates a new {@link ComplexOutput} instance.
      * 
      * @param id
+     *            output parameter identifier, must not be <code>null</code>
      * @param url
+     *            web-accessible URL for accessing the resource, must not be <code>null</code>
      * @param mimeType
+     *            mime type of the complex data, can be <code>null</code> (unspecified)
      * @param encoding
+     *            encoding of the complex data, can be <code>null</code> (unspecified)
      * @param schema
+     *            XML schema of the complex data, can be <code>null</code> (unspecified)
      */
     public ComplexOutput( CodeType id, URL url, String mimeType, String encoding, String schema ) {
         super( id );
@@ -82,11 +87,18 @@ public class ComplexOutput extends ExecutionOutput {
     }
 
     /**
+     * Creates a new {@link ComplexOutput} instance.
+     * 
      * @param id
+     *            output parameter identifier, must not be <code>null</code>
      * @param store
+     *            stream that holds the complex data, must not be <code>null</code>
      * @param mimeType
+     *            mime type of the complex data, can be <code>null</code> (unspecified)
      * @param encoding
+     *            encoding of the complex data, can be <code>null</code> (unspecified)
      * @param schema
+     *            XML schema of the complex data, can be <code>null</code> (unspecified)
      */
     public ComplexOutput( CodeType id, StreamBufferStore store, String mimeType, String encoding, String schema ) {
         super( id );
@@ -96,8 +108,9 @@ public class ComplexOutput extends ExecutionOutput {
     }
 
     /**
+     * Returns the format of the output.
      * 
-     * @return complex attributes (encoding, mime type, schema) associated with the xml data type
+     * @return the format of the output, never <code>null</code>
      */
     public ComplexFormat getFormat() {
         return complexAttribs;
@@ -117,12 +130,14 @@ public class ComplexOutput extends ExecutionOutput {
     }
 
     /**
-     * Gets the xml data as {@link XMLStreamReader}. In case the xml stream begins with the START_DOCUMENT event, the
-     * returning stream will have skipped it.
+     * Returns an {@link XMLStreamReader} for accessing the complex value as an XML event stream.
+     * <p>
+     * NOTE: Never use this method if the input parameter is a binary value -- use {@link #getAsBinaryStream()} instead.
+     * </p>
      * 
      * @return an {@link XMLStreamReader} instance, positioned after the START_DOCUMENT element
-     * 
      * @throws IOException
+     *             if accessing the value fails
      * @throws XMLStreamException
      */
     public XMLStreamReader getAsXMLStream()
@@ -139,8 +154,18 @@ public class ComplexOutput extends ExecutionOutput {
     }
 
     /**
-     * @return
+     * Returns an {@link InputStream} for accessing the complex value as a binary stream.
+     * <p>
+     * NOTE: Don't use this method if the input parameter is encoded in XML -- use {@link #getAsXMLStream()} instead.
+     * Otherwise erroneous behaviour has to be expected (e.g. if the input value is given embedded in the execute request
+     * document).
+     * </p>
+     * The returned stream will point at the first START_ELEMENT event of the data.
+     * 
+     * @return the input value as an XML event stream, current event is START_ELEMENT (the root element of the data
+     *         object)
      * @throws IOException
+     *             if accessing the value fails
      */
     public InputStream getAsBinaryStream()
                             throws IOException {

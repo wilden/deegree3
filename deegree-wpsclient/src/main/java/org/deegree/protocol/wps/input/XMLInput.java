@@ -50,14 +50,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * {@link ExecutionInput} that encapsulates an XML value.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
 public class XMLInput extends ExecutionInput {
 
@@ -98,6 +97,15 @@ public class XMLInput extends ExecutionInput {
     }
 
     /**
+     * Returns the format of the input.
+     * 
+     * @return the format of the input, never <code>null</code>
+     */
+    public ComplexFormat getFormat() {
+        return complexAttribs;
+    }
+
+    /**
      * Gets the xml data as {@link XMLStreamReader}. In case the xml stream begins with the START_DOCUMENT event, the
      * returning stream will have skipped it.
      * 
@@ -123,14 +131,7 @@ public class XMLInput extends ExecutionInput {
         return reader;
     }
 
-    /**
-     * 
-     * @return complex attributes (encoding, mime type, schema) associated with the xml data type
-     */
-    public ComplexFormat getComplexAttributes() {
-        return complexAttribs;
-    }
-
+    @Override
     public URL getWebAccessibleURL() {
         return isWebAccessible ? url : null;
     }

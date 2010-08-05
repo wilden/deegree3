@@ -37,48 +37,65 @@ package org.deegree.protocol.wps.output.type;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
+import org.deegree.protocol.wps.input.type.InputType;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * Abstract base class for definitions of process output parameters.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
 public abstract class OutputType {
 
     private final CodeType id;
 
-    private final LanguageString outputTitle;
+    private final LanguageString inputTitle;
 
-    private final LanguageString outputAbstract;
+    private final LanguageString inputAbstract;
 
-    protected OutputType( CodeType id, LanguageString outputTitle, LanguageString outputAbstract) {
+    /**
+     * Creates a new {@link InputType} instance.
+     * 
+     * @param id
+     *            parameter identifier, must not be <code>null</code>
+     * @param inputTitle
+     *            parameter title, must not be <code>null</code>
+     * @param inputAbstract
+     *            abstract for the parameter, can be <code>null</code>
+     */
+    protected OutputType( CodeType id, LanguageString inputTitle, LanguageString inputAbstract ) {
         this.id = id;
-        this.outputTitle = outputTitle;
-        this.outputAbstract = outputAbstract;
+        this.inputTitle = inputTitle;
+        this.inputAbstract = inputAbstract;
     }
 
+    /**
+     * Returns the parameter identifier.
+     * 
+     * @return the parameter identifier, never <code>null</code>
+     */
     public CodeType getId() {
         return id;
     }
 
     /**
+     * Returns the parameter title.
      * 
-     * @return title of the output
+     * @return the parameter title, never <code>null</code>
      */
     public LanguageString getTitle() {
-        return outputTitle;
+        return inputTitle;
     }
 
     /**
+     * Returns the abstract for the parameter.
      * 
-     * @return abstract of the output
+     * @return the abstract for the parameter, can be <code>null</code>
      */
     public LanguageString getAbstract() {
-        return outputAbstract;
+        return inputAbstract;
     }
 }

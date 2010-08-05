@@ -43,14 +43,13 @@ import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.protocol.wps.param.ComplexFormat;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * {@link ExecutionInput} that encapsulates a binary value.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
 public class BinaryInput extends ExecutionInput {
 
@@ -76,12 +75,21 @@ public class BinaryInput extends ExecutionInput {
     }
 
     /**
+     * Returns the format of the input.
+     * 
+     * @return the format of the input, never <code>null</code>
+     */    
+    public ComplexFormat getFormat() {
+        return complexAttributes;
+    }
+
+    /**
      * Get the binary data as a stream
      * 
      * @return an {@link InputStream} to the binary data
      * @throws IOException
      */
-    public InputStream getDataStream()
+    public InputStream getAsBinaryStream()
                             throws IOException {
         if ( inputStream != null ) {
             return inputStream;
@@ -89,10 +97,7 @@ public class BinaryInput extends ExecutionInput {
         return url.openStream();
     }
 
-    public ComplexFormat getAttributes() {
-        return complexAttributes;
-    }
-
+    @Override
     public URL getWebAccessibleURL() {
         return isWebAccessible ? url : null;
     }

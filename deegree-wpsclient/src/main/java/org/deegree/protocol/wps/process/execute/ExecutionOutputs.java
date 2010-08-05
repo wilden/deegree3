@@ -62,7 +62,10 @@ public class ExecutionOutputs {
     private final Map<CodeType, ExecutionOutput> paramIdToOutput = new LinkedHashMap<CodeType, ExecutionOutput>();
 
     /**
+     * Creates a new {@link ExecutionOutputs} instance.
+     * 
      * @param outputs
+     *            output values, never <code>null</code>
      */
     public ExecutionOutputs( ExecutionOutput[] outputs ) {
         for ( ExecutionOutput output : outputs ) {
@@ -72,36 +75,79 @@ public class ExecutionOutputs {
     }
 
     /**
-     * @return
+     * Returns all outputs.
+     * 
+     * @return all outputs, never <code>null</code>
      */
     public ExecutionOutput[] getAll() {
         return paramIdToOutput.values().toArray( new ExecutionOutput[paramIdToOutput.size()] );
     }
 
     /**
-     * @return
+     * Returns the output with the specified index.
+     * 
+     * @param i
+     *            index of the output, starting with zero
+     * @return the output with the specified index, never <code>null</code>
+     * @throws IndexOutOfBoundsException
+     *             if no such output exists
      */
     public ExecutionOutput get( int i ) {
         return getAll()[i];
     }
 
     /**
+     * Returns the output with the specified identifier.
+     * 
      * @param id
+     *            output identifier, never <code>null</code>
      * @param idCodeSpace
-     * @return
+     *            codespace of the output identifier, may be <code>null</code> (for identifiers that don't use a code
+     *            space)
+     * @return output with the specified identifier, may be <code>null</code> (if no such output exists)
      */
     public ExecutionOutput get( String id, String idCodeSpace ) {
         return paramIdToOutput.get( new CodeType( id, idCodeSpace ) );
     }
 
+    /**
+     * Returns the literal output with the specified identifier.
+     * 
+     * @param id
+     *            output identifier, never <code>null</code>
+     * @param idCodeSpace
+     *            codespace of the output identifier, may be <code>null</code> (for identifiers that don't use a code
+     *            space)
+     * @return output with the specified identifier, may be <code>null</code> (if no such output exists)
+     */
     public LiteralOutput getLiteral( String id, String idCodeSpace ) {
         return (LiteralOutput) paramIdToOutput.get( new CodeType( id, idCodeSpace ) );
     }
 
+    /**
+     * Returns the bounding box output with the specified identifier.
+     * 
+     * @param id
+     *            output identifier, never <code>null</code>
+     * @param idCodeSpace
+     *            codespace of the output identifier, may be <code>null</code> (for identifiers that don't use a code
+     *            space)
+     * @return output with the specified identifier, may be <code>null</code> (if no such output exists)
+     */
     public BoundingBoxOutput getBoundingBox( String id, String idCodeSpace ) {
         return (BoundingBoxOutput) paramIdToOutput.get( new CodeType( id, idCodeSpace ) );
     }
 
+    /**
+     * Returns the complex output with the specified identifier.
+     * 
+     * @param id
+     *            output identifier, never <code>null</code>
+     * @param idCodeSpace
+     *            codespace of the output identifier, may be <code>null</code> (for identifiers that don't use a code
+     *            space)
+     * @return output with the specified identifier, may be <code>null</code> (if no such output exists)
+     */
     public ComplexOutput getComplex( String id, String idCodeSpace ) {
         return (ComplexOutput) paramIdToOutput.get( new CodeType( id, idCodeSpace ) );
     }

@@ -148,11 +148,13 @@ public class OWS110CapabilitiesAdapter extends XMLAdapter {
         }
 
         List<OMElement> keywordsEls = getElements( serviceIdEl, new XPath( "ows:Keywords", nsContext ) );
-        for ( OMElement keywordsEl : keywordsEls ) {
+        for ( @SuppressWarnings("unused")
+        OMElement keywordsEl : keywordsEls ) {
             // TODO
         }
 
         // TODO
+        @SuppressWarnings("unused")
         String[] profiles = getNodesAsStrings( serviceIdEl, new XPath( "ows:Profiles", nsContext ) );
 
         String fees = getNodeAsString( serviceIdEl, new XPath( "ows:Fees", nsContext ), null );

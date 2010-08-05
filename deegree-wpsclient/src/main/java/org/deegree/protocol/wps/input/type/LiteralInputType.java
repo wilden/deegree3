@@ -43,14 +43,13 @@ import org.deegree.protocol.wps.param.ValueWithRef;
 import org.deegree.services.jaxb.wps.Range;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * {@link InputType} that defines a literal input.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
 public class LiteralInputType extends InputType {
 
@@ -72,6 +71,22 @@ public class LiteralInputType extends InputType {
 
     private ValueWithRef reference;
 
+    /**
+     * Creates a new {@link LiteralInputType} instance.
+     * 
+     * @param id
+     * @param inputTitle
+     * @param inputAbstract
+     * @param minOccurs
+     * @param maxOccurs
+     * @param dataType
+     * @param defaultUom
+     * @param supportedUoms
+     * @param allowedValues
+     * @param range
+     * @param anyValue
+     * @param reference
+     */
     public LiteralInputType( CodeType id, LanguageString inputTitle, LanguageString inputAbstract, String minOccurs,
                              String maxOccurs, ValueWithRef dataType, ValueWithRef defaultUom,
                              ValueWithRef[] supportedUoms, String[] allowedValues, Range[] range, boolean anyValue,
@@ -140,5 +155,4 @@ public class LiteralInputType extends InputType {
     public boolean isAnyValue() {
         return anyValue;
     }
-
 }

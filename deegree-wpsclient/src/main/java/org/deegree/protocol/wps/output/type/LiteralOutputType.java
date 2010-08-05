@@ -40,14 +40,13 @@ import org.deegree.commons.tom.ows.LanguageString;
 import org.deegree.protocol.wps.param.ValueWithRef;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * {@link OutputType} that defines a literal output.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
 public class LiteralOutputType extends OutputType {
 

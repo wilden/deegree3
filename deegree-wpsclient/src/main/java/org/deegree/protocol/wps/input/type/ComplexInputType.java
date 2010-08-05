@@ -40,14 +40,13 @@ import org.deegree.commons.tom.ows.LanguageString;
 import org.deegree.protocol.wps.param.ComplexFormat;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * {@link InputType} that defines a complex input (XML or binary).
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
+ * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
 public class ComplexInputType extends InputType {
 
@@ -65,8 +64,8 @@ public class ComplexInputType extends InputType {
     }
 
     /**
-     * Returns a {@link ComplexFormat} instance (that encapsulates encoding, mime type and schema) as default format
-     * for this input.
+     * Returns a {@link ComplexFormat} instance (that encapsulates encoding, mime type and schema) as default format for
+     * this input.
      * 
      * @return the default format used for this input.
      */

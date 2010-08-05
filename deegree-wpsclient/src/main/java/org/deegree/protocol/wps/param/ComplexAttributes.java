@@ -33,13 +33,10 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.describeprocess;
-
-import java.net.URI;
+package org.deegree.protocol.wps.param;
 
 /**
- * The <code>ValueWithRef</code> class encapsulates a value and a reference that are used as together throughout the
- * describe process API.
+ * The <code></code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * 
@@ -48,33 +45,30 @@ import java.net.URI;
  * @version $Revision$, $Date$
  * 
  */
-public class ValueWithRef<T> {
+public class ComplexAttributes {
 
-    private T value;
+    private String mimeType;
 
-    private URI ref;
+    private String encoding;
 
-    public ValueWithRef( T value, URI ref ) {
-        this.value = value;
-        this.ref = ref;
+    private String schema;
+
+    public ComplexAttributes( String mimeType, String encoding, String schema ) {
+        this.mimeType = mimeType;
+        this.encoding = encoding;
+        this.schema = schema;
     }
 
-    /**
-     * Get the value associated with this instance.
-     * 
-     * @return the value
-     */
-    public T getValue() {
-        return value;
+    public String getMimeType() {
+        return mimeType;
     }
 
-    /**
-     * Get the reference associated with this instance.
-     * 
-     * @return
-     */
-    public URI getRef() {
-        return ref;
+    public String getEncoding() {
+        return encoding;
+    }
+
+    public String getSchema() {
+        return schema;
     }
 
 }

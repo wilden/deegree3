@@ -36,7 +36,7 @@
 package org.deegree.protocol.wps.process.execute;
 
 import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
+import org.deegree.protocol.wps.param.ComplexAttributes;
 
 /**
  * The <code></code> class TODO add class documentation here.

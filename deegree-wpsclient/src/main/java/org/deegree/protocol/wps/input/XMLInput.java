@@ -45,7 +45,7 @@ import javax.xml.stream.XMLStreamReader;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.stax.StAXParsingHelper;
-import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
+import org.deegree.protocol.wps.param.ComplexAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

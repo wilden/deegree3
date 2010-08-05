@@ -40,7 +40,7 @@ import java.net.URL;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
-import org.deegree.protocol.wps.describeprocess.ValueWithRef;
+import org.deegree.protocol.wps.param.ValueWithRef;
 import org.deegree.services.jaxb.wps.Range;
 
 /**

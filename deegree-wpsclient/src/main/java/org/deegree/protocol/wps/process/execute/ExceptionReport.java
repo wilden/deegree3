@@ -33,10 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute;
-
-import java.util.List;
-
+package org.deegree.protocol.wps.process.execute;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -48,45 +45,39 @@ import java.util.List;
  * @version $Revision$, $Date$
  * 
  */
-public class ResponseFormat {
+public class ExceptionReport {
 
-    private boolean rawOutput;
+    private String message;
 
-    private Boolean asynch;
+    private String code;
 
-    private Boolean includeRequestInfo;
+    private String locator;
 
-    private Boolean updateStatus;
-
-    private List<OutputFormat> outputDefs;
-
-    public ResponseFormat( boolean rawOutput, boolean asynch, boolean includeRequestInfo, boolean updateStatus,
-                           List<OutputFormat> outputDefs ) {
-        this.rawOutput = rawOutput;
-        this.asynch = asynch;
-        this.includeRequestInfo = includeRequestInfo;
-        this.updateStatus = updateStatus;
-        this.outputDefs = outputDefs;
+    public ExceptionReport( String message, String code, String locator ) {
+        this.message = message;
+        this.code = code;
+        this.locator = locator;
     }
 
-    public boolean isRaw() {
-        return rawOutput;
+    /**
+     * @return
+     */
+    public String getMessage() {
+        return message;
     }
 
-    public Boolean isAsync() {
-        return asynch;
+    /**
+     * @return
+     */
+    public String getCode() {
+        return code;
     }
 
-    public Boolean includesRequestInfo() {
-        return includeRequestInfo;
-    }
-
-    public Boolean updatesStatus() {
-        return updateStatus;
-    }
-
-    public List<OutputFormat> getOutputDefinitions() {
-        return outputDefs;
+    /**
+     * @return
+     */
+    public String getLocator() {
+        return locator;
     }
 
 }

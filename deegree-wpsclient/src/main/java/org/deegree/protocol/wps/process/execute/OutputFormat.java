@@ -33,7 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wps.execute;
+package org.deegree.protocol.wps.process.execute;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.protocol.wps.describeprocess.ComplexAttributes;

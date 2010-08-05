@@ -54,7 +54,7 @@ import org.deegree.protocol.wps.input.BinaryInput;
 import org.deegree.protocol.wps.input.ExecutionInput;
 import org.deegree.protocol.wps.input.LiteralInput;
 import org.deegree.protocol.wps.input.XMLInput;
-import org.deegree.protocol.wps.param.ComplexAttributes;
+import org.deegree.protocol.wps.param.ComplexFormat;
 import org.deegree.protocol.wps.process.execute.OutputFormat;
 import org.deegree.protocol.wps.process.execute.ResponseFormat;
 import org.slf4j.Logger;
@@ -178,7 +178,7 @@ public class ExecuteRequest100Writer {
      * @param complexAttributes
      * @throws XMLStreamException
      */
-    private void writeComplexAttributes( ComplexAttributes complexAttributes )
+    private void writeComplexAttributes( ComplexFormat complexAttributes )
                             throws XMLStreamException {
         if ( complexAttributes.getEncoding() != null ) {
             writer.writeAttribute( "encoding", complexAttributes.getEncoding() );

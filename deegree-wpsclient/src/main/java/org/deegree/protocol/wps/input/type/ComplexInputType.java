@@ -37,7 +37,7 @@ package org.deegree.protocol.wps.input.type;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
-import org.deegree.protocol.wps.param.ComplexAttributes;
+import org.deegree.protocol.wps.param.ComplexFormat;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -53,34 +53,34 @@ public class ComplexInputType extends InputType {
 
     // private int maximumFileSize;
 
-    private ComplexAttributes defaultFormat;
+    private ComplexFormat defaultFormat;
 
-    private ComplexAttributes[] supportedFormats;
+    private ComplexFormat[] supportedFormats;
 
     public ComplexInputType( CodeType id, LanguageString inputTitle, LanguageString inputAbstract, String minOccurs,
-                             String maxOccurs, ComplexAttributes defaultFormat, ComplexAttributes[] supportedFormats ) {
+                             String maxOccurs, ComplexFormat defaultFormat, ComplexFormat[] supportedFormats ) {
         super( id, inputTitle, inputAbstract, minOccurs, maxOccurs );
         this.defaultFormat = defaultFormat;
         this.supportedFormats = supportedFormats;
     }
 
     /**
-     * Returns a {@link ComplexAttributes} instance (that encapsulates encoding, mime type and schema) as default format
+     * Returns a {@link ComplexFormat} instance (that encapsulates encoding, mime type and schema) as default format
      * for this input.
      * 
      * @return the default format used for this input.
      */
-    public ComplexAttributes getDefaultFormat() {
+    public ComplexFormat getDefaultFormat() {
         return defaultFormat;
     }
 
     /**
-     * Returns an array of {@link ComplexAttributes} instances (that encapsulates encoding, mime type and schema) as
+     * Returns an array of {@link ComplexFormat} instances (that encapsulates encoding, mime type and schema) as
      * supported formats for this input.
      * 
      * @return the supported format used for this input.
      */
-    public ComplexAttributes[] getSupportedFormats() {
+    public ComplexFormat[] getSupportedFormats() {
         return supportedFormats;
     }
 

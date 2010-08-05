@@ -50,6 +50,12 @@ public abstract class ExecutionOutput {
 
     private CodeType id;
 
+    /**
+     * Creates a new {@link ExecutionOutput} instance.
+     * 
+     * @param id
+     *            output parameter identifier, must not be <code>null</code>
+     */
     protected ExecutionOutput( CodeType id ) {
         this.id = id;
     }

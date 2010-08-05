@@ -67,7 +67,7 @@ import org.deegree.protocol.wps.output.BBoxOutput;
 import org.deegree.protocol.wps.output.ComplexOutput;
 import org.deegree.protocol.wps.output.ExecutionOutput;
 import org.deegree.protocol.wps.output.LiteralOutput;
-import org.deegree.protocol.wps.param.ComplexAttributes;
+import org.deegree.protocol.wps.param.ComplexFormat;
 import org.deegree.protocol.wps.process.execute.ExceptionReport;
 import org.deegree.protocol.wps.process.execute.ExecutionResponse;
 import org.deegree.protocol.wps.process.execute.ExecutionStatus;
@@ -207,7 +207,7 @@ public class ExecuteResponse100Reader {
 
                 if ( reader.getName().getLocalPart().equals( "Reference" ) ) {
                     String href = reader.getAttributeValue( null, "href" );
-                    ComplexAttributes attribs = parseComplexAttributes();
+                    ComplexFormat attribs = parseComplexAttributes();
                     String mimeType = attribs.getMimeType();
                     output = new ComplexOutput( id, new URL( href ), mimeType, attribs.getEncoding(),
                                                 attribs.getSchema() );
@@ -317,7 +317,7 @@ public class ExecuteResponse100Reader {
     private ExecutionOutput parseComplexOutput( CodeType id )
                             throws XMLStreamException {
 
-        ComplexAttributes attribs = parseComplexAttributes();
+        ComplexFormat attribs = parseComplexAttributes();
 
         StreamBufferStore tmpSink = new StreamBufferStore();
         try {
@@ -359,11 +359,11 @@ public class ExecuteResponse100Reader {
     /**
      * @return
      */
-    private ComplexAttributes parseComplexAttributes() {
+    private ComplexFormat parseComplexAttributes() {
         String mimeType = reader.getAttributeValue( null, "mimeType" );
         String encoding = reader.getAttributeValue( null, "encoding" );
         String schema = reader.getAttributeValue( null, "schema" );
-        return new ComplexAttributes( mimeType, encoding, schema );
+        return new ComplexFormat( mimeType, encoding, schema );
     }
 
     /**

@@ -37,7 +37,7 @@ package org.deegree.protocol.wps.output.type;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
-import org.deegree.protocol.wps.param.ComplexAttributes;
+import org.deegree.protocol.wps.param.ComplexFormat;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -51,12 +51,12 @@ import org.deegree.protocol.wps.param.ComplexAttributes;
  */
 public class ComplexOutputType extends OutputType {
 
-    private ComplexAttributes defaultFormat;
+    private ComplexFormat defaultFormat;
 
-    private ComplexAttributes[] supportedFormats;
+    private ComplexFormat[] supportedFormats;
 
     public ComplexOutputType( CodeType id, LanguageString outputTitle, LanguageString outputAbstract,
-                              ComplexAttributes defaultFormat, ComplexAttributes[] supportedFormats ) {
+                              ComplexFormat defaultFormat, ComplexFormat[] supportedFormats ) {
         super( id, outputTitle, outputAbstract );
         this.defaultFormat = defaultFormat;
         this.supportedFormats = supportedFormats;
@@ -64,17 +64,17 @@ public class ComplexOutputType extends OutputType {
 
     /**
      * 
-     * @return the default {@link ComplexAttributes} used
+     * @return the default {@link ComplexFormat} used
      */
-    public ComplexAttributes getDefaultFormat() {
+    public ComplexFormat getDefaultFormat() {
         return defaultFormat;
     }
 
     /**
      * 
-     * @return the supported array of {@link ComplexAttributes} used
+     * @return the supported array of {@link ComplexFormat} used
      */
-    public ComplexAttributes[] getSupportedFormats() {
+    public ComplexFormat[] getSupportedFormats() {
         return supportedFormats;
     }
 

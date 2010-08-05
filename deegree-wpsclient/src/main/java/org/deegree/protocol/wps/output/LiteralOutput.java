@@ -38,7 +38,7 @@ package org.deegree.protocol.wps.output;
 import org.deegree.commons.tom.ows.CodeType;
 
 /**
- * 
+ * {@link ExecutionOutput} that contains a literal value with optional data type and unit-of-measure information.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
@@ -54,6 +54,18 @@ public class LiteralOutput extends ExecutionOutput {
 
     private final String uom;
 
+    /**
+     * Creates a new {@link LiteralOutput} instance.
+     * 
+     * @param id
+     *            output parameter identifier, must not be <code>null</code>
+     * @param value
+     *            literal value, must not be <code>null</code>
+     * @param dataType
+     *            literal data type, can be <code>null</code> (unspecified)
+     * @param uom
+     *            unit-of-measure, can be <code>null</code> (unspecified)
+     */
     public LiteralOutput( CodeType id, String value, String dataType, String uom ) {
         super( id );
         this.value = value;

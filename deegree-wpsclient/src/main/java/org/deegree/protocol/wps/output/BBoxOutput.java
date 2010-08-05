@@ -38,7 +38,8 @@ package org.deegree.protocol.wps.output;
 import org.deegree.commons.tom.ows.CodeType;
 
 /**
- * Base class for output parameters returned by a process execution.
+ * {@link ExecutionOutput} that contains a bounding box value with optional information on the coordinate reference
+ * system.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
@@ -48,14 +49,27 @@ import org.deegree.commons.tom.ows.CodeType;
  */
 public class BBoxOutput extends ExecutionOutput {
 
-    private double[] lower;
+    private final double[] lower;
 
-    private double[] upper;
+    private final double[] upper;
 
-    private String crs;
+    private final String crs;
 
-    private int dim;
+    private final int dim;
 
+    /**
+     * Creates a new {@link BBoxOutput} instance.
+     * 
+     * @param id
+     *            output parameter identifier, must not be <code>null</code>
+     * @param lower
+     *            coordinates of the lower corner, must not be <code>null</code>
+     * @param upper
+     *            coordinates of the upper corner, must not be <code>null</code> and have the same length as the lower
+     *            array
+     * @param crs
+     *            identifier of the coordinate reference system, can be <code>null</code> (unspecified)
+     */
     public BBoxOutput( CodeType id, double[] lower, double[] upper, String crs ) {
         super( id );
         this.lower = lower;
@@ -64,22 +78,37 @@ public class BBoxOutput extends ExecutionOutput {
         this.crs = crs;
     }
 
+    /**
+     * Returns the coordinates of the lower corner.
+     * 
+     * @return the coordinates of the lower corner, never <code>null</code>
+     */
     public double[] getLower() {
         return lower;
     }
 
+    /**
+     * Returns the coordinates of the upper corner.
+     * 
+     * @return the coordinates of the upper corner, never <code>null</code>
+     */
     public double[] getUpper() {
         return upper;
     }
 
+    /**
+     * Returns the dimension (number of coordinates of lower/upper corner).
+     * 
+     * @return coordinate dimension
+     */
     public int getDimension() {
         return dim;
     }
 
     /**
-     * Get coordinate system of the bounding box
+     * Returns the coordinate system identifier.
      * 
-     * @return crs as String
+     * @return coordinate system identifier, or <code>null</code> if unspecified
      */
     public String getCrs() {
         return crs;

@@ -62,7 +62,7 @@ import org.deegree.protocol.wps.output.type.BBoxOutputType;
 import org.deegree.protocol.wps.output.type.ComplexOutputType;
 import org.deegree.protocol.wps.output.type.LiteralOutputType;
 import org.deegree.protocol.wps.output.type.OutputType;
-import org.deegree.protocol.wps.param.ComplexAttributes;
+import org.deegree.protocol.wps.param.ComplexFormat;
 import org.deegree.protocol.wps.param.ValueWithRef;
 import org.deegree.services.jaxb.wps.Range;
 
@@ -252,11 +252,11 @@ public class ProcessDetails {
             schema = omSchema.getText();
         }
 
-        ComplexAttributes defaultFormat = new ComplexAttributes( mimeType, encoding, schema );
+        ComplexFormat defaultFormat = new ComplexFormat( mimeType, encoding, schema );
 
         xpath = new XPath( "Supported/Format", nsContext );
         List<OMElement> omSupported = omResponse.getElements( omComplex, xpath );
-        ComplexAttributes[] supportedFormats = new ComplexAttributes[omSupported.size()];
+        ComplexFormat[] supportedFormats = new ComplexFormat[omSupported.size()];
         for ( int i = 0; i < omSupported.size(); i++ ) {
             OMElement omSupp = omSupported.get( i );
             mimeType = omSupp.getFirstChildWithName( new QName( null, "MimeType" ) ).getText();
@@ -270,7 +270,7 @@ public class ProcessDetails {
             if ( omSchema != null ) {
                 schema = omSchema.getText();
             }
-            supportedFormats[i] = new ComplexAttributes( mimeType, encoding, schema );
+            supportedFormats[i] = new ComplexFormat( mimeType, encoding, schema );
         }
         return new ComplexOutputType( id, outputTitle, outputAbstract, defaultFormat, supportedFormats );
     }
@@ -421,11 +421,11 @@ public class ProcessDetails {
         if ( omSchema != null ) {
             schema = omSchema.getText();
         }
-        ComplexAttributes defaultFormat = new ComplexAttributes( mimeType, encoding, schema );
+        ComplexFormat defaultFormat = new ComplexFormat( mimeType, encoding, schema );
 
         xpath = new XPath( "Supported/Format", nsContext );
         List<OMElement> omFormats = omResponse.getElements( input, xpath );
-        ComplexAttributes[] supported = new ComplexAttributes[omFormats.size()];
+        ComplexFormat[] supported = new ComplexFormat[omFormats.size()];
         for ( int i = 0; i < omFormats.size(); i++ ) {
             OMElement omFormat = omFormats.get( i );
             mimeType = omFormat.getFirstChildWithName( new QName( null, "MimeType" ) ).getText();
@@ -439,7 +439,7 @@ public class ProcessDetails {
             if ( omSchema != null ) {
                 schema = omSchema.getText();
             }
-            supported[i] = new ComplexAttributes( mimeType, encoding, schema );
+            supported[i] = new ComplexFormat( mimeType, encoding, schema );
         }
         return new ComplexInputType( id, inputTitle, inputAbstract, minOccurs, maxOccurs, defaultFormat, supported );
     }

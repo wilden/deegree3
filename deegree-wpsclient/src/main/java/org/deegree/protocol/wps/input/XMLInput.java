@@ -45,7 +45,7 @@ import javax.xml.stream.XMLStreamReader;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.stax.StAXParsingHelper;
-import org.deegree.protocol.wps.param.ComplexAttributes;
+import org.deegree.protocol.wps.param.ComplexFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +63,7 @@ public class XMLInput extends ExecutionInput {
 
     private static Logger LOG = LoggerFactory.getLogger( XMLInput.class );
 
-    private final ComplexAttributes complexAttribs;
+    private final ComplexFormat complexAttribs;
 
     private URL url;
 
@@ -75,7 +75,7 @@ public class XMLInput extends ExecutionInput {
         super( id );
         this.url = url;
         this.isWebAccessible = isWebAcessible;
-        this.complexAttribs = new ComplexAttributes( mimeType, null, schema );
+        this.complexAttribs = new ComplexFormat( mimeType, null, schema );
     }
 
     /**
@@ -94,7 +94,7 @@ public class XMLInput extends ExecutionInput {
         }
         this.reader = reader;
         this.isWebAccessible = false;
-        this.complexAttribs = new ComplexAttributes( mimeType, encoding, schema );
+        this.complexAttribs = new ComplexFormat( mimeType, encoding, schema );
     }
 
     /**
@@ -127,7 +127,7 @@ public class XMLInput extends ExecutionInput {
      * 
      * @return complex attributes (encoding, mime type, schema) associated with the xml data type
      */
-    public ComplexAttributes getComplexAttributes() {
+    public ComplexFormat getComplexAttributes() {
         return complexAttribs;
     }
 

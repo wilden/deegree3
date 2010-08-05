@@ -40,7 +40,7 @@ import java.io.InputStream;
 import java.net.URL;
 
 import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.param.ComplexAttributes;
+import org.deegree.protocol.wps.param.ComplexFormat;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -54,7 +54,7 @@ import org.deegree.protocol.wps.param.ComplexAttributes;
  */
 public class BinaryInput extends ExecutionInput {
 
-    private ComplexAttributes complexAttributes;
+    private ComplexFormat complexAttributes;
 
     private URL url;
 
@@ -66,13 +66,13 @@ public class BinaryInput extends ExecutionInput {
         super( id );
         this.url = url;
         this.isWebAccessible = isWebAccessible;
-        this.complexAttributes = new ComplexAttributes( mimeType, encoding, null );
+        this.complexAttributes = new ComplexFormat( mimeType, encoding, null );
     }
 
     public BinaryInput( CodeType id, InputStream inputStream, String mimeType, String encoding ) {
         super( id );
         this.inputStream = inputStream;
-        this.complexAttributes = new ComplexAttributes( mimeType, encoding, null );
+        this.complexAttributes = new ComplexFormat( mimeType, encoding, null );
     }
 
     /**
@@ -89,7 +89,7 @@ public class BinaryInput extends ExecutionInput {
         return url.openStream();
     }
 
-    public ComplexAttributes getAttributes() {
+    public ComplexFormat getAttributes() {
         return complexAttributes;
     }
 

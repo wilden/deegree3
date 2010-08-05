@@ -36,16 +36,14 @@
 package org.deegree.protocol.wps.param;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * Encapsulates the parameters needed for defining a complex input / output format.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
- * 
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
- * 
  */
-public class ComplexAttributes {
+public class ComplexFormat {
 
     private String mimeType;
 
@@ -53,22 +51,46 @@ public class ComplexAttributes {
 
     private String schema;
 
-    public ComplexAttributes( String mimeType, String encoding, String schema ) {
+    /**
+     * Creates a new {@link ComplexFormat} instance.
+     * 
+     * @param mimeType
+     *            mime type, may be <code>null</code>
+     * @param encoding
+     *            encoding, may be <code>null</code>
+     * @param schema
+     *            XML schema, may be <code>null</code>
+     */
+    public ComplexFormat( String mimeType, String encoding, String schema ) {
         this.mimeType = mimeType;
         this.encoding = encoding;
         this.schema = schema;
     }
 
+    /**
+     * Returns the mime type of the format.
+     * 
+     * @return mime type, may be <code>null</code> (means unspecified / default)
+     */
     public String getMimeType() {
         return mimeType;
     }
 
+    /**
+     * Returns the encoding of the format.
+     * 
+     * @return encoding, may be <code>null</code> (means unspecified / default)
+     */
     public String getEncoding() {
         return encoding;
     }
 
+    /**
+     * Returns the XML schema URL of the format.
+     * 
+     * @return he XML schema URL, may be <code>null</code> (means unspecified / default)
+     */
     public String getSchema() {
         return schema;
     }
-
 }

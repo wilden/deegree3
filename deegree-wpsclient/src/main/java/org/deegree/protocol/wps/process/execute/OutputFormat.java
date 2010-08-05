@@ -36,7 +36,7 @@
 package org.deegree.protocol.wps.process.execute;
 
 import org.deegree.commons.tom.ows.CodeType;
-import org.deegree.protocol.wps.param.ComplexAttributes;
+import org.deegree.protocol.wps.param.ComplexFormat;
 
 /**
  * The <code></code> class TODO add class documentation here.
@@ -54,7 +54,7 @@ public class OutputFormat {
 
     private String uom;
 
-    private ComplexAttributes complexAttributes;
+    private ComplexFormat complexAttributes;
 
     private boolean asRef;
 
@@ -62,7 +62,7 @@ public class OutputFormat {
         this.id = id;
         this.uom = uom;
         this.asRef = asRef;
-        this.complexAttributes = new ComplexAttributes( mimeType, encoding, schema );
+        this.complexAttributes = new ComplexFormat( mimeType, encoding, schema );
     }
 
     public CodeType getId() {
@@ -73,7 +73,7 @@ public class OutputFormat {
         return uom;
     }
 
-    public ComplexAttributes getComplexAttributes() {
+    public ComplexFormat getComplexAttributes() {
         return complexAttributes;
     }
 

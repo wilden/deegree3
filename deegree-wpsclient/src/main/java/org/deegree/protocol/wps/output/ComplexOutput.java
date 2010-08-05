@@ -46,9 +46,10 @@ import javax.xml.stream.XMLStreamReader;
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.utils.io.StreamBufferStore;
 import org.deegree.commons.xml.stax.StAXParsingHelper;
-import org.deegree.protocol.wps.param.ComplexAttributes;
+import org.deegree.protocol.wps.param.ComplexFormat;
 
 /**
+ * {@link ExecutionOutput} that encapsulates an XML or binary value.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
@@ -58,24 +59,48 @@ import org.deegree.protocol.wps.param.ComplexAttributes;
  */
 public class ComplexOutput extends ExecutionOutput {
 
-    private final ComplexAttributes complexAttribs;
+    private final ComplexFormat complexAttribs;
 
     private final URL url;
 
     private final StreamBufferStore store;
 
+    /**
+     * Creates a new {@link ComplexOutput} instance
+     * 
+     * @param id
+     * @param url
+     * @param mimeType
+     * @param encoding
+     * @param schema
+     */
     public ComplexOutput( CodeType id, URL url, String mimeType, String encoding, String schema ) {
         super( id );
         this.url = url;
         this.store = null;
-        this.complexAttribs = new ComplexAttributes( mimeType, null, schema );
+        this.complexAttribs = new ComplexFormat( mimeType, null, schema );
     }
 
+    /**
+     * @param id
+     * @param store
+     * @param mimeType
+     * @param encoding
+     * @param schema
+     */
     public ComplexOutput( CodeType id, StreamBufferStore store, String mimeType, String encoding, String schema ) {
         super( id );
         this.url = null;
         this.store = store;
-        this.complexAttribs = new ComplexAttributes( mimeType, encoding, schema );
+        this.complexAttribs = new ComplexFormat( mimeType, encoding, schema );
+    }
+
+    /**
+     * 
+     * @return complex attributes (encoding, mime type, schema) associated with the xml data type
+     */
+    public ComplexFormat getFormat() {
+        return complexAttribs;
     }
 
     /**
@@ -113,6 +138,10 @@ public class ComplexOutput extends ExecutionOutput {
         return xmlReader;
     }
 
+    /**
+     * @return
+     * @throws IOException
+     */
     public InputStream getAsBinaryStream()
                             throws IOException {
         InputStream is = null;
@@ -122,13 +151,5 @@ public class ComplexOutput extends ExecutionOutput {
             is = store.getInputStream();
         }
         return is;
-    }
-
-    /**
-     * 
-     * @return complex attributes (encoding, mime type, schema) associated with the xml data type
-     */
-    public ComplexAttributes getComplexAttributes() {
-        return complexAttribs;
     }
 }

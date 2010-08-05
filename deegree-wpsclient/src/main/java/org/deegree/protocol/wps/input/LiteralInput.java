@@ -38,7 +38,7 @@ package org.deegree.protocol.wps.input;
 import org.deegree.commons.tom.ows.CodeType;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * {@link ExecutionInput} that contains a literal value with optional data type and unit-of-measure information.
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * @author last edited by: $Author$
@@ -47,14 +47,24 @@ import org.deegree.commons.tom.ows.CodeType;
  */
 public class LiteralInput extends ExecutionInput {
 
-    private String value;
+    private final String value;
 
-    // optional
-    private String dataType;
+    private final String dataType;
 
-    // optional
-    private String uom;
+    private final String uom;
 
+    /**
+     * Creates a new {@link LiteralInput} instance.
+     * 
+     * @param id
+     *            input parameter identifier, must not be <code>null</code>
+     * @param value
+     *            literal value, must not be <code>null</code>
+     * @param dataType
+     *            literal data type, can be <code>null</code> (unspecified)
+     * @param uom
+     *            unit-of-measure, can be <code>null</code> (unspecified)
+     */
     public LiteralInput( CodeType id, String value, String dataType, String uom ) {
         super( id );
         this.value = value;

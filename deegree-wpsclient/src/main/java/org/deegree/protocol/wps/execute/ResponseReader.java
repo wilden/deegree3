@@ -323,10 +323,18 @@ public class ResponseReader {
                 fac.setProperty( XMLOutputFactory.IS_REPAIRING_NAMESPACES, true );
                 XMLStreamWriter xmlWriter = fac.createXMLStreamWriter( tmpSink, "UTF-8" );
 
+                StAXParsingHelper.nextElement( reader );
+
                 xmlWriter.writeStartDocument( "UTF-8", "1.0" );
-                XMLAdapter.writeElement( xmlWriter, reader );
+                if ( reader.getEventType() == START_ELEMENT ) {
+                    XMLAdapter.writeElement( xmlWriter, reader );
+                    StAXParsingHelper.nextElement( reader );
+                } else {
+                    LOG.debug( "Response document contains empty complex data output '" + id + "'" );
+                }
                 xmlWriter.writeEndDocument();
                 xmlWriter.close();
+
             } else {
                 if ( "base64".equals( attribs.getEncoding() ) ) {
                     String base64String = reader.getElementText();
@@ -342,7 +350,6 @@ public class ResponseReader {
         } catch ( IOException e ) {
             LOG.error( e.getMessage() );
         }
-
         return new ComplexOutput( id, tmpSink, attribs.getMimeType(), attribs.getEncoding(), attribs.getEncoding() );
     }
 

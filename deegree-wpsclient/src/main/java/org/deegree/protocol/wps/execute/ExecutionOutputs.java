@@ -44,6 +44,8 @@ import org.deegree.protocol.wps.execute.output.ComplexOutput;
 import org.deegree.protocol.wps.execute.output.ExecutionOutput;
 import org.deegree.protocol.wps.execute.output.LiteralOutput;
 import org.deegree.services.wps.output.BoundingBoxOutput;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Provides access to the outputs from a {@link ProcessExecution}.
@@ -55,6 +57,8 @@ import org.deegree.services.wps.output.BoundingBoxOutput;
  */
 public class ExecutionOutputs {
 
+    private static final Logger LOG = LoggerFactory.getLogger( ExecutionOutputs.class );
+
     private final Map<CodeType, ExecutionOutput> paramIdToOutput = new LinkedHashMap<CodeType, ExecutionOutput>();
 
     /**
@@ -62,7 +66,7 @@ public class ExecutionOutputs {
      */
     public ExecutionOutputs( ExecutionOutput[] outputs ) {
         for ( ExecutionOutput output : outputs ) {
-            System.out.println (output.getId());
+            LOG.debug( "Output: " + output.getId() + ": " + output );
             paramIdToOutput.put( output.getId(), output );
         }
     }

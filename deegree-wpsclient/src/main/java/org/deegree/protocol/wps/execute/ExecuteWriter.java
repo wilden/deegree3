@@ -35,6 +35,9 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.execute;
 
+import static org.deegree.commons.xml.CommonNamespaces.XLINK_PREFIX;
+import static org.deegree.commons.xml.CommonNamespaces.XLNNS;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -47,8 +50,8 @@ import org.apache.axiom.om.util.Base64;
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.protocol.wps.describeprocess.ComplexAttributes;
-import org.deegree.protocol.wps.execute.input.BinaryInput;
 import org.deegree.protocol.wps.execute.input.BBoxInput;
+import org.deegree.protocol.wps.execute.input.BinaryInput;
 import org.deegree.protocol.wps.execute.input.ExecutionInput;
 import org.deegree.protocol.wps.execute.input.LiteralInput;
 import org.deegree.protocol.wps.execute.input.XMLInput;
@@ -98,6 +101,7 @@ public class ExecuteWriter {
             writer.writeNamespace( wpsPrefix, wpsNS );
             writer.writeNamespace( owsPrefix, owsNS );
             writer.writeNamespace( xsiPrefix, xsiNS );
+            writer.writeNamespace( XLINK_PREFIX, XLNNS );
 
             writeHeader( id );
             writeInputs( inputs );
@@ -118,7 +122,7 @@ public class ExecuteWriter {
     private void writeOutputs( ResponseFormat outputFormat )
                             throws XMLStreamException {
         if ( outputFormat != null ) {
-            List<OutputDefinition> outputs = outputFormat.getOutputDefinitions();            
+            List<OutputDefinition> outputs = outputFormat.getOutputDefinitions();
 
             if ( outputs != null && outputs.size() > 0 ) {
                 writer.writeStartElement( wpsPrefix, "ResponseForm", wpsNS );
@@ -214,7 +218,8 @@ public class ExecuteWriter {
 
                 if ( dataInput.getWebAccessibleURL() != null ) {
                     writer.writeStartElement( wpsPrefix, "Reference", wpsNS );
-                    writer.writeAttribute( "href", dataInput.getWebAccessibleURL().toExternalForm() );
+                    writer.writeAttribute( XLINK_PREFIX, XLNNS, "href",
+                                           dataInput.getWebAccessibleURL().toExternalForm() );
                     writer.writeEndElement();
                 } else {
                     writer.writeStartElement( wpsPrefix, "Data", wpsNS );

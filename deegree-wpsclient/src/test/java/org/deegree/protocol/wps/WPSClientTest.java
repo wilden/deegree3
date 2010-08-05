@@ -35,6 +35,7 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps;
 
+import static org.deegree.protocol.wfs.WFSConstants.WFS_NS;
 import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.FAILED;
 import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.SUCCEEDED;
 import static org.junit.Assert.assertEquals;
@@ -47,9 +48,11 @@ import java.util.Arrays;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import org.deegree.commons.xml.CommonNamespaces;
 import org.deegree.commons.xml.NamespaceContext;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.XPath;
+import org.deegree.protocol.wfs.WFSConstants;
 import org.deegree.protocol.wps.describeprocess.input.BBoxInputType;
 import org.deegree.protocol.wps.describeprocess.input.ComplexInputType;
 import org.deegree.protocol.wps.describeprocess.input.InputType;
@@ -93,6 +96,10 @@ public class WPSClientTest {
     private static final String DEMO_SERVICE_URL = "http://deegree3-testing.deegree.org/deegree-wps-demo-3.0-pre6/services?service=WPS&version=1.0.0&request=GetCapabilities";
 
     private static final String NORTH52_SERVICE_URL = "http://giv-wps.uni-muenster.de:8080/wps/WebProcessingService?Request=GetCapabilities&Service=WPS";
+
+    private static final String REMOTE_XML_INPUT = "http://demo.deegree.org/deegree-wfs/services?REQUEST=GetCapabilities&version=1.1.0&service=WFS";
+
+    private static final String REMOTE_BINARY_INPUT = "http://www.deegree.org/deegree/images/deegree/logo-deegree.png";
 
     @Before
     public void init() {
@@ -269,15 +276,15 @@ public class WPSClientTest {
 
         Process proc = wpsClient.getProcess( "Centroid", null );
         ProcessExecution execution = proc.prepareExecution();
-        execution.addXMLInput( "GMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
+        execution.addXMLInput( "GMLInput", null, CURVE_FILE.toURI().toURL(), false, "text/xml", null, null );
         execution.addOutput( "Centroid", null, null, true, null, null, null );
         ExecutionOutputs response = execution.execute();
-        
         assertEquals( SUCCEEDED, execution.getState() );
 
         ComplexOutput output = (ComplexOutput) response.get( 0 );
         XMLStreamReader reader = output.getAsXMLStream();
         XMLAdapter searchableXML = new XMLAdapter( reader );
+        System.out.println ("HUHU: " + searchableXML.getRootElement());
         NamespaceContext nsContext = new NamespaceContext();
         nsContext.addNamespace( "wps", WPSConstants.WPS_100_NS );
         nsContext.addNamespace( "gml", "http://www.opengis.net/gml" );
@@ -300,7 +307,7 @@ public class WPSClientTest {
 
         ProcessExecution execution = proc.prepareExecution();
         execution.addLiteralInput( "BufferDistance", null, "0.1", "double", "unity" );
-        execution.addXMLInput( "GMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
+        execution.addXMLInput( "GMLInput", null, CURVE_FILE.toURI().toURL(), false, "text/xml", null, null );
         execution.addOutput( "BufferedGeometry", null, null, false, null, null, null );
         ExecutionOutputs response = execution.execute();
         Assert.assertNotNull( response );
@@ -317,8 +324,8 @@ public class WPSClientTest {
         ProcessExecution execution = proc.prepareExecution();
         execution.addLiteralInput( "LiteralInput", null, "0", "integer", "seconds" );
         execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
-        execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
-        execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), "image/png", null );
+        execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), false, "text/xml", null, null );
+        execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), false, "image/png", null );
         ExecutionOutputs outputs = execution.execute();
 
         LiteralOutput out1 = (LiteralOutput) outputs.get( 0 );
@@ -334,6 +341,43 @@ public class WPSClientTest {
     }
 
     @Test
+    public void testExecuteInputsByRef()
+                            throws OWSException, IOException, XMLStreamException {
+        URL processUrl = new URL( DEMO_SERVICE_URL );
+        WPSClient wpsClient = new WPSClient( processUrl );
+        Process proc = wpsClient.getProcess( "ParameterDemoProcess", null );
+
+        ProcessExecution execution = proc.prepareExecution();
+        execution.addLiteralInput( "LiteralInput", null, "0", "integer", "seconds" );
+        execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
+        execution.addXMLInput( "XMLInput", null, new URL( REMOTE_XML_INPUT ), true, "text/xml", null, null );
+        execution.addBinaryInput( "BinaryInput", null, new URL( REMOTE_BINARY_INPUT ), true, "image/png", null );
+        ExecutionOutputs outputs = execution.execute();
+
+        LiteralOutput out1 = (LiteralOutput) outputs.get( 0 );
+        Assert.assertEquals( "0", out1.getValue() );
+        Assert.assertEquals( "integer", out1.getDataType() );
+        Assert.assertEquals( "seconds", out1.getUom() );
+
+        BBoxOutput out2 = (BBoxOutput) outputs.get( 1 );
+        Assert.assertTrue( Arrays.equals( new double[] { 0.0, 0.0 }, out2.getLower() ) );
+        Assert.assertTrue( Arrays.equals( new double[] { 90.0, 180.0 }, out2.getUpper() ) );
+        Assert.assertEquals( "EPSG:4326", out2.getCrs() );
+        Assert.assertEquals( 2, out2.getDimension() );
+
+        ComplexOutput output = (ComplexOutput) outputs.get( 2 );
+        XMLStreamReader reader = output.getAsXMLStream();
+        XMLAdapter searchableXML = new XMLAdapter( reader );
+        NamespaceContext nsContext = new NamespaceContext();
+        nsContext.addNamespace( "wfs", WFS_NS );
+        XPath xpath = new XPath( "/wfs:WFS_Capabilities/wfs:FeatureTypeList/wfs:FeatureType[1]/wfs:Name", nsContext );
+        String pos = searchableXML.getRequiredNodeAsString( searchableXML.getRootElement(), xpath );
+        Assert.assertEquals( "app:Springs", pos );
+        
+        //TODO test the binary output
+    }
+
+    @Test
     public void testExecuteAsync()
                             throws OWSException, IOException, XMLStreamException, InterruptedException {
         URL processUrl = new URL( DEMO_SERVICE_URL );
@@ -341,32 +385,32 @@ public class WPSClientTest {
         Process proc = wpsClient.getProcess( "ParameterDemoProcess", null );
 
         ProcessExecution execution = proc.prepareExecution();
-        execution.addLiteralInput( "LiteralInput", null, "5", "integer", "seconds" );
+        execution.addLiteralInput( "LiteralInput", null, "10", "integer", "seconds" );
         execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
-        execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), "text/xml", null, null );
-        execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), "image/png", null );
+        execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), false, "text/xml", null, null );
+        execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), false, "image/png", null );
 
         execution.executeAsync();
         Assert.assertNotSame( SUCCEEDED, execution.getState() );
         Assert.assertNotSame( FAILED, execution.getState() );
 
         ExecutionState state = null;
-        while ( ( state = execution.getState() ) != SUCCEEDED ) {            
-            System.out.println (execution.getPercentCompleted());
+        while ( ( state = execution.getState() ) != SUCCEEDED ) {
+            System.out.println( execution.getPercentCompleted() );
             Thread.sleep( 500 );
         }
-        
+
         ExecutionOutputs outputs = execution.getOutputs();
         LiteralOutput out1 = (LiteralOutput) outputs.get( "LiteralOutput", null );
         Assert.assertEquals( "5", out1.getValue() );
         Assert.assertEquals( "integer", out1.getDataType() );
-//        Assert.assertEquals( "seconds", out1.getUom() );
+        // Assert.assertEquals( "seconds", out1.getUom() );
 
         BBoxOutput out2 = (BBoxOutput) outputs.get( "BBOXOutput", null );
         Assert.assertTrue( Arrays.equals( new double[] { 0.0, 0.0 }, out2.getLower() ) );
         Assert.assertTrue( Arrays.equals( new double[] { 90.0, 180.0 }, out2.getUpper() ) );
         Assert.assertEquals( "EPSG:4326", out2.getCrs() );
-        Assert.assertEquals( 2, out2.getDimension() );        
+        Assert.assertEquals( 2, out2.getDimension() );
     }
 
     // @Test

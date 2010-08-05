@@ -169,8 +169,10 @@ public class ProcessExecution {
      * @param idCodeSpace
      *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
      * @param url
-     *            {@link URL} reference to the xml resource, must not be <code>null</code> (and must not be
-     *            web-accessible)
+     *            {@link URL} reference to the xml resource, must not be <code>null</code>
+     * @param byRef
+     *            if true, the parameter will be passed by reference to the server, otherwise it will be nested in the
+     *            Execute request. If true, the url needs to be web-accessible (e.g. not a file URL)
      * @param mimeType
      *            mime type, may be <code>null</code> (indicates that the default mime type from the parameter
      *            description applies)
@@ -181,8 +183,9 @@ public class ProcessExecution {
      *            schema, may be <code>null</code> (indicates that the default schema from the parameter description
      *            applies)
      */
-    public void addXMLInput( String id, String idCodeSpace, URL url, String mimeType, String encoding, String schema ) {
-        inputs.add( new XMLInput( new CodeType( id, idCodeSpace ), url, false, mimeType, encoding, schema ) );
+    public void addXMLInput( String id, String idCodeSpace, URL url, boolean byRef, String mimeType, String encoding,
+                             String schema ) {
+        inputs.add( new XMLInput( new CodeType( id, idCodeSpace ), url, byRef, mimeType, encoding, schema ) );
     }
 
     /**
@@ -220,6 +223,9 @@ public class ProcessExecution {
      * @param url
      *            {@link URL} reference to the binary resource, must not be <code>null</code> (and must not be
      *            web-accessible)
+     * @param byRef
+     *            if true, the parameter will be passed by reference to the server, otherwise it will be nested in the
+     *            Execute request. If true, the url needs to be web-accessible (e.g. not a file URL)
      * @param mimeType
      *            mime type, may be <code>null</code> (indicates that the default mime type from the parameter
      *            description applies)
@@ -227,8 +233,8 @@ public class ProcessExecution {
      *            encoding, may be <code>null</code> (indicates that the default encoding from the parameter description
      *            applies)
      */
-    public void addBinaryInput( String id, String idCodeSpace, URL url, String mimeType, String encoding ) {
-        inputs.add( new BinaryInput( new CodeType( id, idCodeSpace ), url, false, mimeType, encoding ) );
+    public void addBinaryInput( String id, String idCodeSpace, URL url, boolean byRef, String mimeType, String encoding ) {
+        inputs.add( new BinaryInput( new CodeType( id, idCodeSpace ), url, byRef, mimeType, encoding ) );
     }
 
     /**
@@ -303,11 +309,12 @@ public class ProcessExecution {
      *            schema of data, in case it is an XML document
      */
     public void setRawOutput( String id, String idCodeSpace, String mimeType, String encoding, String schema ) {
-        outputDefs.add( new OutputDefinition( new CodeType( id ), null, false, mimeType, encoding, schema ) );
-        rawOutput = true;
-        if ( outputDefs.size() > 1 ) {
-            throw new RuntimeException( "A raw response can be delivered only for one output parameter." );
-        }
+        throw new UnsupportedOperationException("Raw data output is currently not activated -- needs testing.");
+        // outputDefs.add( new OutputDefinition( new CodeType( id ), null, false, mimeType, encoding, schema ) );
+        // rawOutput = true;
+        // if ( outputDefs.size() > 1 ) {
+        // throw new RuntimeException( "A raw response can be delivered only for one output parameter." );
+        // }
     }
 
     /**
@@ -470,14 +477,14 @@ public class ProcessExecution {
 
         XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
 
-        // if ( LOG.isDebugEnabled() ) {
-        // File logFile = File.createTempFile( "wpsclient", "request.xml" );
-        // XMLStreamWriter logWriter = outFactory.createXMLStreamWriter( new FileOutputStream( logFile ) );
-        // ExecuteWriter executer = new ExecuteWriter( logWriter );
-        // executer.write100( process.getId(), inputs, responseFormat );
-        // logWriter.close();
-        // LOG.debug( "WPS request can be found at " + logFile.toString() );
-        // }
+//        if ( LOG.isDebugEnabled() ) {
+//            File logFile = File.createTempFile( "wpsclient", "request.xml" );
+//            XMLStreamWriter logWriter = outFactory.createXMLStreamWriter( new FileOutputStream( logFile ) );
+//            ExecuteWriter executer = new ExecuteWriter( logWriter );
+//            executer.write100( process.getId(), inputs, responseFormat );
+//            logWriter.close();
+//            LOG.debug( "WPS request can be found at " + logFile.toString() );
+//        }
 
         XMLStreamWriter writer = outFactory.createXMLStreamWriter( conn.getOutputStream() );
         ExecuteWriter executer = new ExecuteWriter( writer );

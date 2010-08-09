@@ -75,7 +75,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * The <code></code> class TODO add class documentation here.
+ * JUnit class tests the functionality of the client.
  * 
  * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
@@ -340,6 +340,32 @@ public class WPSClientTest {
         Assert.assertTrue( Arrays.equals( new double[] { 90.0, 180.0 }, out2.getUpper() ) );
         Assert.assertEquals( "EPSG:4326", out2.getCrs() );
         Assert.assertEquals( 2, out2.getDimension() );
+    }
+
+    @Test
+    public void testExecute_4()
+                            throws OWSException, IOException, XMLStreamException {
+        URL processUrl = new URL( DEMO_SERVICE_URL );
+        WPSClient wpsClient = new WPSClient( processUrl );
+        Process proc = wpsClient.getProcess( "ParameterDemoProcess", null );
+
+        ProcessExecution execution = proc.prepareExecution();
+        execution.addLiteralInput( "LiteralInput", null, "0", "integer", "seconds" );
+        execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
+        execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), false, "text/xml", null, null );
+        execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), false, "image/png", null );
+        execution.addOutput( "BBOXOutput", null, null, false, null, null, null );
+        ExecutionOutputs outputs = execution.execute();
+
+        BBoxOutput bboxOut = outputs.getBoundingBox( "BBOXOutput", null );
+        Assert.assertTrue( Arrays.equals( new double[] { 0.0, 0.0 }, bboxOut.getLower() ) );
+        Assert.assertTrue( Arrays.equals( new double[] { 90.0, 180.0 }, bboxOut.getUpper() ) );
+        Assert.assertEquals( "EPSG:4326", bboxOut.getCrs() );
+        Assert.assertEquals( 2, bboxOut.getDimension() );
+
+        Assert.assertNull( outputs.getComplex( "XMLOutput", null ) );
+        Assert.assertNull( outputs.getComplex( "BinaryOutput", null ) );
+        Assert.assertNull( outputs.getLiteral( "LiteralOutput", null ) );
     }
 
     @Test

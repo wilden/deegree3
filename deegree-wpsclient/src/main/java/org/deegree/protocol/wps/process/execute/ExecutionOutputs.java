@@ -39,11 +39,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.deegree.commons.tom.ows.CodeType;
+import org.deegree.protocol.wps.output.BBoxOutput;
 import org.deegree.protocol.wps.output.ComplexOutput;
 import org.deegree.protocol.wps.output.ExecutionOutput;
 import org.deegree.protocol.wps.output.LiteralOutput;
 import org.deegree.protocol.wps.process.ProcessExecution;
-import org.deegree.services.wps.output.BoundingBoxOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,8 +134,8 @@ public class ExecutionOutputs {
      *            space)
      * @return output with the specified identifier, may be <code>null</code> (if no such output exists)
      */
-    public BoundingBoxOutput getBoundingBox( String id, String idCodeSpace ) {
-        return (BoundingBoxOutput) paramIdToOutput.get( new CodeType( id, idCodeSpace ) );
+    public BBoxOutput getBoundingBox( String id, String idCodeSpace ) {
+        return (BBoxOutput) paramIdToOutput.get( new CodeType( id, idCodeSpace ) );
     }
 
     /**

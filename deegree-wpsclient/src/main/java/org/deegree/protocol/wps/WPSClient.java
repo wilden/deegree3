@@ -158,7 +158,29 @@ import org.slf4j.LoggerFactory;
  * ...
  * </pre>
  * 
- * <h4>Controlling output</h4>One can normally
+ * <h4>Controlling output</h4>By omitting to set the outputs, the process will generate the default ones, as specified
+ * in the process definition. However, the user can take control on precisely what outputs he/she wants by using
+ * {@link ProcessExecution#addOutput(String, String, String, boolean, String, String, String)} and specifying the id of
+ * the respective wanted output. Among the parameters there is the possibility of retrieving an URL instead of an inline
+ * representation.
+ * 
+ * <pre>
+ * ...
+ *      execution.addLiteralInput( "LiteralInput", null, "0", "integer", "seconds" );
+ *      execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
+ *      execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), false, "text/xml", null, null );
+ *      execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), false, "image/png", null );
+ *      // BBOXOutput will be returned inline
+ *      execution.addOutput( "BBOXOutput", null, null, false, null, null, null );
+ *      // BinaryOutput will be returned as reference 
+ *      execution.addOutput( "BinaryOutput", null, null, true, null, null, null );
+ *      // the other -- otherwise default -- outputs will be skipped.
+ * ...
+ * </pre>
+ * 
+ * There is also the possibility of retrieving a raw output, i.e. not being wrapped in an ExecuteResponse XML document.
+ * To do this, one must set {@link ProcessExecution#setRawOutput(String, String, String, String, String)}. The server
+ * shall respond with this sole output resource.
  * 
  * <h4>Executing a process asynchronously</h4>
  * 

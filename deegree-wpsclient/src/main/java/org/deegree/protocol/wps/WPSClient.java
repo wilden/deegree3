@@ -126,27 +126,28 @@ import org.slf4j.LoggerFactory;
  * ...
  * </pre>
  * 
- * For complex data however, the are methods that provide <b>XML and binary data separately</b>. One variant of these
- * provides an URL and whether it is web accessible (that will be translated into a Reference element in the WPS
- * request), or is just a local URL.<br/>
- * <br/> {@link ProcessExecution#addXMLInput(String, String, URL, boolean, String, String, String)} and respectively <br/>
+ * For complex data however, the are methods that provide <b>XML and binary data separately</b>. One can provide the
+ * <b>input as reference</b> by giving an URL and whether it is external (using http, ftp, etc. protocols) or local
+ * (file protocol). <br/> {@link ProcessExecution#addXMLInput(String, String, URL, boolean, String, String, String)} and
+ * respectively <br/>
  * <br/> {@link ProcessExecution#addBinaryInput(String, String, URL, boolean, String, String)}
  * 
  * <pre>
  * ...
- *   execution.addXMLInput( "XMLInput1", null, new URL( REMOTE_XML_INPUT ), true, "text/xml", null, null );
- *   // OR, from a local file
- *   execution.addXMLInput( "XMLInput2", null, new URL( LOCAL_XML_INPUT ), false, "text/xml", null, null );
+ *   URL externalURL = new URL( "http://..." );
+ *   execution.addXMLInput( "XMLInput1", null, externalURL, true, "text/xml", null, null );
+ *   URL localURL = new URL( "file:/home/musterman/xmlInput.xml" );
+ *   execution.addXMLInput( "XMLInput2", null, localURL, false, "text/xml", null, null );
  *   
- *   // and for binary data
- *   execution.addBinaryInput( "BinaryInput1", null, new URL( LOCAL_BINARY_INPUT ), false, "image/png", null );
+ *   // and for binary data, as local file
+ *   execution.addBinaryInput( "BinaryInput1", null, localBinaryURL, false, "image/png", null );
  *   // OR, from the web
- *   execution.addBinaryInput( "BinaryInput2", null, new URL( REMOTE_XML_INPUT ), true, "image/png", null );
+ *   execution.addBinaryInput( "BinaryInput2", null, externalBinaryURL, true, "image/png", null );
  * ...
  * </pre>
  * 
- * Alternatively, one can simply provide a stream. In the case of XML it will be a {@link XMLStreamReader}, while for
- * the binary data expected will be an {@link InputStream}.<br/>
+ * Alternatively, one can simply provide the <b>input inline as stream</b>. In the case of XML it will be a
+ * {@link XMLStreamReader}, while for the binary data expected will be an {@link InputStream}.<br/>
  * <br/> {@link ProcessExecution#addXMLInput(String, String, XMLStreamReader, String, String, String)} respectively <br/>
  * <br/> {@link ProcessExecution#addBinaryInput(String, String, java.io.InputStream, String, String)}
  * 
@@ -161,26 +162,23 @@ import org.slf4j.LoggerFactory;
  * <h4>Controlling output</h4>By omitting to set the outputs, the process will generate the default ones, as specified
  * in the process definition. However, the user can take control on precisely what outputs he/she wants by using
  * {@link ProcessExecution#addOutput(String, String, String, boolean, String, String, String)} and specifying the id of
- * the respective wanted output. Among the parameters there is the possibility of retrieving an URL instead of an inline
- * representation.
+ * the respective wanted output. Among the parameters there is the possibility of specifying to <b>retrieve the output
+ * as reference or inline</b>.
  * 
  * <pre>
  * ...
- *      execution.addLiteralInput( "LiteralInput", null, "0", "integer", "seconds" );
- *      execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
- *      execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), false, "text/xml", null, null );
- *      execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), false, "image/png", null );
  *      // BBOXOutput will be returned inline
  *      execution.addOutput( "BBOXOutput", null, null, false, null, null, null );
  *      // BinaryOutput will be returned as reference 
  *      execution.addOutput( "BinaryOutput", null, null, true, null, null, null );
- *      // the other -- otherwise default -- outputs will be skipped.
+ *      // the other (not specified) outputs will be skipped.
  * ...
  * </pre>
  * 
+ * 
  * There is also the possibility of selecting the WPS <code>RawOutput</code> mode, where the (single) output parameter
- * is not being wrapped in an ExecuteResponse XML document, but directly. To do this, one must set
- * {@link ProcessExecution#setRawOutput(String, String, String, String, String)}. The server shall respond with this
+ * is not going to be wrapped in an ExecuteResponse XML document, but directly returned as a resource. For this one must
+ * set {@link ProcessExecution#setRawOutput(String, String, String, String, String)}. The server shall respond with this
  * sole output resource.
  * 
  * <h4>Executing a process asynchronously</h4> Instead of using {@link ProcessExecution#execute()}, one can also request

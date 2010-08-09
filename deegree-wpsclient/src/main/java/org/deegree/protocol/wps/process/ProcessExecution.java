@@ -559,12 +559,10 @@ public class ProcessExecution {
                 reader.close();
 
             } else {
-                // handle xml raw response
                 lastResponse = handleRawResponse( responseStream, outputContent );
             }
 
         } else {
-            // handle binary raw response
             lastResponse = handleRawResponse( responseStream, outputContent );
         }
 

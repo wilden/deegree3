@@ -35,8 +35,8 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.process;
 
-import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.FAILED;
-import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.SUCCEEDED;
+import static org.deegree.services.wps.ProcessExecution.ExecutionState.FAILED;
+import static org.deegree.services.wps.ProcessExecution.ExecutionState.SUCCEEDED;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -76,7 +76,7 @@ import org.deegree.protocol.wps.process.execute.ResponseFormat;
 import org.deegree.protocol.wps.wps100.ExecuteRequest100Writer;
 import org.deegree.protocol.wps.wps100.ExecuteResponse100Reader;
 import org.deegree.services.controller.ows.OWSException;
-import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
+import org.deegree.services.wps.ProcessExecution.ExecutionState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

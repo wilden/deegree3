@@ -65,8 +65,8 @@ import org.deegree.protocol.wps.param.ComplexFormat;
 import org.deegree.protocol.wps.process.execute.ExecutionResponse;
 import org.deegree.protocol.wps.process.execute.ExecutionStatus;
 import org.deegree.services.controller.ows.OWSException;
-import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
-import org.deegree.services.controller.wps.execute.ExecuteResponse;
+import org.deegree.services.wps.ProcessExecution.ExecutionState;
+import org.deegree.services.wps.execute.ExecuteResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

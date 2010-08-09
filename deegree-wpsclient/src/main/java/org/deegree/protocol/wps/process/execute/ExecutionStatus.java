@@ -36,7 +36,7 @@
 package org.deegree.protocol.wps.process.execute;
 
 import org.deegree.services.controller.ows.OWSException;
-import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
+import org.deegree.services.wps.ProcessExecution.ExecutionState;
 
 /**
  * TODO add class documentation here

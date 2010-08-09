@@ -35,12 +35,12 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps.process.execute;
 
-import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.SUCCEEDED;
+import static org.deegree.services.wps.ProcessExecution.ExecutionState.SUCCEEDED;
 
 import java.net.URL;
 
 import org.deegree.protocol.wps.output.ExecutionOutput;
-import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
+import org.deegree.services.wps.ProcessExecution.ExecutionState;
 
 /**
  * Encapsulates the results from a process execution.

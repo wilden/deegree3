@@ -36,8 +36,8 @@
 package org.deegree.protocol.wps;
 
 import static org.deegree.protocol.wfs.WFSConstants.WFS_NS;
-import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.FAILED;
-import static org.deegree.services.controller.wps.ProcessExecution.ExecutionState.SUCCEEDED;
+import static org.deegree.services.wps.ProcessExecution.ExecutionState.FAILED;
+import static org.deegree.services.wps.ProcessExecution.ExecutionState.SUCCEEDED;
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
@@ -68,8 +68,8 @@ import org.deegree.protocol.wps.process.Process;
 import org.deegree.protocol.wps.process.ProcessExecution;
 import org.deegree.protocol.wps.process.execute.ExecutionOutputs;
 import org.deegree.services.controller.ows.OWSException;
-import org.deegree.services.controller.wps.ProcessExecution.ExecutionState;
 import org.deegree.services.jaxb.main.ServiceIdentificationType;
+import org.deegree.services.wps.ProcessExecution.ExecutionState;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

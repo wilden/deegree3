@@ -35,6 +35,8 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wps;
 
+import static com.vividsolutions.jts.io.gml2.GMLConstants.GML_NAMESPACE;
+import static com.vividsolutions.jts.io.gml2.GMLConstants.GML_PREFIX;
 import static org.deegree.protocol.wfs.WFSConstants.WFS_NS;
 import static org.deegree.services.wps.ProcessExecution.ExecutionState.FAILED;
 import static org.deegree.services.wps.ProcessExecution.ExecutionState.SUCCEEDED;
@@ -311,9 +313,16 @@ public class WPSClientTest {
         execution.addLiteralInput( "BufferDistance", null, "0.1", "double", "unity" );
         execution.addXMLInput( "GMLInput", null, CURVE_FILE.toURI().toURL(), false, "text/xml", null, null );
         execution.addOutput( "BufferedGeometry", null, null, false, null, null, null );
-        ExecutionOutputs response = execution.execute();
-        Assert.assertNotNull( response );
-        // TODO test response
+        ExecutionOutputs outputs = execution.execute();
+
+        ComplexOutput complexOut = outputs.getComplex( "BufferedGeometry", null );
+        XMLAdapter searchableXML = new XMLAdapter( complexOut.getAsXMLStream() );
+        String xpathStr = "/gml:Polygon/gml:exterior/gml:LinearRing/gml:posList";
+        NamespaceContext nsContext = new NamespaceContext();
+        nsContext.addNamespace( GML_PREFIX, GML_NAMESPACE );
+        XPath xpath = new XPath( xpathStr, nsContext );
+        String pointList = searchableXML.getRequiredNodeAsString( searchableXML.getRootElement(), xpath );
+        Assert.assertEquals( 670, pointList.split( "\\s" ).length );
     }
 
     @Test
@@ -429,8 +438,40 @@ public class WPSClientTest {
         String pos = searchableXML.getRequiredNodeAsString( searchableXML.getRootElement(), xpath );
         Assert.assertEquals( "app:Springs", pos );
 
-        // TODO test the binary output
+        // Assert.assertTrue( compareStreams( new URL( REMOTE_BINARY_INPUT ).openStream(),
+        // outputs.getComplex( "BinaryOutput", null ).getAsBinaryStream() ) );
     }
+
+    // /**
+    // * @param openStream
+    // * @param complex
+    // * @throws IOException
+    // */
+    // private boolean compareStreams( InputStream originalStream, InputStream resultingStream )
+    // throws IOException {
+    // boolean result = true;
+    // byte[] b1 = new byte[1024];
+    // byte[] b2 = new byte[1024];
+    // while ( originalStream.read( b1 ) != -1 ) {
+    // if ( resultingStream.read( b2 ) != -1 ) {
+    // System.out.println( Arrays.toString( b1 ) );
+    // System.out.println( Arrays.toString( b2 ) );
+    // if ( !Arrays.equals( b1, b2 ) ) {
+    // result = false;
+    // break;
+    // }
+    // } else {
+    // result = false;
+    // break;
+    // }
+    // }
+    // if ( result ) {
+    // if ( originalStream.read( b1 ) != resultingStream.read( b2 ) ) {
+    // result = false;
+    // }
+    // }
+    // return result;
+    // }
 
     @Test
     public void testExecuteAsync()

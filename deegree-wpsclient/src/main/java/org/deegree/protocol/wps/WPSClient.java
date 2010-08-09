@@ -178,11 +178,17 @@ import org.slf4j.LoggerFactory;
  * ...
  * </pre>
  * 
- * There is also the possibility of retrieving a raw output, i.e. not being wrapped in an ExecuteResponse XML document.
- * To do this, one must set {@link ProcessExecution#setRawOutput(String, String, String, String, String)}. The server
- * shall respond with this sole output resource.
+ * There is also the possibility of selecting the WPS <code>RawOutput</code> mode, where the (single) output parameter
+ * is not being wrapped in an ExecuteResponse XML document, but directly. To do this, one must set
+ * {@link ProcessExecution#setRawOutput(String, String, String, String, String)}. The server shall respond with this
+ * sole output resource.
  * 
- * <h4>Executing a process asynchronously</h4>
+ * <h4>Executing a process asynchronously</h4> Instead of using {@link ProcessExecution#execute()}, one can also request
+ * asynchronous execution via the {@link ProcessExecution#executeAsync()} method. In the latter case, the call will
+ * return immediately, but the result is not necessarily available yet. In order to check for completion, the
+ * {@link ProcessExecution#getState()} is available, that will poll the server for the current status (if it wasn't
+ * finished anyway). Additionally, the method {@link ProcessExecution#getPercentCompleted()} is available to check the
+ * execution progress.
  * 
  * <pre>
  * ...

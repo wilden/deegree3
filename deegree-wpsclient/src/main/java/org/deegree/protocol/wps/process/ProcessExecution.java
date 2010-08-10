@@ -506,7 +506,7 @@ public class ProcessExecution {
 
         if ( LOG.isDebugEnabled() ) {
             File logFile = File.createTempFile( "wpsclient", "request.xml" );
-            XMLStreamWriter logWriter = outFactory.createXMLStreamWriter( new FileOutputStream( logFile ) );
+            XMLStreamWriter logWriter = outFactory.createXMLStreamWriter( new FileOutputStream( logFile ), "UTF-8" );
             ExecuteRequest100Writer executer = new ExecuteRequest100Writer( logWriter );
             executer.write100( process.getId(), inputs, responseFormat );
             logWriter.close();

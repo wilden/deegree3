@@ -66,7 +66,6 @@ import org.deegree.protocol.wps.process.execute.ExecutionResponse;
 import org.deegree.protocol.wps.process.execute.ExecutionStatus;
 import org.deegree.services.controller.ows.OWSException;
 import org.deegree.services.wps.ProcessExecution.ExecutionState;
-import org.deegree.services.wps.execute.ExecuteResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,7 +97,7 @@ public class ExecuteResponse100Reader {
     /**
      * Parses an execute response document. The response shall not be an ExceptionReport.
      * 
-     * @return an {@link ExecuteResponse} object
+     * @return an {@link ExecutionResponse} object
      * @throws MalformedURLException
      * @throws XMLStreamException
      */

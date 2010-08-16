@@ -490,7 +490,7 @@ public class ProcessExecution {
     }
 
     private ExecutionResponse sendExecute( boolean async )
-                            throws XMLStreamException, IOException, OWSException {
+                            throws OWSException, XMLStreamException, IOException {
 
         responseFormat = new ResponseFormat( rawOutput, async, false, async, outputDefs );
 
@@ -550,13 +550,11 @@ public class ProcessExecution {
 
         String outputContent = conn.getContentType();
         if ( outputContent.startsWith( "text/xml" ) || outputContent.startsWith( "application/xml" ) ) {
-
             XMLStreamReader reader = inFactory.createXMLStreamReader( responseStream );
             StAXParsingHelper.nextElement( reader );
             if ( OWSExceptionReader.isException( reader ) ) {
                 throw OWSExceptionReader.parseException( reader );
             }
-
             if ( new QName( WPSConstants.WPS_100_NS, "ExecuteResponse" ).equals( reader.getName() ) ) {
                 ExecuteResponse100Reader responseReader = new ExecuteResponse100Reader( reader );
                 lastResponse = responseReader.parse100();
@@ -565,11 +563,9 @@ public class ProcessExecution {
             } else {
                 lastResponse = handleRawResponse( responseStream, outputContent );
             }
-
         } else {
             lastResponse = handleRawResponse( responseStream, outputContent );
         }
-
         return lastResponse;
     }
 

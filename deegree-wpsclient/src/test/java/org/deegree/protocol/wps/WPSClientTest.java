@@ -548,4 +548,17 @@ public class WPSClientTest {
     // response.getOutputs()[0].getDataType();
     // }
 
+    @Test(expected = OWSException.class)
+    public void testFailedExecute()
+                            throws Exception {
+        URL processUrl = new URL( DEMO_SERVICE_URL );
+        WPSClient wpsClient = new WPSClient( processUrl );
+
+        Process proc = wpsClient.getProcess( "Centroid", null );
+        ProcessExecution execution = proc.prepareExecution();
+        // omitting required input parameter
+        execution.addOutput( "Centroid", null, null, true, null, null, null );
+        ExecutionOutputs response = execution.execute();
+        assertEquals( SUCCEEDED, execution.getState() );
+    }
 }

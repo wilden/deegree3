@@ -333,6 +333,10 @@ public class ProcessExecution {
                             throws OWSException, IOException, XMLStreamException {
 
         lastResponse = sendExecute( false );
+        OWSException report = lastResponse.getStatus().getExceptionReport();
+        if ( report != null ) {
+            throw report;
+        }
         return lastResponse.getOutputs();
     }
 

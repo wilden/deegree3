@@ -3,10 +3,10 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.deegree</groupId>
-  <artifactId>deegree-wpsclient</artifactId>
+  <artifactId>deegree-wpsclient_branch</artifactId>
   <packaging>jar</packaging>
   <version>3.0-SNAPSHOT</version>
-  <name>deegree-wpsclient</name>
+  <name>deegree-wpsclient_branch</name>
   <url>http://www.deegree.org</url>
   <scm>
     <developerConnection>scm:svn:http://svn.wald.intevation.org/svn/deegree/deegree3/branch/aionita/deegree-wpsclient</developerConnection>

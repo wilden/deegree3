@@ -62,8 +62,9 @@ public class OWSExceptionReader {
 
     /**
      * <ul>
-     * <li>Precondition: cursor must point at the <code>START_ELEMENT</code> event (&lt;wps:Exception&gt;)</li>
-     * <li>Postcondition: cursor points at the corresponding <code>END_ELEMENT</code> event (&lt;/wps:Exception&gt;)</li>
+     * <li>Precondition: cursor must point at the <code>START_ELEMENT</code> event (&lt;ows:ExceptionReport&gt;)</li>
+     * <li>Postcondition: cursor points at the corresponding <code>END_ELEMENT</code> event
+     * (&lt;/ows:ExceptionReport&gt;)</li>
      * </ul>
      * 
      * @return
@@ -80,9 +81,8 @@ public class OWSExceptionReader {
             locator = reader.getAttributeValue( null, "locator" );
             message = reader.getElementText();
         } catch ( XMLStreamException e ) {
-            e.printStackTrace();
+            throw new RuntimeException( "Error parsing OWSExceptionReport: " + e.getMessage() );
         }
         return new OWSException( message, code, locator );
     }
-
 }

@@ -151,14 +151,13 @@ public class ExecuteRequest100Writer {
                         if ( outputDef.isReference() ) {
                             writer.writeAttribute( "asReference", "true" );
                         }
-                        writeIdentifier( outputDef.getId() );
-
                         if ( outputDef.getUom() != null ) {
                             writer.writeAttribute( "uom", outputDef.getUom() );
                         }
                         if ( outputDef.getComplexAttributes() != null ) {
                             writeComplexAttributes( outputDef.getComplexAttributes() );
                         }
+                        writeIdentifier( outputDef.getId() );
                         writer.writeEndElement();
                     }
                     writer.writeEndElement();

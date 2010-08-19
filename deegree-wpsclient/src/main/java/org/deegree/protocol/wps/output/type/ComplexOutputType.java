@@ -37,6 +37,7 @@ package org.deegree.protocol.wps.output.type;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
+import org.deegree.protocol.wps.output.type.OutputType.Type;
 import org.deegree.protocol.wps.param.ComplexFormat;
 
 /**
@@ -61,6 +62,11 @@ public class ComplexOutputType extends OutputType {
         this.supportedFormats = supportedFormats;
     }
 
+    @Override
+    public Type getType() {
+        return Type.COMPLEX;
+    }
+    
     /**
      * 
      * @return the default {@link ComplexFormat} used

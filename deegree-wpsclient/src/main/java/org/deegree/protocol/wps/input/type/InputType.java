@@ -60,6 +60,23 @@ public abstract class InputType {
     private String maxOccurs;
 
     /**
+     * Convenvience enum type for discriminating the different subclasses of {@link InputType}.
+     * 
+     * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
+     * @author last edited by: $Author$
+     * 
+     * @version $Revision$, $Date$
+     */
+    public enum Type {
+        /** Instance is a {@link LiteralInputType}. */
+        LITERAL,
+        /** Instance is a {@link BBoxInputType}. */
+        BBOX,
+        /** Instance is a {@link ComplexInputType}. */
+        COMPLEX
+    }
+    
+    /**
      * Creates a new {@link InputType} instance.
      * 
      * @param id
@@ -81,7 +98,14 @@ public abstract class InputType {
         this.minOccurs = minOccurs;
         this.maxOccurs = maxOccurs;
     }
-
+    
+    /**
+     * Returns the concrete input type of this instance.
+     * 
+     * @return the concrete input type, never <code>null</code> 
+     */
+    public abstract Type getType ();
+    
     /**
      * Returns the parameter identifier.
      * 

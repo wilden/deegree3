@@ -101,6 +101,11 @@ public class LiteralInputType extends InputType {
         this.reference = reference;
     }
 
+    @Override
+    public Type getType() {
+        return Type.LITERAL;
+    }    
+    
     /**
      * 
      * @return a string array with the concrete values the input can take

@@ -38,7 +38,7 @@ package org.deegree.protocol.wps.process;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.Collection;
+import java.util.List;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
@@ -135,27 +135,8 @@ public class Process {
      */
     public InputType[] getInputTypes()
                             throws IOException, OWSException {
-        Collection<InputType> collection = getProcessDetails().getInputs().values();
-        return collection.toArray( new InputType[collection.size()] );
-    }
-
-    /**
-     * Returns the description for the input parameter with the specified identifier.
-     * 
-     * @param id
-     *            parameter identifier, never <code>null</code>
-     * @param idCodeSpace
-     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers that don't use a code
-     *            space)
-     * @return input parameter description, can be <code>null</code> (if no such parameter exists)
-     * @throws IOException
-     *             if a communication/network problem occured
-     * @throws OWSException
-     *             if the server replied with an exception
-     */
-    public InputType getInputType( String id, String idCodeSpace )
-                            throws IOException, OWSException {
-        return getProcessDetails().getInputs().get( new CodeType( id, idCodeSpace ) );
+        List<InputType> inputs = getProcessDetails().getInputs();
+        return inputs.toArray( new InputType[inputs.size()] );
     }
 
     /**
@@ -169,27 +150,8 @@ public class Process {
      */
     public OutputType[] getOutputTypes()
                             throws IOException, OWSException {
-        Collection<OutputType> collection = getProcessDetails().getOutputs().values();
-        return collection.toArray( new OutputType[collection.size()] );
-    }
-
-    /**
-     * Returns the description for the output parameter with the specified identifier.
-     * 
-     * @param id
-     *            parameter identifier, never <code>null</code>
-     * @param idCodeSpace
-     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers that don't use a code
-     *            space)
-     * @return output parameter description, can be <code>null</code> (if no such parameter exists)
-     * @throws IOException
-     *             if a communication/network problem occured
-     * @throws OWSException
-     *             if the server replied with an exception
-     */
-    public OutputType getOutputType( String id, String idCodeSpace )
-                            throws OWSException, IOException {
-        return getProcessDetails().getOutputs().get( new CodeType( id, idCodeSpace ) );
+        List<OutputType> outputs = getProcessDetails().getOutputs();
+        return outputs.toArray( new OutputType[outputs.size()] );
     }
 
     /**

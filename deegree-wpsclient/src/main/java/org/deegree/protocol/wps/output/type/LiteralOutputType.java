@@ -37,6 +37,7 @@ package org.deegree.protocol.wps.output.type;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
+import org.deegree.protocol.wps.output.type.OutputType.Type;
 import org.deegree.protocol.wps.param.ValueWithRef;
 
 /**
@@ -63,6 +64,11 @@ public class LiteralOutputType extends OutputType {
         this.defaultUom = defaultUom;
         this.supportedUoms = supportedUoms;
     }
+    
+    @Override
+    public Type getType() {
+        return Type.LITERAL;
+    }    
 
     /**
      * 

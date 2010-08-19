@@ -133,7 +133,7 @@ public class WPSClientTest {
         URL processUrl = new URL( DEMO_SERVICE_URL );
         WPSClient wpsClient = new WPSClient( processUrl );
         Process p1 = wpsClient.getProcess( "Buffer" );
-        LiteralInputType literalInput = (LiteralInputType) p1.getInputType( "BufferDistance", null );
+        LiteralInputType literalInput = (LiteralInputType) p1.getInputTypes()[1];
         Assert.assertEquals( "1", literalInput.getMinOccurs() );
         Assert.assertEquals( "1", literalInput.getMaxOccurs() );
         Assert.assertEquals( "double", literalInput.getDataType().getValue() );
@@ -142,7 +142,7 @@ public class WPSClientTest {
         Assert.assertEquals( "unity", literalInput.getSupportedUoms()[0].getValue() );
         Assert.assertEquals( true, literalInput.isAnyValue() );
 
-        OutputType output = p1.getOutputType( "BufferedGeometry", null );
+        OutputType output = p1.getOutputTypes()[0];
         ComplexOutputType complexData = (ComplexOutputType) output;
         Assert.assertEquals( "UTF-8", complexData.getDefaultFormat().getEncoding() );
         Assert.assertEquals( "text/xml", complexData.getDefaultFormat().getMimeType() );
@@ -160,7 +160,7 @@ public class WPSClientTest {
         URL processUrl = new URL( DEMO_SERVICE_URL );
         WPSClient wpsClient = new WPSClient( processUrl );
         Process p2 = wpsClient.getProcess( "Crosses", null );
-        InputType secondInput = p2.getInputType( "GMLInput2", null );
+        InputType secondInput = p2.getInputTypes()[1];
         Assert.assertEquals( "1", secondInput.getMinOccurs() );
         Assert.assertEquals( "1", secondInput.getMaxOccurs() );
         ComplexInputType complexData = (ComplexInputType) secondInput;
@@ -173,7 +173,7 @@ public class WPSClientTest {
         Assert.assertEquals( "http://schemas.opengis.net/gml/3.1.1/base/gml.xsd",
                              complexData.getSupportedFormats()[0].getSchema() );
 
-        OutputType output = p2.getOutputType( "Crosses", null );
+        OutputType output = p2.getOutputTypes()[0];
         LiteralOutputType literalOut = (LiteralOutputType) output;
         Assert.assertEquals( "boolean", literalOut.getDataType().getValue() );
         Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#boolean", literalOut.getDataType().getRef().toString() );
@@ -186,7 +186,7 @@ public class WPSClientTest {
         WPSClient wpsClient = new WPSClient( processUrl );
         Process p2 = wpsClient.getProcess( "ParameterDemoProcess", null );
 
-        InputType firstInput = p2.getInputType( "LiteralInput", null );
+        InputType firstInput = p2.getInputTypes()[0];
         LiteralInputType literalInput = (LiteralInputType) firstInput;
         Assert.assertEquals( "integer", literalInput.getDataType().getValue() );
         Assert.assertEquals( "http://www.w3.org/TR/xmlschema-2/#integer",
@@ -195,26 +195,26 @@ public class WPSClientTest {
         Assert.assertEquals( "seconds", literalInput.getSupportedUoms()[0].getValue() );
         Assert.assertEquals( "minutes", literalInput.getSupportedUoms()[1].getValue() );
 
-        InputType secondInput = p2.getInputType( "BBOXInput", null );
+        InputType secondInput = p2.getInputTypes()[1];
         Assert.assertEquals( "1", secondInput.getMinOccurs() );
         Assert.assertEquals( "1", secondInput.getMaxOccurs() );
         BBoxInputType bboxData = (BBoxInputType) secondInput;
         Assert.assertEquals( "EPSG:4326", bboxData.getDefaultCRS() );
         Assert.assertEquals( "EPSG:4326", bboxData.getSupportedCrs()[0] );
 
-        InputType thirdInput = p2.getInputType( "XMLInput", null );
+        InputType thirdInput = p2.getInputTypes()[2];
         ComplexInputType xmlData = (ComplexInputType) thirdInput;
         Assert.assertEquals( "text/xml", xmlData.getDefaultFormat().getMimeType() );
         Assert.assertEquals( "text/xml", xmlData.getSupportedFormats()[0].getMimeType() );
 
-        InputType fourthInput = p2.getInputType( "BinaryInput", null );
+        InputType fourthInput = p2.getInputTypes()[3];
         ComplexInputType binaryData = (ComplexInputType) fourthInput;
         Assert.assertEquals( "image/png", binaryData.getDefaultFormat().getMimeType() );
         Assert.assertEquals( "base64", binaryData.getDefaultFormat().getEncoding() );
         Assert.assertEquals( "image/png", binaryData.getSupportedFormats()[0].getMimeType() );
         Assert.assertEquals( "base64", binaryData.getSupportedFormats()[0].getEncoding() );
 
-        OutputType firstOutput = p2.getOutputType( "LiteralOutput", null );
+        OutputType firstOutput = p2.getOutputTypes()[0];
         Assert.assertEquals( "A literal output parameter", firstOutput.getTitle().getString() );
         LiteralOutputType literalData = (LiteralOutputType) firstOutput;
         Assert.assertEquals( "integer", literalData.getDataType().getValue() );
@@ -222,17 +222,17 @@ public class WPSClientTest {
         Assert.assertEquals( "seconds", literalData.getDefaultUom().getValue() );
         Assert.assertEquals( "seconds", literalData.getSupportedUoms()[0].getValue() );
 
-        OutputType secondOutput = p2.getOutputType( "BBOXOutput", null );
+        OutputType secondOutput = p2.getOutputTypes()[1];
         BBoxOutputType bboxOutput = (BBoxOutputType) secondOutput;
         Assert.assertEquals( "EPSG:4326", bboxOutput.getDefaultCrs() );
         Assert.assertEquals( "EPSG:4326", bboxOutput.getSupportedCrs()[0] );
 
-        OutputType thirdOutput = p2.getOutputType( "XMLOutput", null );
+        OutputType thirdOutput = p2.getOutputTypes()[2];
         ComplexOutputType xmlOutput = (ComplexOutputType) thirdOutput;
         Assert.assertEquals( "text/xml", xmlOutput.getDefaultFormat().getMimeType() );
         Assert.assertEquals( "text/xml", xmlOutput.getSupportedFormats()[0].getMimeType() );
 
-        OutputType fourthOutput = p2.getOutputType( "BinaryOutput", null );
+        OutputType fourthOutput = p2.getOutputTypes()[3];
         ComplexOutputType binaryOutput = (ComplexOutputType) fourthOutput;
         Assert.assertEquals( "text/xml", xmlOutput.getDefaultFormat().getMimeType() );
         Assert.assertEquals( "text/xml", xmlOutput.getSupportedFormats()[0].getMimeType() );

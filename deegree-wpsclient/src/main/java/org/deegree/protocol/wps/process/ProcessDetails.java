@@ -39,10 +39,8 @@ import static org.deegree.protocol.wps.WPSConstants.WPS_100_NS;
 import static org.deegree.protocol.wps.WPSConstants.WPS_PREFIX;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import javax.xml.namespace.QName;
 
@@ -85,9 +83,9 @@ public class ProcessDetails {
 
     private final XMLAdapter omResponse;
 
-    private final Map<CodeType, InputType> inputs;
+    private final List<InputType> inputs;
 
-    private final Map<CodeType, OutputType> outputs;
+    private final List<OutputType> outputs;
 
     private final boolean storeSupported;
 
@@ -122,7 +120,7 @@ public class ProcessDetails {
      * 
      * @return the input parameter descriptions, never <code>null</code>
      */
-    public Map<CodeType, InputType> getInputs() {
+    public List<InputType> getInputs() {
         return inputs;
     }
 
@@ -131,14 +129,14 @@ public class ProcessDetails {
      * 
      * @return the output parameter descriptions, never <code>null</code>
      */
-    public Map<CodeType, OutputType> getOutputs() {
+    public List<OutputType> getOutputs() {
         return outputs;
     }
 
-    private Map<CodeType, InputType> parseInputs() {
+    private List<InputType> parseInputs() {
         XPath xpath = new XPath( "/wps:ProcessDescriptions/ProcessDescription/DataInputs/Input", nsContext );
         List<OMElement> omInputs = omResponse.getElements( omResponse.getRootElement(), xpath );
-        Map<CodeType, InputType> idToInputType = new HashMap<CodeType, InputType>();
+        List<InputType> inputs = new ArrayList<InputType>( omInputs.size() );
         for ( OMElement input : omInputs ) {
             String minOccurs = input.getAttribute( new QName( null, "minOccurs" ) ).getAttributeValue();
             String maxOccurs = input.getAttribute( new QName( null, "minOccurs" ) ).getAttributeValue();
@@ -146,24 +144,24 @@ public class ProcessDetails {
             CodeType id = parseId( input );
             LanguageString inputTitle = parseLanguageString( input, "Title" );
             LanguageString inputAbstract = parseLanguageString( input, "Abstract" );
-            InputType inputDescrips = parseData( input, id, inputTitle, inputAbstract, minOccurs, maxOccurs );
-            idToInputType.put( id, inputDescrips );
+            InputType inputDesc = parseData( input, id, inputTitle, inputAbstract, minOccurs, maxOccurs );
+            inputs.add( inputDesc );
         }
-        return idToInputType;
+        return inputs;
     }
 
-    private Map<CodeType, OutputType> parseOutputs() {
+    private List<OutputType> parseOutputs() {
         XPath xpath = new XPath( "/wps:ProcessDescriptions/ProcessDescription/ProcessOutputs/Output", nsContext );
         List<OMElement> omOutputs = omResponse.getElements( omResponse.getRootElement(), xpath );
-        Map<CodeType, OutputType> idToOutputType = new HashMap<CodeType, OutputType>();
+        List<OutputType> outputs = new ArrayList<OutputType>( omOutputs.size() );
         for ( OMElement output : omOutputs ) {
             CodeType id = parseId( output );
             LanguageString outputTitle = parseLanguageString( output, "Title" );
             LanguageString outputAbstract = parseLanguageString( output, "Abstract" );
-            OutputType outputDescrib = parseOutputData( output, id, outputTitle, outputAbstract );
-            idToOutputType.put( id, outputDescrib );
+            OutputType outputDesc = parseOutputData( output, id, outputTitle, outputAbstract );
+            outputs.add( outputDesc );
         }
-        return idToOutputType;
+        return outputs;
     }
 
     private OutputType parseOutputData( OMElement output, CodeType id, LanguageString outputTitle,

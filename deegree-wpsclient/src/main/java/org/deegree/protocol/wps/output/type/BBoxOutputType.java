@@ -37,6 +37,7 @@ package org.deegree.protocol.wps.output.type;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
+import org.deegree.protocol.wps.input.type.InputType.Type;
 
 /**
  * {@link OutputType} that defines a bounding box output.
@@ -60,6 +61,11 @@ public class BBoxOutputType extends OutputType {
         this.supportedCrs = supportedCrs;
     }
 
+    @Override
+    public Type getType() {
+        return Type.BBOX;
+    }
+    
     /**
      * 
      * @return the default CRS used

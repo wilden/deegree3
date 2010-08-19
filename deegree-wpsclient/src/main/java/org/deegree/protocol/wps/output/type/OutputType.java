@@ -37,7 +37,6 @@ package org.deegree.protocol.wps.output.type;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
-import org.deegree.protocol.wps.input.type.InputType;
 
 /**
  * Abstract base class for definitions of process output parameters.
@@ -57,7 +56,24 @@ public abstract class OutputType {
     private final LanguageString inputAbstract;
 
     /**
-     * Creates a new {@link InputType} instance.
+     * Convenvience enum type for discriminating the different subclasses of {@link OutputType}.
+     * 
+     * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
+     * @author last edited by: $Author$
+     * 
+     * @version $Revision$, $Date$
+     */
+    public enum Type {
+        /** Instance is a {@link LiteralOutputType}. */
+        LITERAL,
+        /** Instance is a {@link BBoxOutputType}. */
+        BBOX,
+        /** Instance is a {@link ComplexOutputType}. */
+        COMPLEX
+    }
+    
+    /**
+     * Creates a new {@link OutputType} instance.
      * 
      * @param id
      *            parameter identifier, must not be <code>null</code>
@@ -72,6 +88,13 @@ public abstract class OutputType {
         this.inputAbstract = inputAbstract;
     }
 
+    /**
+     * Returns the concrete output type of this instance.
+     * 
+     * @return the concrete output type, never <code>null</code> 
+     */
+    public abstract Type getType ();
+    
     /**
      * Returns the parameter identifier.
      * 

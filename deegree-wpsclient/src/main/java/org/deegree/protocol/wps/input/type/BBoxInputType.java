@@ -60,6 +60,11 @@ public class BBoxInputType extends InputType {
         this.supportedCrs = supportedCRSs;
     }
 
+    @Override
+    public Type getType() {
+        return Type.BBOX;
+    }
+    
     /**
      * 
      * @return the default CRS used for this respective input.
@@ -75,5 +80,4 @@ public class BBoxInputType extends InputType {
     public String[] getSupportedCrs() {
         return supportedCrs;
     }
-
 }

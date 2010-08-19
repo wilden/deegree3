@@ -37,6 +37,7 @@ package org.deegree.protocol.wps.input.type;
 
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
+import org.deegree.protocol.wps.input.type.InputType.Type;
 import org.deegree.protocol.wps.param.ComplexFormat;
 
 /**
@@ -63,6 +64,11 @@ public class ComplexInputType extends InputType {
         this.supportedFormats = supportedFormats;
     }
 
+    @Override
+    public Type getType() {
+        return Type.COMPLEX;
+    }    
+    
     /**
      * Returns a {@link ComplexFormat} instance (that encapsulates encoding, mime type and schema) as default format for
      * this input.

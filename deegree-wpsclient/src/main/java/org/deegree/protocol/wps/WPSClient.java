@@ -78,13 +78,13 @@ import org.slf4j.LoggerFactory;
  * 
  * <h4>Getting process information</h4> The method {@link #getProcesses()} allows to find out about the processes
  * offered by the service. Additionally (if one knows the identifier of a process beforehand), one can use
- * {@link #getProcess(String, String)} to retrieve a specific process. The {@link Process} class allows to execute a
- * process and offers methods to access detail information such as title, abstract, input parameter types and output
- * parameters types:
+ * {@link #getProcess(String)} or {@link #getProcess(String, String)} to retrieve a specific process. The
+ * {@link Process} class allows to execute a process and offers methods to access detail information such as title,
+ * abstract, input parameter types and output parameters types:
  * 
  * <pre>
  * ...
- *   Process buffer = wpsClient.getProcess ("Buffer", null);
+ *   Process buffer = wpsClient.getProcess ("Buffer");
  *   System.out.println ("Abstract for Buffer process: " + buffer.getAbstract());
  *   System.out.println ("Number of input parameters: " + buffer.getInputTypes().length);
  *   System.out.println ("Number of output parameters: " + buffer.getOutputTypes().length);
@@ -97,7 +97,7 @@ import org.slf4j.LoggerFactory;
  * 
  * <pre>
  * ...
- *   Process buffer = wpsClient.getProcess ("Buffer", null);
+ *   Process buffer = wpsClient.getProcess ("Buffer");
  * 
  *   // get execution context
  *   ProcessExecution execution = buffer.prepareExecution();
@@ -175,22 +175,37 @@ import org.slf4j.LoggerFactory;
  * ...
  * </pre>
  * 
- * 
- * There is also the possibility of selecting the WPS <code>RawOutput</code> mode, where the (single) output parameter
- * is not going to be wrapped in an ExecuteResponse XML document, but directly returned as a resource. For this one must
- * set {@link ProcessExecution#setRawOutput(String, String, String, String, String)}. The server shall respond with this
- * sole output resource.
- * 
- * <h4>Executing a process asynchronously</h4> Instead of using {@link ProcessExecution#execute()}, one can also request
- * asynchronous execution via the {@link ProcessExecution#executeAsync()} method. In the latter case, the call will
- * return immediately, but the result is not necessarily available yet. In order to check for completion, the
- * {@link ProcessExecution#getState()} is available, that will poll the server for the current status (if it wasn't
- * finished anyway). Additionally, the method {@link ProcessExecution#getPercentCompleted()} is available to check the
- * execution progress.
+ * <h4>Executing a process: raw output mode</h4> There is also the possibility of selecting the WPS
+ * <code>RawOutput</code> mode, where the (single) output parameter is not going to be wrapped in an ExecuteResponse XML
+ * document, but directly returned as a resource. For this one must set {@link Process#prepareRawExecution()} to
+ * retrieve a suitable execution context. The server shall respond with this sole output resource.
  * 
  * <pre>
  * ...
- *   Process buffer = wpsClient.getProcess ("Buffer", null);
+ *   Process buffer = wpsClient.getProcess ("Buffer");
+ * 
+ *   // get raw execution context
+ *   RawProcessExecution execution = buffer.prepareRawExecution();
+ *   
+ *   // add input parameters
+ *   execution.addLiteralInput( "BufferDistance", null, "0.1", "double", "unity" );
+ *   execution.addXMLInput( "GMLInput", null, gmlFileUrl, "text/xml", null, null );
+ *   
+ *   // invoke RawOutput mode execution (returns a single output parameter)
+ *   ComplexOutput output = execution.execute("GMLOutput", null, "text/xml", null, null);
+ * ...
+ * </pre>
+ * 
+ * <h4>Executing a process: asynchronous mode</h4> Instead of using {@link ProcessExecution#execute()}, one can also
+ * request asynchronous execution via the {@link ProcessExecution#executeAsync()} method. In the latter case, the call
+ * will return immediately, but the result is not necessarily available yet. In order to check for completion, the
+ * {@link ProcessExecution#getState()} is available, that will poll the server for the current status (if it wasn't
+ * finished anyway). Additionally, the method {@link ProcessExecution#getPercentCompleted()} is available to check the
+ * execution progress (if the process supports it).
+ * 
+ * <pre>
+ * ...
+ *   Process buffer = wpsClient.getProcess ("Buffer");
  * 
  *   // get execution context
  *   ProcessExecution execution = buffer.prepareExecution();
@@ -260,6 +275,9 @@ public class WPSClient {
     // using LinkedHashMap because it keeps insertion order
     private final Map<CodeType, Process> processIdToProcess = new LinkedHashMap<CodeType, Process>();
 
+    // using LinkedHashMap because it keeps insertion order
+    private final Map<String, Process> processIdSimpleToProcess = new LinkedHashMap<String, Process>();
+
     /**
      * Creates a new {@link WPSClient} instance.
      * 
@@ -286,6 +304,7 @@ public class WPSClient {
         for ( ProcessInfo processInfo : capabilitiesDoc.getProcesses() ) {
             Process process = new Process( this, processInfo );
             processIdToProcess.put( process.getId(), process );
+            processIdSimpleToProcess.put( process.getId().getCode(), process );
         }
     }
 
@@ -348,6 +367,25 @@ public class WPSClient {
     }
 
     /**
+     * Returns the specified process instance (ignoring the codespace of the identifier).
+     * <p>
+     * NOTE: This is a convenience method that ignores the optional codespace that a process identifier may have. If a
+     * server actually offers two processes with the same identifier, but different codespace, let's say 'Buffer'
+     * (codespace: 'Sextante') and 'Buffer' (codespace: 'GRASS'), then it's not defined which of the ones will be
+     * returned, when this method is called with parameter 'Buffer'. To be on the safe side, use
+     * {@link #getProcess(String, String)}.
+     * </p>
+     * 
+     * @param id
+     *            process identifier, never <code>null</code>
+     * @return process instance, can be <code>null</code> (if no process with the specified identifier and code space is
+     *         offered by the services)
+     */
+    public Process getProcess( String id ) {
+        return processIdSimpleToProcess.get( id );
+    }
+
+    /**
      * Returns the specified process instance.
      * 
      * @param id
@@ -359,9 +397,6 @@ public class WPSClient {
      *         offered by the services)
      */
     public Process getProcess( String id, String idCodeSpace ) {
-        if ( !processIdToProcess.containsKey( new CodeType( id, idCodeSpace ) ) ) {
-            throw new RuntimeException( "WPS has no registered process with id " + id );
-        }
         return processIdToProcess.get( new CodeType( id, idCodeSpace ) );
     }
 

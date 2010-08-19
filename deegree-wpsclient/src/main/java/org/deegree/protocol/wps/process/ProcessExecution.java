@@ -61,13 +61,6 @@ import org.deegree.commons.xml.stax.StAXParsingHelper;
 import org.deegree.protocol.ows.OWSExceptionReader;
 import org.deegree.protocol.wps.WPSClient;
 import org.deegree.protocol.wps.WPSConstants;
-import org.deegree.protocol.wps.input.BBoxInput;
-import org.deegree.protocol.wps.input.BinaryInput;
-import org.deegree.protocol.wps.input.ExecutionInput;
-import org.deegree.protocol.wps.input.LiteralInput;
-import org.deegree.protocol.wps.input.XMLInput;
-import org.deegree.protocol.wps.output.ComplexOutput;
-import org.deegree.protocol.wps.output.ExecutionOutput;
 import org.deegree.protocol.wps.output.type.OutputType;
 import org.deegree.protocol.wps.process.execute.ExecutionOutputs;
 import org.deegree.protocol.wps.process.execute.ExecutionResponse;
@@ -81,12 +74,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Represents an execution context for a {@link Process}.
+ * Represents an execution context for a {@link Process} that uses the <code>ResponseDocument</code> output mode.
  * <p>
  * NOTE: This class is not thread-safe.
  * </p>
  * 
  * @see Process
+ * @see RawProcessExecution
  * 
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
  * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
@@ -94,21 +88,13 @@ import org.slf4j.LoggerFactory;
  * 
  * @version $Revision$, $Date$
  */
-public class ProcessExecution {
+public class ProcessExecution extends AbstractProcessExecution {
 
     private static Logger LOG = LoggerFactory.getLogger( ProcessExecution.class );
-
-    private final WPSClient client;
-
-    private final Process process;
-
-    private final List<ExecutionInput> inputs = new ArrayList<ExecutionInput>();
 
     private final List<OutputFormat> outputDefs = new ArrayList<OutputFormat>();
 
     private ResponseFormat responseFormat;
-
-    private boolean rawOutput;
 
     private ExecutionResponse lastResponse;
 
@@ -121,143 +107,7 @@ public class ProcessExecution {
      *            associated process instance, must not be <code>null</code>
      */
     ProcessExecution( WPSClient client, Process process ) {
-        this.client = client;
-        this.process = process;
-    }
-
-    /**
-     * Adds a literal input parameter.
-     * 
-     * @param id
-     *            identifier of the input parameter, must not be <code>null</code>
-     * @param idCodeSpace
-     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
-     * @param value
-     *            value of the literal input, must not be <code>null</code>
-     * @param type
-     *            data type in which the value should be considered, may be <code>null</code> (this means it matches the
-     *            data type as defined by the process description)
-     * @param uom
-     *            unit of measure of the value, may be <code>null</code> (this means it matches the data type as defined
-     *            by the process description)
-     */
-    public void addLiteralInput( String id, String idCodeSpace, String value, String type, String uom ) {
-        inputs.add( new LiteralInput( new CodeType( id, idCodeSpace ), value, type, uom ) );
-    }
-
-    /**
-     * Adds a bounding box input parameter.
-     * 
-     * @param id
-     *            identifier of the input parameter, must not be <code>null</code>
-     * @param idCodeSpace
-     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
-     * @param lower
-     *            coordinates of the lower point, must not be <code>null</code>
-     * @param upper
-     *            coordinates of the upper point, must not be <code>null</code> and length must match lower point
-     * @param crs
-     *            coordinate system, may be <code>null</code> (indicates that the default crs from the parameter
-     *            description applies)
-     */
-    public void addBBoxInput( String id, String idCodeSpace, double[] lower, double[] upper, String crs ) {
-        inputs.add( new BBoxInput( new CodeType( id, idCodeSpace ), lower, upper, crs ) );
-    }
-
-    /**
-     * Adds an XML-valued complex input parameter.
-     * 
-     * @param id
-     *            identifier of the input parameter, must not be <code>null</code>
-     * @param idCodeSpace
-     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
-     * @param url
-     *            {@link URL} reference to the xml resource, must not be <code>null</code>
-     * @param byRef
-     *            if true, the parameter will be passed by reference to the server, otherwise it will be nested in the
-     *            Execute request. If true, the url needs to be web-accessible (e.g. not a file URL)
-     * @param mimeType
-     *            mime type, may be <code>null</code> (indicates that the default mime type from the parameter
-     *            description applies)
-     * @param encoding
-     *            encoding, may be <code>null</code> (indicates that the default encoding from the parameter description
-     *            applies)
-     * @param schema
-     *            schema, may be <code>null</code> (indicates that the default schema from the parameter description
-     *            applies)
-     */
-    public void addXMLInput( String id, String idCodeSpace, URL url, boolean byRef, String mimeType, String encoding,
-                             String schema ) {
-        inputs.add( new XMLInput( new CodeType( id, idCodeSpace ), url, byRef, mimeType, encoding, schema ) );
-    }
-
-    /**
-     * Adds an XML-valued complex input parameter.
-     * 
-     * @param id
-     *            identifier of the input parameter, must not be <code>null</code>
-     * @param idCodeSpace
-     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
-     * @param reader
-     *            {@link XMLStreamReader} to the xml data, must not be <code>null</code> and point to the START_ELEMENT
-     *            event
-     * @param mimeType
-     *            mime type, may be <code>null</code> (indicates that the default mime type from the parameter
-     *            description applies)
-     * @param encoding
-     *            encoding, may be <code>null</code> (indicates that the default encoding from the parameter description
-     *            applies)
-     * @param schema
-     *            schema, may be <code>null</code> (indicates that the default schema from the parameter description
-     *            applies)
-     */
-    public void addXMLInput( String id, String idCodeSpace, XMLStreamReader reader, String mimeType, String encoding,
-                             String schema ) {
-        inputs.add( new XMLInput( new CodeType( id, idCodeSpace ), reader, mimeType, encoding, schema ) );
-    }
-
-    /**
-     * Adds a binary-valued complex input parameter.
-     * 
-     * @param id
-     *            identifier of the input parameter, must not be <code>null</code>
-     * @param idCodeSpace
-     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
-     * @param url
-     *            {@link URL} reference to the binary resource, must not be <code>null</code> (and must not be
-     *            web-accessible)
-     * @param byRef
-     *            if true, the parameter will be passed by reference to the server, otherwise it will be nested in the
-     *            Execute request. If true, the url needs to be web-accessible (e.g. not a file URL)
-     * @param mimeType
-     *            mime type, may be <code>null</code> (indicates that the default mime type from the parameter
-     *            description applies)
-     * @param encoding
-     *            encoding, may be <code>null</code> (indicates that the default encoding from the parameter description
-     *            applies)
-     */
-    public void addBinaryInput( String id, String idCodeSpace, URL url, boolean byRef, String mimeType, String encoding ) {
-        inputs.add( new BinaryInput( new CodeType( id, idCodeSpace ), url, byRef, mimeType, encoding ) );
-    }
-
-    /**
-     * Adds a binary-valued complex input parameter.
-     * 
-     * @param id
-     *            identifier of the input parameter, must not be <code>null</code>
-     * @param idCodeSpace
-     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
-     * @param inputStream
-     *            input stream to the binary data, must not be <code>null</code>
-     * @param mimeType
-     *            mime type, may be <code>null</code> (indicates that the default mime type from the parameter
-     *            description applies)
-     * @param encoding
-     *            encoding, may be <code>null</code> (indicates that the default encoding from the parameter description
-     *            applies)
-     */
-    public void addBinaryInput( String id, String idCodeSpace, InputStream inputStream, String mimeType, String encoding ) {
-        inputs.add( new BinaryInput( new CodeType( id, idCodeSpace ), inputStream, mimeType, encoding ) );
+        super( client, process );
     }
 
     /**
@@ -289,34 +139,6 @@ public class ProcessExecution {
     public void addOutput( String id, String idCodeSpace, String uom, boolean asRef, String mimeType, String encoding,
                            String schema ) {
         outputDefs.add( new OutputFormat( new CodeType( id ), uom, asRef, mimeType, encoding, schema ) );
-        rawOutput = false;
-    }
-
-    /**
-     * Sets an explicitly requested output parameter and sets the <code>ResponseForm</code> of the <code>Execute</code>
-     * request to <code>RawOutput</code>.
-     * <p>
-     * By calling this method, the server will only be able to respond with a single output parameter. If you require
-     * multiple output parameters, use {@link #addOutput(String, String, String, boolean, String, String, String)}.
-     * </p>
-     * 
-     * @param id
-     *            identifier of the output parameter, must not be <code>null</code>
-     * @param idCodeSpace
-     *            codespace of the parameter identifier, may be <code>null</code> (for identifiers without codespace)
-     * @param mimeType
-     *            mimeType of the data, may be null
-     * @param encoding
-     *            encoding of data, may be null
-     * @param schema
-     *            schema of data, in case it is an XML document
-     */
-    public void setRawOutput( String id, String idCodeSpace, String mimeType, String encoding, String schema ) {
-        outputDefs.add( new OutputFormat( new CodeType( id ), null, false, mimeType, encoding, schema ) );
-        rawOutput = true;
-        if ( outputDefs.size() > 1 ) {
-            throw new RuntimeException( "A raw response can be delivered only for one output parameter." );
-        }
     }
 
     /**
@@ -492,7 +314,7 @@ public class ProcessExecution {
     private ExecutionResponse sendExecute( boolean async )
                             throws OWSException, XMLStreamException, IOException {
 
-        responseFormat = new ResponseFormat( rawOutput, async, false, async, outputDefs );
+        responseFormat = new ResponseFormat( false, async, false, async, outputDefs );
 
         // TODO what if server only supports Get?
         URL url = client.getExecuteURL( true );
@@ -548,37 +370,21 @@ public class ProcessExecution {
             LOG.debug( "WPS response can be found at " + logFile );
         }
 
-        String outputContent = conn.getContentType();
-        if ( outputContent.startsWith( "text/xml" ) || outputContent.startsWith( "application/xml" ) ) {
-            XMLStreamReader reader = inFactory.createXMLStreamReader( responseStream );
-            StAXParsingHelper.nextElement( reader );
-            if ( OWSExceptionReader.isException( reader ) ) {
-                throw OWSExceptionReader.parseException( reader );
-            }
-            if ( new QName( WPSConstants.WPS_100_NS, "ExecuteResponse" ).equals( reader.getName() ) ) {
-                ExecuteResponse100Reader responseReader = new ExecuteResponse100Reader( reader );
-                lastResponse = responseReader.parse100();
-                reader.close();
+        // String outputContent = conn.getContentType();
+        // TODO determine XML reader encoding based on mime type
+        XMLStreamReader reader = inFactory.createXMLStreamReader( responseStream );
+        StAXParsingHelper.nextElement( reader );
+        if ( OWSExceptionReader.isException( reader ) ) {
+            throw OWSExceptionReader.parseException( reader );
+        }
+        if ( new QName( WPSConstants.WPS_100_NS, "ExecuteResponse" ).equals( reader.getName() ) ) {
+            ExecuteResponse100Reader responseReader = new ExecuteResponse100Reader( reader );
+            lastResponse = responseReader.parse100();
+            reader.close();
 
-            } else {
-                lastResponse = handleRawResponse( responseStream, outputContent );
-            }
         } else {
-            lastResponse = handleRawResponse( responseStream, outputContent );
+            throw new RuntimeException( "Unexpected Execute response: root element is '" + reader.getName() + "'" );
         }
         return lastResponse;
-    }
-
-    private ExecutionResponse handleRawResponse( InputStream responseStream, String outputContent )
-                            throws IOException {
-        ComplexOutput rawComplex;
-        if ( !outputContent.contains( "xml" ) ) {
-            rawComplex = new ComplexOutput( null, responseStream, outputContent, null, null );
-        } else {
-
-            rawComplex = new ComplexOutput( null, responseStream, outputContent, null, null );
-        }
-        ExecutionOutput[] outputs = new ExecutionOutput[] { rawComplex };
-        return new ExecutionResponse( null, null, outputs );
     }
 }

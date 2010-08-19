@@ -121,7 +121,6 @@ public class ComplexOutput extends ExecutionOutput {
      * @param schema
      *            XML schema of the complex data, can be <code>null</code> (unspecified)
      * @throws IOException
-     * 
      */
     public ComplexOutput( CodeType id, InputStream is, String mimeType, String encoding, String schema )
                             throws IOException {

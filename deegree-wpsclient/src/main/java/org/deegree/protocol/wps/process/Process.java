@@ -222,11 +222,29 @@ public class Process {
 
     /**
      * Prepares a new {@link ProcessExecution} context that allows to execute the process.
+     * <p>
+     * This method will request the response using the WPS <code>ResponseDocument</code> mode. If you're unsure, this is
+     * most probably what you want, as it is the most flexible way of executing WPS processes.
+     * </p>
      * 
      * @return new process execution context, never <code>null</code>
      */
     public ProcessExecution prepareExecution() {
         return new ProcessExecution( client, this );
+    }
+
+    /**
+     * Prepares a new {@link RawProcessExecution} context that allows to execute the process using the WPS
+     * <code>RawOutput</code> mode.
+     * <p>
+     * If you're unsure, then you most probably want to use {@link #prepareExecution()}, as the <code>RawOutput</code>
+     * mode is rather restricted: just a single (complex) output, no asynchronous execution, no storing of output.
+     * </p>
+     * 
+     * @return new process execution context, never <code>null</code>
+     */
+    public RawProcessExecution prepareRawExecution() {
+        return new RawProcessExecution( client, this );
     }
 
     @Override

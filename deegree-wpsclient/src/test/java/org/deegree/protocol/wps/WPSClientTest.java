@@ -68,6 +68,7 @@ import org.deegree.protocol.wps.output.type.LiteralOutputType;
 import org.deegree.protocol.wps.output.type.OutputType;
 import org.deegree.protocol.wps.process.Process;
 import org.deegree.protocol.wps.process.ProcessExecution;
+import org.deegree.protocol.wps.process.RawProcessExecution;
 import org.deegree.protocol.wps.process.execute.ExecutionOutputs;
 import org.deegree.services.controller.ows.OWSException;
 import org.deegree.services.jaxb.main.ServiceIdentificationType;
@@ -131,7 +132,7 @@ public class WPSClientTest {
                             throws OWSException, IOException {
         URL processUrl = new URL( DEMO_SERVICE_URL );
         WPSClient wpsClient = new WPSClient( processUrl );
-        Process p1 = wpsClient.getProcess( "Buffer", null );
+        Process p1 = wpsClient.getProcess( "Buffer" );
         LiteralInputType literalInput = (LiteralInputType) p1.getInputType( "BufferDistance", null );
         Assert.assertEquals( "1", literalInput.getMinOccurs() );
         Assert.assertEquals( "1", literalInput.getMaxOccurs() );
@@ -288,7 +289,6 @@ public class WPSClientTest {
         ComplexOutput output = (ComplexOutput) response.get( 0 );
         XMLStreamReader reader = output.getAsXMLStream();
         XMLAdapter searchableXML = new XMLAdapter( reader );
-        System.out.println( "HUHU: " + searchableXML.getRootElement() );
         NamespaceContext nsContext = new NamespaceContext();
         nsContext.addNamespace( "wps", WPSConstants.WPS_100_NS );
         nsContext.addNamespace( "gml", "http://www.opengis.net/gml" );
@@ -330,7 +330,7 @@ public class WPSClientTest {
                             throws OWSException, IOException, XMLStreamException {
         URL processUrl = new URL( DEMO_SERVICE_URL );
         WPSClient wpsClient = new WPSClient( processUrl );
-        Process proc = wpsClient.getProcess( "ParameterDemoProcess", null );
+        Process proc = wpsClient.getProcess( "ParameterDemoProcess" );
 
         ProcessExecution execution = proc.prepareExecution();
         execution.addLiteralInput( "LiteralInput", null, "0", "integer", "seconds" );
@@ -384,15 +384,13 @@ public class WPSClientTest {
         WPSClient wpsClient = new WPSClient( processUrl );
         Process proc = wpsClient.getProcess( "ParameterDemoProcess", null );
 
-        ProcessExecution execution = proc.prepareExecution();
+        RawProcessExecution execution = proc.prepareRawExecution();
         execution.addLiteralInput( "LiteralInput", null, "0", "integer", "seconds" );
         execution.addBBoxInput( "BBOXInput", null, new double[] { 0, 0 }, new double[] { 90, 180 }, "EPSG:4326" );
         execution.addXMLInput( "XMLInput", null, CURVE_FILE.toURI().toURL(), false, "text/xml", null, null );
         execution.addBinaryInput( "BinaryInput", null, BINARY_INPUT.toURI().toURL(), false, "image/png", null );
-        execution.setRawOutput( "BinaryOutput", null, "image/png", null, null );
-        ExecutionOutputs outputs = execution.execute();
+        ComplexOutput out = execution.executeComplexOutput( "BinaryOutput", null, "image/png", null, null );
 
-        ComplexOutput out = (ComplexOutput) outputs.get( 0 );
         InputStream stream = out.getAsBinaryStream();
         FileOutputStream fileStream = new FileOutputStream( File.createTempFile( "wpsBinaryOut", "" ) );
         byte[] b = new byte[1024];

@@ -75,10 +75,10 @@ public class OWSExceptionReader {
         String locator = null;
         String message = null;
         try {
-            StAXParsingHelper.nextElement( reader ); // "Exception"
-            StAXParsingHelper.nextElement( reader ); // "ExceptionText"
+            StAXParsingHelper.nextElement( reader ); // "ExceptionReport"
             code = reader.getAttributeValue( null, "exceptionCode" );
             locator = reader.getAttributeValue( null, "locator" );
+            StAXParsingHelper.nextElement( reader ); // "Exception"
             message = reader.getElementText();
         } catch ( XMLStreamException e ) {
             throw new RuntimeException( "Error parsing OWSExceptionReport: " + e.getMessage() );

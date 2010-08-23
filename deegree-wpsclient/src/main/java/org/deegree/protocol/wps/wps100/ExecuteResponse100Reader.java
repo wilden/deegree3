@@ -396,7 +396,7 @@ public class ExecuteResponse100Reader {
             StAXParsingHelper.nextElement( reader );
         } else if ( "ProcessFailed".equals( localName ) ) {
             state = ExecutionState.FAILED;
-            StAXParsingHelper.nextElement( reader );
+            StAXParsingHelper.nextElement( reader ); // ProcessFailed
             exceptionReport = OWSExceptionReader.parseException( reader );
         }
         StAXParsingHelper.nextElement( reader ); // </Status>

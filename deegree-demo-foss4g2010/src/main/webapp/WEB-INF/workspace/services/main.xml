@@ -1,7 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<deegreeServiceController configVersion="0.6.0" xmlns="http://www.deegree.org/webservices"
-  xsi:schemaLocation="http://www.deegree.org/webservices http://schemas.deegree.org/webservices/0.6.0/services.xsd"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<deegreeServiceController xmlns="http://www.deegree.org/webservices" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" configVersion="0.6.0" xsi:schemaLocation="http://www.deegree.org/webservices http://schemas.deegree.org/webservices/0.6.0/services.xsd">
   <!--   <DCP>-->
   <!--
     Only provide the URLs below, if you need to hard-wire the URLs returned in GetCapabilities responses (e.g. for

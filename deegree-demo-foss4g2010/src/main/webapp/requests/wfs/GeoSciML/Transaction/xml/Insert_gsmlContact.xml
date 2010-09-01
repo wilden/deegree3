@@ -6701,7 +6701,7 @@
           </gsml:occurrence>
           <gsml:contactType xlink:href="urn:cgi:classifier:CGI:ContactType:200811:igneous_intrusive_contact" />
         </gsml:Contact>
-      </gml:featureMember>
+      </gml:featureMember>      
     </wfs:FeatureCollection>
   </wfs:Insert>
 </wfs:Transaction>

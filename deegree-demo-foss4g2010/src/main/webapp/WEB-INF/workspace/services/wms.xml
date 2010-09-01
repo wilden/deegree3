@@ -5,7 +5,7 @@
       <Title>Root Layer</Title>
       <CRS>EPSG:4258 EPSG:4326 EPSG:900913</CRS>
 
-      <UnrequestableLayer>
+      <!--UnrequestableLayer>
         <Title>GeoSciML Layers</Title>
         <RequestableLayer>
           <Name>MappedFeature</Name>
@@ -24,7 +24,7 @@
             <File>../styles/MappedFeatureLabel.xml</File>
           </DirectStyle>
         </RequestableLayer>
-      </UnrequestableLayer>
+      </UnrequestableLayer-->
 
       <UnrequestableLayer>
         <Title>INSPIRE Layers</Title>
@@ -32,7 +32,7 @@
         <RequestableLayer>
           <Name>addresses</Name>
           <Title>INSPIRE Addresses</Title>
-          <FeatureStoreId>inspire-memory</FeatureStoreId>
+          <FeatureStoreId>inspire-postgis</FeatureStoreId>
           <DirectStyle>
             <File>../styles/Addresses.xml</File>
             <Name>addresses</Name>
@@ -41,7 +41,7 @@
         <RequestableLayer>
           <Name>cadastralparcels</Name>
           <Title>INSPIRE Cadastral Parcels</Title>
-          <FeatureStoreId>inspire-memory</FeatureStoreId>
+          <FeatureStoreId>inspire-postgis</FeatureStoreId>
           <DirectStyle>
             <File>../styles/CadastralParcels.xml</File>
             <Name>cadastralparcels</Name>

@@ -4,12 +4,12 @@
   <NamespaceHint namespaceURI="app" prefix="http://www.deegree.org/app"></NamespaceHint>
 
   <!-- [1] CRS for storing geometries -->
-  <StorageCRS>EPSG:4258</StorageCRS>
+  <StorageCRS>EPSG:4326</StorageCRS>
 
   <!-- [1] Identifier of JDBC connection -->
-  <JDBCConnId>postgis</JDBCConnId>
+  <JDBCConnId>geosciml-db</JDBCConnId>
 
   <!-- [1...n] GML schema files / directory to be used -->
-  <GMLSchemaFileURL gmlVersion="GML_32">file:/home/schneider/schemas/inspire/annex1</GMLSchemaFileURL>
+  <GMLSchemaFileURL gmlVersion="GML_31">file:/home/schneider/schemas/geosciml/geosciml/2.0/geosciml.xsd</GMLSchemaFileURL>
 
 </PostGISFeatureStore>

@@ -1,4 +1,7 @@
-<FeatureTypeStyle xmlns="http://www.opengis.net/se" xmlns:gsml="urn:cgi:xmlns:CGI:GeoSciML:2.0" xmlns:app="http://www.deegree.org/app" xmlns:ogc="http://www.opengis.net/ogc" xmlns:deegreeogc="http://www.deegree.org/ogc" xmlns:sed="http://www.deegree.org/se" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/se http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd http://www.deegree.org/se http://schemas.deegree.org/se/1.1.0/Symbolizer-deegree.xsd">
+<FeatureTypeStyle xmlns="http://www.opengis.net/se" xmlns:gsml="urn:cgi:xmlns:CGI:GeoSciML:2.0"
+  xmlns:app="http://www.deegree.org/app" xmlns:ogc="http://www.opengis.net/ogc" xmlns:deegreeogc="http://www.deegree.org/ogc"
+  xmlns:sed="http://www.deegree.org/se" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.opengis.net/se http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd http://www.deegree.org/se http://schemas.deegree.org/se/1.1.0/Symbolizer-deegree.xsd">
   <Name>MappedFeature</Name>
   <FeatureTypeName>gsml:MappedFeature</FeatureTypeName>
   <Rule>
@@ -58,7 +61,7 @@
     </ogc:Filter>
     <PolygonSymbolizer>
       <Fill>
-        <SvgParameter name="fill">#D9CFCF</SvgParameter>
+        <SvgParameter name="fill">#FF0000</SvgParameter>
         <SvgParameter name="fill-opacity">1</SvgParameter>
       </Fill>
       <Stroke>
@@ -80,7 +83,7 @@
     </ogc:Filter>
     <LineSymbolizer>
       <Stroke>
-        <SvgParameter name="stroke">#D9CFCF</SvgParameter>
+        <SvgParameter name="stroke">#FF0000</SvgParameter>
         <SvgParameter name="stroke-opacity">1</SvgParameter>
         <SvgParameter name="stroke-width">1</SvgParameter>
         <SvgParameter name="stroke-dasharray">5 3</SvgParameter>

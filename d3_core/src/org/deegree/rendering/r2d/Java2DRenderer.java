@@ -356,7 +356,7 @@ public class Java2DRenderer implements Renderer {
                 if ( g != null ) {
                     // TODO minimize transformations in all other cases as well
                     CRS crs = ( (Geometry) g ).getCoordinateSystem();
-                    if ( targetCRS != null || targetCRS.equals( crs ) ) {
+                    if ( targetCRS == null || targetCRS.equals( crs ) ) {
                         return (T) g;
                     }
                 }

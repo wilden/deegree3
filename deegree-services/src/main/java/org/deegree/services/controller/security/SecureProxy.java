@@ -98,6 +98,8 @@ public class SecureProxy extends HttpServlet {
     private static final long serialVersionUID = 6154340524804958669L;
 
     String proxiedUrl;
+    
+    String fwdcreds = "false";
 
     private CredentialsProvider credentialsProvider;
 
@@ -143,6 +145,9 @@ public class SecureProxy extends HttpServlet {
             if ( param.equalsIgnoreCase( "proxied_url" ) ) {
                 proxiedUrl = config.getInitParameter( param );
             }
+            if ( param.equalsIgnoreCase( "forwardcredentials" ) ) {
+                fwdcreds = config.getInitParameter( param );
+            } 
         }
         if ( proxiedUrl == null ) {
             String msg = "You need to define the 'proxied_url' init parameter in the web.xml.";
@@ -276,8 +281,10 @@ public class SecureProxy extends HttpServlet {
             boolean loggedIn = securityConfiguration.checkCredentials( creds );
             boolean serviceRights = securityConfiguration.verifyAddress( creds, proxiedUrl );
             if ( loggedIn && serviceRights ) {
-                normalizedKVPParams.remove( "USER" );
-                normalizedKVPParams.remove( "PASSWORD" );
+            	if (!fwdcreds.equalsIgnoreCase("true")) {
+            		normalizedKVPParams.remove( "USER" );
+	                normalizedKVPParams.remove( "PASSWORD" );
+            	}
                 InputStream in = retrieve( STREAM, proxiedUrl, normalizedKVPParams );
                 OutputStream out = response.getOutputStream();
                 boolean successful = false;

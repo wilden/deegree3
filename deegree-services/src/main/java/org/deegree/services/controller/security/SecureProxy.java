@@ -93,19 +93,21 @@ import org.slf4j.Logger;
  */
 public class SecureProxy extends HttpServlet {
 
-    static final Logger LOG = getLogger( SecureProxy.class );
+    private static final Logger LOG = getLogger( SecureProxy.class );
 
     private static final long serialVersionUID = 6154340524804958669L;
 
-    String proxiedUrl;
+    private String proxiedUrl;
     
-    String fwdcreds = "false";
+    private String proxyURL;
+    
+    private String fwdcreds = "false";
 
     private CredentialsProvider credentialsProvider;
 
-    XMLInputFactory inFac = XMLInputFactory.newInstance();
+    private XMLInputFactory inFac = XMLInputFactory.newInstance();
 
-    XMLOutputFactory outFac = XMLOutputFactory.newInstance();
+    private XMLOutputFactory outFac = XMLOutputFactory.newInstance();
 
     private WebServicesConfiguration serviceConfig;
 
@@ -147,7 +149,10 @@ public class SecureProxy extends HttpServlet {
             }
             if ( param.equalsIgnoreCase( "forwardcredentials" ) ) {
                 fwdcreds = config.getInitParameter( param );
-            } 
+            }
+            if ( param.equalsIgnoreCase( "proxy_url" ) ) {
+                proxyURL = config.getInitParameter( param );
+            }
         }
         if ( proxiedUrl == null ) {
             String msg = "You need to define the 'proxied_url' init parameter in the web.xml.";

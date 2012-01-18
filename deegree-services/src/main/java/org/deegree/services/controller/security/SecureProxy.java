@@ -99,7 +99,7 @@ public class SecureProxy extends HttpServlet {
 
     private String proxiedUrl;
     
-    private String proxyURL;
+    private String proxyURL = null;
     
     private String fwdcreds = "false";
 
@@ -298,8 +298,10 @@ public class SecureProxy extends HttpServlet {
                      || req.equalsIgnoreCase( "DescribeFeatureType" ) ) {
                     XMLStreamReader reader = inFac.createXMLStreamReader( in );
                     reader.next();
+                    if (proxyURL == null) {
+                    	proxyURL = request.getRequestURL().toString();
+                    }
                     successful = copyXML( reader, outFac.createXMLStreamWriter( out ), proxyURL);
-                                          //request.getRequestURL().toString() );
                 } else {
                     // TODO determine from content type if it was successful, for WFS this should not be a problem
                     copy( in, out );
@@ -309,7 +311,7 @@ public class SecureProxy extends HttpServlet {
                     requestLogger.logKVP( proxiedUrl + "?" + request.getRequestURL(),
                                           toQueryString( normalizedKVPParams ), startTime, System.currentTimeMillis(),
                                           creds );
-                    LOG.debug(proxiedUrl + "?" + request.getRequestURL() + toQueryString( normalizedKVPParams ) + startTime + System.currentTimeMillis() + creds );
+                    LOG.debug("Backend request: " + proxiedUrl + "?" + toQueryString( normalizedKVPParams ));
                 }
             } else {
                 writeUnauthorized( response, loggedIn );

@@ -93,21 +93,21 @@ import org.slf4j.Logger;
  */
 public class SecureProxy extends HttpServlet {
 
-    private static final Logger LOG = getLogger( SecureProxy.class );
+    static final Logger LOG = getLogger( SecureProxy.class );
 
     private static final long serialVersionUID = 6154340524804958669L;
 
     private String proxiedUrl;
-    
+
     private String proxyURL = null;
-    
+
     private String fwdcreds = "false";
 
     private CredentialsProvider credentialsProvider;
 
     private XMLInputFactory inFac = XMLInputFactory.newInstance();
 
-    private XMLOutputFactory outFac = XMLOutputFactory.newInstance();
+    XMLOutputFactory outFac = XMLOutputFactory.newInstance();
 
     private WebServicesConfiguration serviceConfig;
 
@@ -140,7 +140,6 @@ public class SecureProxy extends HttpServlet {
             throw new ServletException( msg );
         }
 
-        @SuppressWarnings("unchecked")
         Enumeration<String> e = config.getInitParameterNames();
         while ( e.hasMoreElements() ) {
             String param = e.nextElement();
@@ -236,7 +235,6 @@ public class SecureProxy extends HttpServlet {
                 writerThread.start();
 
                 Map<String, String> headers = new HashMap<String, String>();
-                @SuppressWarnings("unchecked")
                 Enumeration<String> iter = request.getHeaderNames();
                 while ( iter.hasMoreElements() ) {
                     String next = iter.nextElement();
@@ -286,10 +284,10 @@ public class SecureProxy extends HttpServlet {
             boolean loggedIn = securityConfiguration.checkCredentials( creds );
             boolean serviceRights = securityConfiguration.verifyAddress( creds, proxiedUrl );
             if ( loggedIn && serviceRights ) {
-            	if (!fwdcreds.equalsIgnoreCase("true")) {
-            		normalizedKVPParams.remove( "USER" );
-	                normalizedKVPParams.remove( "PASSWORD" );
-            	}
+                if ( !fwdcreds.equalsIgnoreCase( "true" ) ) {
+                    normalizedKVPParams.remove( "USER" );
+                    normalizedKVPParams.remove( "PASSWORD" );
+                }
                 InputStream in = retrieve( STREAM, proxiedUrl, normalizedKVPParams );
                 OutputStream out = response.getOutputStream();
                 boolean successful = false;
@@ -298,10 +296,10 @@ public class SecureProxy extends HttpServlet {
                      || req.equalsIgnoreCase( "DescribeFeatureType" ) ) {
                     XMLStreamReader reader = inFac.createXMLStreamReader( in );
                     reader.next();
-                    if (proxyURL == null) {
-                    	proxyURL = request.getRequestURL().toString();
+                    if ( proxyURL == null ) {
+                        proxyURL = request.getRequestURL().toString();
                     }
-                    successful = copyXML( reader, outFac.createXMLStreamWriter( out ), proxyURL);
+                    successful = copyXML( reader, outFac.createXMLStreamWriter( out ), proxyURL );
                 } else {
                     // TODO determine from content type if it was successful, for WFS this should not be a problem
                     copy( in, out );
@@ -311,7 +309,7 @@ public class SecureProxy extends HttpServlet {
                     requestLogger.logKVP( proxiedUrl + "?" + request.getRequestURL(),
                                           toQueryString( normalizedKVPParams ), startTime, System.currentTimeMillis(),
                                           creds );
-                    LOG.debug("Backend request: " + proxiedUrl + "?" + toQueryString( normalizedKVPParams ));
+                    LOG.debug( "Backend request: " + proxiedUrl + "?" + toQueryString( normalizedKVPParams ) );
                 }
             } else {
                 writeUnauthorized( response, loggedIn );
@@ -401,6 +399,19 @@ public class SecureProxy extends HttpServlet {
                         } else {
                             writer.writeAttribute( nsPrefix, nsURI, localName, link );
                         }
+                    } else if ( localName.equals( "onlineResource" ) && nsURI == null ) {
+                        // probably a WFS 1.0.0
+                        if ( elementName.equals( "Get" ) || elementName.equals( "Post" ) ) {
+                            String link = value.replace( ":80", "" ); // again, normalization would be nice
+                            if ( link.startsWith( proxiedUrl ) ) {
+                                link = link.replace( proxiedUrl, serverUrl );
+                                // next two to work around buggy servers with broken endpoints such as a misconfigured
+                                // XtraServer or deegree 2
+                            }
+                            writer.writeAttribute( localName, link );
+                        } else {
+                            writer.writeAttribute( localName, value );
+                        }
                     } else if ( nsURI == null ) {
                         writer.writeAttribute( localName, value );
                     } else {
@@ -441,7 +452,7 @@ public class SecureProxy extends HttpServlet {
         return wasSuccessful;
     }
 
-    void copy( InputStream in, OutputStream out )
+    static void copy( InputStream in, OutputStream out )
                             throws IOException {
         try {
             byte[] buf = new byte[65536];

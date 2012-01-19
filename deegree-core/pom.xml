@@ -5,7 +5,7 @@
   <groupId>org.deegree</groupId>
   <artifactId>deegree-core</artifactId>
   <packaging>jar</packaging>
-  <version>3.0-pre8</version>
+  <version>3.0-pre8-1-SNAPSHOT</version>
   <name>deegree-core</name>
   <url>http://www.deegree.org</url>
   <scm>
@@ -156,7 +156,7 @@
       <groupId>com.sun.xml.fastinfoset</groupId>
       <artifactId>FastInfoset</artifactId>
       <version>1.2.7</version>
-    </dependency>   
+    </dependency>
     <dependency>
       <groupId>org.antlr</groupId>
       <artifactId>antlr-runtime</artifactId>

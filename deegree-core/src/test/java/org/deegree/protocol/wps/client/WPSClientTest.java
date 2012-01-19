@@ -102,7 +102,7 @@ public class WPSClientTest {
 
     private static final File BINARY_INPUT_TIFF = new File( WPSClientTest.class.getResource( "image.tiff" ).getPath() );
 
-    private static final String DEMO_SERVICE_URL = "http://deegree3-testing.deegree.org/deegree-wps-demo/services?service=WPS&version=1.0.0&request=GetCapabilities";
+    private static final String DEMO_SERVICE_URL = "http://deegree3-demo.deegree.org/wps-workspace/services?service=WPS&version=1.0.0&request=GetCapabilities";
 
     private static final String NORTH52_SERVICE_URL = "http://giv-wps.uni-muenster.de:8080/wps/WebProcessingService?Request=GetCapabilities&Service=WPS";
 

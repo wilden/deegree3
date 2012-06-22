@@ -144,7 +144,8 @@ public class GeoTIFFTileStore implements TileStore {
 
                 SpatialMetadata smd = new SpatialMetadata( envelope, singletonList( envelope.getCoordinateSystem() ) );
 
-                List<TileDataLevel> matrices = new ArrayList<TileDataLevel>( num );
+                List<TileDataLevel> levels = new ArrayList<TileDataLevel>( num );
+                List<TileMatrix> matrices = new ArrayList<TileMatrix>();
 
                 for ( int i = 0; i < num; ++i ) {
                     int tw = reader.getTileWidth( i );
@@ -156,14 +157,15 @@ public class GeoTIFFTileStore implements TileStore {
                     double res = Math.max( envelope.getSpan0() / width, envelope.getSpan1() / height );
                     String id = Double.toString( res / DEFAULT_PIXEL_SIZE );
                     TileMatrix tmd = new TileMatrix( id, smd, tw, th, res, numx, numy );
+                    matrices.add( tmd );
                     GeoTIFFTileMatrix matrix = new GeoTIFFTileMatrix( tmd, file.first, i );
-                    matrices.add( matrix );
+                    levels.add( matrix );
                     LOG.debug( "Level {} has {}x{} tiles of {}x{} pixels, resolution is {}", new Object[] { i, numx,
                                                                                                            numy, tw,
                                                                                                            th, res } );
                 }
-                TileMatrixSet metadata = new TileMatrixSet( tmsId, "image/png", smd );
-                TileDataSet tileMatrixSet = new DefaultTileDataSet( matrices, metadata );
+                TileMatrixSet metadata = new TileMatrixSet( tmsId, matrices, smd );
+                TileDataSet tileMatrixSet = new DefaultTileDataSet( levels, metadata, "image/png" );
                 tileMatrixSets.put( tmsId, tileMatrixSet );
             }
         } catch ( Throwable e ) {
@@ -183,7 +185,7 @@ public class GeoTIFFTileStore implements TileStore {
     }
 
     @Override
-    public Collection<String> getTileMatrixSetIds() {
+    public Collection<String> getTileDataSetIds() {
         return tileMatrixSets.keySet();
     }
 
@@ -249,17 +251,17 @@ public class GeoTIFFTileStore implements TileStore {
 
     @Override
     public SpatialMetadata getMetadata( String id ) {
-        return tileMatrixSets.get( id ).getMetadata().getSpatialMetadata();
+        return tileMatrixSets.get( id ).getTileMatrixSet().getSpatialMetadata();
     }
 
     @Override
-    public TileDataSet getTileMatrixSet( String id ) {
+    public TileDataSet getTileDataSet( String id ) {
         return tileMatrixSets.get( id );
     }
 
     @Override
     public Tile getTile( String tmsId, String tileMatrix, int x, int y ) {
-        TileDataLevel tm = tileMatrixSets.get( tmsId ).getTileMatrix( tileMatrix );
+        TileDataLevel tm = tileMatrixSets.get( tmsId ).getTileDataLevel( tileMatrix );
         if ( tm == null ) {
             return null;
         }

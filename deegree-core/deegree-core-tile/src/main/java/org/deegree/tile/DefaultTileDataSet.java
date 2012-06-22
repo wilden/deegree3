@@ -67,22 +67,25 @@ public class DefaultTileDataSet implements TileDataSet {
 
     private static final Logger LOG = getLogger( DefaultTileDataSet.class );
 
-    private final Map<String, TileDataLevel> matrices;
+    private final Map<String, TileDataLevel> levels;
 
     private TileMatrixSet metadata;
 
-    public DefaultTileDataSet( List<TileDataLevel> matrices, TileMatrixSet metadata ) {
-        this.matrices = new LinkedHashMap<String, TileDataLevel>();
-        for ( TileDataLevel m : matrices ) {
-            this.matrices.put( m.getMetadata().getIdentifier(), m );
+    private final String format;
+
+    public DefaultTileDataSet( List<TileDataLevel> levels, TileMatrixSet tileMatrixSet, String format ) {
+        this.format = format;
+        this.levels = new LinkedHashMap<String, TileDataLevel>();
+        for ( TileDataLevel m : levels ) {
+            this.levels.put( m.getMetadata().getIdentifier(), m );
         }
-        this.metadata = metadata;
+        this.metadata = tileMatrixSet;
     }
 
     @Override
     public Iterator<Tile> getTiles( Envelope envelope, double resolution ) {
         // select correct matrix
-        Iterator<TileDataLevel> iter = matrices.values().iterator();
+        Iterator<TileDataLevel> iter = levels.values().iterator();
         TileDataLevel matrix = iter.next();
         TileDataLevel next = matrix;
         while ( next.getMetadata().getResolution() <= resolution && iter.hasNext() ) {
@@ -133,18 +136,23 @@ public class DefaultTileDataSet implements TileDataSet {
     }
 
     @Override
-    public List<TileDataLevel> getTileMatrices() {
-        return new ArrayList<TileDataLevel>( matrices.values() );
+    public List<TileDataLevel> getTileDataLevels() {
+        return new ArrayList<TileDataLevel>( levels.values() );
     }
 
     @Override
-    public TileMatrixSet getMetadata() {
+    public TileMatrixSet getTileMatrixSet() {
         return metadata;
     }
 
     @Override
-    public TileDataLevel getTileMatrix( String identifier ) {
-        return matrices.get( identifier );
+    public TileDataLevel getTileDataLevel( String identifier ) {
+        return levels.get( identifier );
+    }
+
+    @Override
+    public String getNativeImageFormat() {
+        return format;
     }
 
 }

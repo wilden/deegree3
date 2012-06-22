@@ -53,7 +53,7 @@ import org.deegree.tile.TileMatrix;
  * 
  * @version $Revision$, $Date$
  */
-class FileSystemTileMatrix implements TileDataLevel {
+class FileSystemTileDataLevel implements TileDataLevel {
 
     private final SimpleGeometryFactory fac = new SimpleGeometryFactory();
 
@@ -62,12 +62,12 @@ class FileSystemTileMatrix implements TileDataLevel {
     private final DiskLayout layout;
 
     /**
-     * Creates a new {@link FileSystemTileMatrix} instance.
+     * Creates a new {@link FileSystemTileDataLevel} instance.
      * 
      * @param metadata
      * @param layout
      */
-    FileSystemTileMatrix( TileMatrix metadata, DiskLayout layout ) {
+    FileSystemTileDataLevel( TileMatrix metadata, DiskLayout layout ) {
         this.metadata = metadata;
         this.layout = layout;
     }

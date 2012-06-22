@@ -234,7 +234,7 @@ public class WMTSController extends AbstractOWS {
         }
 
         String format = op.getFormat();
-        if ( !store.getTileMatrixSet( op.getTileMatrixSet() ).getMetadata().getMimeType().equals( format ) ) {
+        if ( !store.getTileDataSet( op.getTileMatrixSet() ).getNativeImageFormat().equals( format ) ) {
             throw new OWSException( "Unknown format: " + format, INVALID_PARAMETER_VALUE );
         }
 

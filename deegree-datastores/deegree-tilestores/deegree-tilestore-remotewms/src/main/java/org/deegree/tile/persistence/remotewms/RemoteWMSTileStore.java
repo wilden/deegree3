@@ -146,17 +146,17 @@ public class RemoteWMSTileStore implements TileStore {
             }
 
             TileDataSet tileMatrixSet = buildTileMatrixSet( crs, config, client );
-            tileMatrixSets.put( tileMatrixSet.getMetadata().getIdentifier(), tileMatrixSet );
+            tileMatrixSets.put( tileMatrixSet.getTileMatrixSet().getIdentifier(), tileMatrixSet );
         }
     }
 
     @Override
-    public Collection<String> getTileMatrixSetIds() {
+    public Collection<String> getTileDataSetIds() {
         return tileMatrixSets.keySet();
     }
 
     private static TileDataSet buildTileMatrixSet( ICRS crs, RemoteWMSTileStoreJAXB.TileMatrixSet config,
-                                                     WMSClient client ) {
+                                                   WMSClient client ) {
         RequestParams requestParams = config.getRequestParams();
         List<String> layers = splitNullSafe( requestParams.getLayers() );
         List<String> styles = splitNullSafe( requestParams.getStyles() );
@@ -179,15 +179,16 @@ public class RemoteWMSTileStore implements TileStore {
     }
 
     private static TileDataSet buildTileMatrixSet( String tmsId, SpatialMetadata smd, int tileWidth, int tileHeight,
-                                                     double scaleDenominator, int levels, List<String> layers,
-                                                     List<String> styles, String format, WMSClient client,
-                                                     String outputFormat ) {
+                                                   double scaleDenominator, int levels, List<String> layers,
+                                                   List<String> styles, String format, WMSClient client,
+                                                   String outputFormat ) {
 
         if ( outputFormat != null && outputFormat.startsWith( "image/" ) ) {
             outputFormat = outputFormat.substring( 6 );
         }
 
-        List<TileDataLevel> matrices = new ArrayList<TileDataLevel>( levels );
+        List<TileDataLevel> dataLevels = new ArrayList<TileDataLevel>( levels );
+        List<TileMatrix> matrices = new ArrayList<TileMatrix>();
         Envelope bbox = smd.getEnvelope();
         double span0 = bbox.getSpan0();
         double span1 = bbox.getSpan1();
@@ -199,14 +200,15 @@ public class RemoteWMSTileStore implements TileStore {
             int numY = MathUtils.round( Math.ceil( span1 / ( res * tileHeight ) ) );
 
             TileMatrix md = new TileMatrix( id, smd, tileWidth, tileHeight, res, numX, numY );
+            matrices.add( md );
 
             TileDataLevel m = new RemoteWMSTileMatrix( md, format, layers, styles, client, outputFormat );
-            matrices.add( m );
+            dataLevels.add( m );
 
             scaleDenominator *= 2;
         }
         String f = outputFormat != null ? "image/" + outputFormat : format;
-        return new DefaultTileDataSet( matrices, new TileMatrixSet( tmsId, f, smd ) );
+        return new DefaultTileDataSet( dataLevels, new TileMatrixSet( tmsId, matrices, smd ), f );
     }
 
     /**
@@ -252,11 +254,11 @@ public class RemoteWMSTileStore implements TileStore {
 
     @Override
     public SpatialMetadata getMetadata( String id ) {
-        return tileMatrixSets.get( id ).getMetadata().getSpatialMetadata();
+        return tileMatrixSets.get( id ).getTileMatrixSet().getSpatialMetadata();
     }
 
     @Override
-    public TileDataSet getTileMatrixSet( String id ) {
+    public TileDataSet getTileDataSet( String id ) {
         return tileMatrixSets.get( id );
     }
 
@@ -267,7 +269,7 @@ public class RemoteWMSTileStore implements TileStore {
 
     @Override
     public Tile getTile( String tmsId, String tileMatrix, int x, int y ) {
-        TileDataLevel m = tileMatrixSets.get( tmsId ).getTileMatrix( tileMatrix );
+        TileDataLevel m = tileMatrixSets.get( tmsId ).getTileDataLevel( tileMatrix );
         if ( m == null ) {
             return null;
         }

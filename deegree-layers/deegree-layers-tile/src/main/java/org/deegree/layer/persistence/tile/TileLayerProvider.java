@@ -94,7 +94,7 @@ public class TileLayerProvider implements LayerStoreProvider {
         if ( store == null ) {
             throw new ResourceInitException( "Tile store with id " + id.getValue() + " was not available." );
         }
-        if ( store.getTileMatrixSet( id.getTileMatrixSet() ) == null ) {
+        if ( store.getTileDataSet( id.getTileMatrixSet() ) == null ) {
             throw new ResourceInitException( "Tile store with id " + id.getValue()
                                              + " does not provide a tile matrix set with id " + id.getTileMatrixSet()
                                              + "." );

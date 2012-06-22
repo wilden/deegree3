@@ -78,9 +78,9 @@ public class GeoTIFFTileStoreTest {
         TileStore ts = new GeoTIFFTileStore( Collections.singletonList( new Pair<File, String>( file, null ) ) );
         ts.init( null );
         Envelope envelope = ts.getMetadata( "merged" ).getEnvelope();
-        TileDataSet set = ts.getTileMatrixSet( "merged" );
+        TileDataSet set = ts.getTileDataSet( "merged" );
         double res = 0;
-        for ( TileDataLevel tm : set.getTileMatrices() ) {
+        for ( TileDataLevel tm : set.getTileDataLevels() ) {
             res = Math.max( tm.getMetadata().getResolution(), res );
         }
 

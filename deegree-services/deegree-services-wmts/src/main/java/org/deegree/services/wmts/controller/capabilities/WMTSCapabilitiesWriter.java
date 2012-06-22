@@ -261,8 +261,8 @@ public class WMTSCapabilitiesWriter extends OWSCapabilitiesXMLAdapter {
                     writeElement( writer, OWS110_NS, "Identifier", "default" );
                     writer.writeEndElement();
                     List<String> fmts = new ArrayList<String>();
-                    for ( String id : ts.getTileMatrixSetIds() ) {
-                        String fmt = ts.getTileMatrixSet( id ).getMetadata().getMimeType();
+                    for ( String id : ts.getTileDataSetIds() ) {
+                        String fmt = ts.getTileDataSet( id ).getNativeImageFormat();
                         if ( !fmts.contains( fmt ) ) {
                             fmts.add( fmt );
                         }
@@ -270,7 +270,7 @@ public class WMTSCapabilitiesWriter extends OWSCapabilitiesXMLAdapter {
                     for ( String fmt : fmts ) {
                         writeElement( writer, WMTSNS, "Format", fmt );
                     }
-                    for ( String id : ts.getTileMatrixSetIds() ) {
+                    for ( String id : ts.getTileDataSetIds() ) {
                         writer.writeStartElement( WMTSNS, "TileMatrixSetLink" );
                         writeElement( writer, WMTSNS, "TileMatrixSet", id );
                         writer.writeEndElement();
@@ -289,15 +289,15 @@ public class WMTSCapabilitiesWriter extends OWSCapabilitiesXMLAdapter {
                     LayerMetadata md = tl.getMetadata();
                     TileStore ts = tl.getTileStore();
 
-                    for ( String id : ts.getTileMatrixSetIds() ) {
+                    for ( String id : ts.getTileDataSetIds() ) {
                         writer.writeStartElement( WMTSNS, "TileMatrixSet" );
 
                         exportMetadata( md, true, id );
-                        TileMatrixSet metadata = ts.getTileMatrixSet( id ).getMetadata();
+                        TileMatrixSet metadata = ts.getTileDataSet( id ).getTileMatrixSet();
                         ICRS cs = metadata.getSpatialMetadata().getCoordinateSystems().get( 0 );
                         writeElement( writer, OWS110_NS, "SupportedCRS", cs.getAlias() );
 
-                        for ( TileDataLevel tm : ts.getTileMatrixSet( id ).getTileMatrices() ) {
+                        for ( TileDataLevel tm : ts.getTileDataSet( id ).getTileDataLevels() ) {
                             TileMatrix tmmd = tm.getMetadata();
                             writer.writeStartElement( WMTSNS, "TileMatrix" );
                             double scale;

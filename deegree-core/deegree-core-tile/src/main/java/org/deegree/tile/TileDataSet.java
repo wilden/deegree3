@@ -72,14 +72,14 @@ public interface TileDataSet {
      * 
      * @return the list of tile matrices this matrix set contains.
      */
-    List<TileDataLevel> getTileMatrices();
+    List<TileDataLevel> getTileDataLevels();
 
     /**
      * Returns the metadata about this matrix set.
      * 
      * @return never null.
      */
-    TileMatrixSet getMetadata();
+    TileMatrixSet getTileMatrixSet();
 
     /**
      * Returns a single tile matrix identified by the identifier.
@@ -87,6 +87,11 @@ public interface TileDataSet {
      * @param identifier
      * @return null, if no such matrix
      */
-    TileDataLevel getTileMatrix( String identifier );
+    TileDataLevel getTileDataLevel( String identifier );
+
+    /**
+     * @return the mime type of the native image format, never <code>null</code>
+     */
+    String getNativeImageFormat();
 
 }

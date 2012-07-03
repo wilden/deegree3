@@ -1,7 +1,7 @@
 //$HeadURL$
 /*----------------------------------------------------------------------------
  This file is part of deegree, http://deegree.org/
- Copyright (C) 2001-2010 by:
+ Copyright (C) 2001-2012 by:
  - Department of Geography, University of Bonn -
  and
  - lat/lon GmbH -
@@ -31,47 +31,34 @@
  Germany
  http://www.geographie.uni-bonn.de/deegree/
 
- Occam Labs UG (haftungsbeschränkt)
- Godesberger Allee 139, 53175 Bonn
- Germany
- http://www.occamlabs.de/
-
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.wmts;
+package org.deegree.protocol.wmts.client;
 
-import org.deegree.commons.tom.ows.Version;
+import static junit.framework.Assert.assertNotNull;
 
-/**
- * <code>WMTSConstants</code>
- * 
- * @author <a href="mailto:schmitz@occamlabs.de">Andreas Schmitz</a>
- * @author last edited by: $Author: mschneider $
- * 
- * @version $Revision: 31882 $, $Date: 2011-09-15 02:05:04 +0200 (Thu, 15 Sep 2011) $
- */
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
-public class WMTSConstants {
+import javax.xml.stream.XMLStreamException;
 
-    /** Namespace for elements from WMTS specification 1.0.0 */
-    public static final String WMTS_100_NS = "http://www.opengis.net/wmts/1.0";
+import org.deegree.protocol.ows.exception.OWSExceptionReport;
+import org.junit.Test;
 
-    /** Common namespace prefix for elements from WMTS specification */
-    public static final String WMTS_PREFIX = "wmts";
+public class WMTSClientIT {
 
-    /** WMTS protocol version 1.0.0 */
-    public static final Version VERSION_100 = Version.parseVersion( "1.0.0" );
-    
-    /**
-     * <code>WMTSRequestType</code>
-     * 
-     * @author <a href="mailto:schmitz@occamlabs.de">Andreas Schmitz</a>
-     * @author last edited by: $Author: mschneider $
-     * 
-     * @version $Revision: 31882 $, $Date: 2011-09-15 02:05:04 +0200 (Thu, 15 Sep 2011) $
-     */
-    public static enum WMTSRequestType {
-        GetCapabilities, GetTile, GetFeatureInfo
+    private static final String WMTS_CAPABILITIES_URL = "http://v2.suite.opengeo.org/geoserver/gwc/service/wmts?service=WMTS&version=1.0.0&request=GetCapabilities";
+
+    @Test
+    public void testConnectAndGetTile()
+                            throws MalformedURLException, OWSExceptionReport, XMLStreamException, IOException {
+
+        WMTSClient client = new WMTSClient( new URL( WMTS_CAPABILITIES_URL ) );
+        GetTileResponse response = client.getTile( "medford:hydro", "_null", "image/png", "EPSG:900913",
+                                                   "EPSG:900913:24", 6203400, 2660870 );
+        BufferedImage img = response.getAsImage();
+        assertNotNull( img );
     }
-
 }

@@ -39,7 +39,7 @@ import org.deegree.protocol.ows.capabilities.OWSCapabilitiesAdapter;
 import org.deegree.protocol.ows.capabilities.OWSCommon110CapabilitiesAdapter;
 
 /**
- * {@link OWSCapabilitiesAdapter} for Web Map Tiling Service (WMTS) 1.0.0 capabilities documents.
+ * {@link OWSCapabilitiesAdapter} for Web Map Tile Service (WMTS) 1.0.0 capabilities documents.
  * 
  * @author <a href="mailto:schneider@occamlabs.de">Markus Schneider</a>
  * @author last edited by: $Author: markus $

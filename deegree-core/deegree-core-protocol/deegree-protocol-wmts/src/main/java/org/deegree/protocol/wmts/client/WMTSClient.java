@@ -1,7 +1,7 @@
 //$HeadURL$
 /*----------------------------------------------------------------------------
  This file is part of deegree, http://deegree.org/
- Copyright (C) 2001-2011 by:
+ Copyright (C) 2001-2012 by:
  - Department of Geography, University of Bonn -
  and
  - lat/lon GmbH -
@@ -32,17 +32,94 @@
  http://www.geographie.uni-bonn.de/deegree/
 
  e-mail: info@deegree.org
-----------------------------------------------------------------------------*/
+ ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wmts.client;
 
+import static org.deegree.protocol.wmts.WMTSConstants.VERSION_100;
+import static org.deegree.protocol.wmts.WMTSConstants.WMTS_100_NS;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.LinkedHashMap;
+
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
+
+import org.apache.axiom.om.OMElement;
+import org.deegree.protocol.ows.client.AbstractOWSClient;
+import org.deegree.protocol.ows.client.OWSResponse;
+import org.deegree.protocol.ows.exception.OWSExceptionReport;
+import org.deegree.protocol.wmts.WMTSConstants;
+
 /**
- * TODO add class documentation here
+ * API-level client for accessing servers that implement the <a
+ * href="http://www.opengeospatial.org/standards/wmts">OpenGIS Web Map Tile Service (WMTS) 1.0.0</a> protocol.
  * 
- * @author <a href="mailto:name@company.com">Your Name</a>
+ * @author <a href="mailto:schneider@occamlabs.de">Markus Schneider</a>
  * @author last edited by: $Author: markus $
  * 
  * @version $Revision: $, $Date: $
  */
-public class WMTSClient {
+public class WMTSClient extends AbstractOWSClient<WMTSCapabilitiesAdapter> {
 
+    protected WMTSClient( URL capaUrl ) throws OWSExceptionReport, XMLStreamException, IOException {
+        super( capaUrl );
+    }
+
+    /**
+     * Fetches the specified tile using a <code>GetTile</code> request.
+     * 
+     * @param layer
+     *            layer identifier, must not be <code>null</code>
+     * @param style
+     *            style identifier, must not be <code>null</code>
+     * @param format
+     *            output format of the tile, must not be <code>null</code>
+     * @param tileMatrixSet
+     *            tile matrix set identifier, must not be <code>null</code>
+     * @param tileMatrix
+     *            tile matrix identifier, must not be <code>null</code>
+     * @param tileRow
+     *            row index of tile matrix, value between 0 and (matrix height-1)
+     * @param tileCol
+     *            column index of tile matrix, value between 0 and (matrix width-1)
+     * @return server response, never <code>null</code>
+     * @throws IOException
+     */
+    public GetTileResponse getTile( String layer, String style, String format, String tileMatrixSet, String tileMatrix,
+                                    int tileRow, int tileCol )
+                            throws IOException {
+
+        LinkedHashMap<String, String> kvp = new LinkedHashMap<String, String>();
+        kvp.put( "service", "WMTS" );
+        kvp.put( "request", "GetTile" );
+        kvp.put( "version", VERSION_100.toString() );
+        kvp.put( "layer", layer );
+        kvp.put( "style", style );
+        kvp.put( "format", format );
+        kvp.put( "tileMatrixSet", tileMatrixSet );
+        kvp.put( "tileMatrix", tileMatrix );
+        kvp.put( "tileRow", "" + tileRow );
+        kvp.put( "tileCol", "" + tileCol );
+
+        URL endPoint = getGetUrl( WMTSConstants.WMTSRequestType.GetTile.name() );
+        OWSResponse response = doGet( endPoint, kvp, null );
+        return new GetTileResponse( response );
+    }
+
+    @Override
+    protected WMTSCapabilitiesAdapter getCapabilitiesAdapter( OMElement root, String version )
+                            throws IOException {
+
+        QName rootElName = root.getQName();
+
+        if ( !new QName( WMTS_100_NS, "Capabilities" ).equals( rootElName ) ) {
+            String msg = "Unexpected WMTS GetCapabilities response element: '" + rootElName + "'.";
+            throw new IOException( msg );
+        }
+
+        WMTSCapabilitiesAdapter capaAdapter = new WMTSCapabilitiesAdapter();
+        capaAdapter.setRootElement( root );
+        return capaAdapter;
+    }
 }

@@ -325,7 +325,7 @@ public abstract class AbstractOWSClient<T extends OWSCapabilitiesAdapter> {
             query = new URI( sb.toString() );
             setCredentials( endPoint );
             HttpGet httpGet = new HttpGet( query );
-            LOG.debug( "Performing GET request: " + query );
+            LOG.info( "Performing GET request: " + query );
             HttpResponse httpResponse = httpClient.execute( httpGet );
             response = new OWSResponse( query, httpResponse );
         } catch ( Throwable e ) {

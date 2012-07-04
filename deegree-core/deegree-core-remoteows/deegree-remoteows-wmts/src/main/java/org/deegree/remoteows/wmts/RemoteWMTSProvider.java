@@ -49,8 +49,12 @@ import org.deegree.commons.utils.ProxyUtils;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.jaxb.JAXBUtils;
 import org.deegree.protocol.ows.exception.OWSExceptionReport;
+import org.deegree.protocol.ows.http.OwsHttpClient;
+import org.deegree.protocol.ows.http.OwsHttpClientImpl;
 import org.deegree.protocol.wmts.client.WMTSClient;
 import org.deegree.remoteows.RemoteOWSProvider;
+import org.deegree.remoteows.wmts.jaxb.AuthenticationType;
+import org.deegree.remoteows.wmts.jaxb.HTTPBasicAuthenticationType;
 import org.deegree.remoteows.wmts.jaxb.RemoteWMTSConfig;
 import org.slf4j.Logger;
 
@@ -72,9 +76,9 @@ public class RemoteWMTSProvider implements RemoteOWSProvider {
 
     private static final String CONFIG_NAMESPACE = "http://www.deegree.org/remoteows/wmts";
 
-//    private static final int DEFAULT_CONNECTION_TIMEOUT_SECS = 5;
-//
-//    private static final int DEFAULT_REQUEST_TIMEOUT_SECS = 60;
+    private static final int DEFAULT_CONNECTION_TIMEOUT_SECS = 5;
+
+    private static final int DEFAULT_REQUEST_TIMEOUT_SECS = 60;
 
     private DeegreeWorkspace workspace;
 
@@ -109,24 +113,29 @@ public class RemoteWMTSProvider implements RemoteOWSProvider {
     private WMTSClient createClient( RemoteWMTSConfig config, XMLAdapter urlResolver )
                             throws OWSExceptionReport, XMLStreamException, IOException {
         URL capas = urlResolver.resolve( config.getCapabilitiesDocumentLocation().getLocation() );
-        // int connTimeout = DEFAULT_CONNECTION_TIMEOUT_SECS;
-        // if ( config.getConnectionTimeout() != null ) {
-        // connTimeout = config.getConnectionTimeout();
-        // }
-        // int reqTimeout = DEFAULT_REQUEST_TIMEOUT_SECS;
-        // if ( config.getRequestTimeout() != null ) {
-        // reqTimeout = config.getRequestTimeout();
-        // }
-        //
-        // AuthenticationType type = config.getAuthentication() == null ? null : config.getAuthentication().getValue();
-        // String user = null;
-        // String pass = null;
-        // if ( type instanceof HTTPBasicAuthenticationType ) {
-        // HTTPBasicAuthenticationType basic = (HTTPBasicAuthenticationType) type;
-        // user = basic.getUsername();
-        // pass = basic.getPassword();
-        // }
-        return new WMTSClient( capas );
+        OwsHttpClient httpClient = createOwsHttpClient( config );
+        return new WMTSClient( capas, httpClient );
+    }
+
+    private OwsHttpClient createOwsHttpClient( RemoteWMTSConfig config ) {
+        int connTimeout = DEFAULT_CONNECTION_TIMEOUT_SECS;
+        if ( config.getConnectionTimeout() != null ) {
+            connTimeout = config.getConnectionTimeout();
+        }
+        int reqTimeout = DEFAULT_REQUEST_TIMEOUT_SECS;
+        if ( config.getRequestTimeout() != null ) {
+            reqTimeout = config.getRequestTimeout();
+        }
+
+        AuthenticationType type = config.getAuthentication() == null ? null : config.getAuthentication().getValue();
+        String user = null;
+        String pass = null;
+        if ( type instanceof HTTPBasicAuthenticationType ) {
+            HTTPBasicAuthenticationType basic = (HTTPBasicAuthenticationType) type;
+            user = basic.getUsername();
+            pass = basic.getPassword();
+        }
+        return new OwsHttpClientImpl( connTimeout * 1000, reqTimeout * 1000, user, pass );
     }
 
     private RemoteWMTSConfig unmarshall( URL configUrl )

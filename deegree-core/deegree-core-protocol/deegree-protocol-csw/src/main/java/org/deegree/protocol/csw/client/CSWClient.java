@@ -66,6 +66,7 @@ import org.deegree.protocol.csw.client.transaction.TransactionResponse;
 import org.deegree.protocol.csw.client.transaction.TransactionXMLEncoder;
 import org.deegree.protocol.ows.client.AbstractOWSClient;
 import org.deegree.protocol.ows.exception.OWSExceptionReport;
+import org.deegree.protocol.ows.http.OwsHttpClientImpl;
 import org.deegree.protocol.ows.http.OwsResponse;
 import org.deegree.protocol.ows.metadata.OperationsMetadata;
 import org.deegree.protocol.ows.metadata.domain.AllowedValues;
@@ -119,7 +120,7 @@ public class CSWClient extends AbstractOWSClient<CSWCapabilitiesAdapter> {
      *             if a communication/network problem occured
      */
     public CSWClient( URL capaUrl ) throws OWSExceptionReport, XMLStreamException, IOException {
-        super( capaUrl );
+        super( capaUrl, null );
     }
 
     /**
@@ -138,7 +139,7 @@ public class CSWClient extends AbstractOWSClient<CSWCapabilitiesAdapter> {
      */
     public CSWClient( URL capaUrl, int connectionTimeout, int readTimeout ) throws OWSExceptionReport,
                             XMLStreamException, IOException {
-        super( capaUrl );
+        super( capaUrl, new OwsHttpClientImpl( connectionTimeout, 0, null, null ) );
         this.connectionTimeout = connectionTimeout;
         this.readTimeout = readTimeout;
     }

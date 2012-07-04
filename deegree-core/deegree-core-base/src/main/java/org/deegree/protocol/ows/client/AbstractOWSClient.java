@@ -51,8 +51,9 @@ import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.protocol.ows.capabilities.OWSCapabilitiesAdapter;
 import org.deegree.protocol.ows.exception.OWSExceptionReport;
-import org.deegree.protocol.ows.http.OwsResponse;
+import org.deegree.protocol.ows.http.OwsHttpClient;
 import org.deegree.protocol.ows.http.OwsHttpClientImpl;
+import org.deegree.protocol.ows.http.OwsResponse;
 import org.deegree.protocol.ows.metadata.OperationsMetadata;
 import org.deegree.protocol.ows.metadata.ServiceIdentification;
 import org.deegree.protocol.ows.metadata.ServiceProvider;
@@ -75,46 +76,72 @@ public abstract class AbstractOWSClient<T extends OWSCapabilitiesAdapter> {
 
     protected T capaDoc;
 
+    protected final OwsHttpClient httpClient;
+
+    // service endpoint derived from capabilities URL (may be null)
+    private URL capaBaseUrl;
+
     private ServiceIdentification identification;
 
     private ServiceProvider provider;
 
     private OperationsMetadata metadata;
 
-    // service endpoint derived from capabilities URL (may be null)
-    private URL capaBaseUrl;
-
-    protected String httpBasicUser;
-
-    protected String httpBasicPass;
-
-    protected OwsHttpClientImpl httpClient;
-
     /**
-     * Creates a new {@link AbstractOWSClient} instance.
+     * Creates a new {@link AbstractOWSClient} instance from the given capabilities document.
      * 
-     * @param capaUrl
-     *            url of a OWS capabilities document, usually this is a <code>GetCapabilities</code> request to the
-     *            service, must not be <code>null</code>
+     * @param capabilities
+     *            OWS capabilities document, must not be <code>null</code>
+     * @param httpClient
+     *            client for customizing HTTP communication, can be <code>null</code>
      * @throws OWSExceptionReport
      *             if the server replied with a service exception report
      * @throws XMLStreamException
      * @throws IOException
      *             if a communication/network problem occured
      */
-    protected AbstractOWSClient( URL capaUrl ) throws OWSExceptionReport, XMLStreamException, IOException {
-        this( capaUrl, null, null );
+    protected AbstractOWSClient( XMLAdapter capabilities, OwsHttpClient httpClient ) throws OWSExceptionReport,
+                            XMLStreamException, IOException {
+        if ( capabilities == null ) {
+            throw new NullPointerException( "Capabilities must not be null." );
+        }
+        try {
+            capaBaseUrl = getGetUrl( "GetCapabilities" );
+        } catch ( Exception e ) {
+            LOG.warn( "No GetCapabilities URL available." );
+        }
+        if ( httpClient != null ) {
+            this.httpClient = httpClient;
+        } else {
+            this.httpClient = new OwsHttpClientImpl();
+        }
+        initCapabilities( capabilities );
     }
 
-    protected AbstractOWSClient( URL capaUrl, String user, String pass ) throws IOException, OWSExceptionReport,
+    /**
+     * Creates a new {@link AbstractOWSClient} instance from the given capabilities URL.
+     * 
+     * @param capaUrl
+     *            URL of a OWS capabilities document, usually this is a <code>GetCapabilities</code> request to the
+     *            service, must not be <code>null</code>
+     * @param httpClient
+     *            client for customizing HTTP communication, can be <code>null</code>
+     * @throws OWSExceptionReport
+     *             if the server replied with a service exception report
+     * @throws XMLStreamException
+     * @throws IOException
+     *             if a communication/network problem occured
+     */
+    protected AbstractOWSClient( URL capaUrl, OwsHttpClient httpClient ) throws IOException, OWSExceptionReport,
                             XMLStreamException {
         if ( capaUrl == null ) {
             throw new NullPointerException( "Capabilities URL must not be null." );
         }
-        httpBasicUser = user;
-        httpBasicPass = pass;
-        httpClient = new OwsHttpClientImpl( user, pass );
-
+        if ( httpClient != null ) {
+            this.httpClient = httpClient;
+        } else {
+            this.httpClient = new OwsHttpClientImpl();
+        }
         initCapabilities( capaUrl );
 
         String baseUrl = capaUrl.toString();
@@ -126,13 +153,9 @@ public abstract class AbstractOWSClient<T extends OWSCapabilitiesAdapter> {
             } catch ( Throwable t ) {
                 LOG.warn( t.getMessage() );
             }
+        } else {
+            capaBaseUrl = capaUrl;
         }
-    }
-
-    protected AbstractOWSClient( XMLAdapter capabilities ) throws IOException {
-        initCapabilities( capabilities );
-        httpClient = new OwsHttpClientImpl( null, null );
-        capaBaseUrl = getGetUrl( "GetCapabilities" );
     }
 
     private void initCapabilities( URL capaUrl )

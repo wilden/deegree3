@@ -48,6 +48,7 @@ import javax.xml.stream.XMLStreamException;
 import org.apache.axiom.om.OMElement;
 import org.deegree.protocol.ows.client.AbstractOWSClient;
 import org.deegree.protocol.ows.exception.OWSExceptionReport;
+import org.deegree.protocol.ows.http.OwsHttpClient;
 import org.deegree.protocol.ows.http.OwsResponse;
 import org.deegree.protocol.wmts.WMTSConstants;
 
@@ -62,8 +63,9 @@ import org.deegree.protocol.wmts.WMTSConstants;
  */
 public class WMTSClient extends AbstractOWSClient<WMTSCapabilitiesAdapter> {
 
-    public WMTSClient( URL capaUrl ) throws OWSExceptionReport, XMLStreamException, IOException {
-        super( capaUrl );
+    public WMTSClient( URL capaUrl, OwsHttpClient httpClient ) throws OWSExceptionReport, XMLStreamException,
+                            IOException {
+        super( capaUrl, httpClient );
     }
 
     /**

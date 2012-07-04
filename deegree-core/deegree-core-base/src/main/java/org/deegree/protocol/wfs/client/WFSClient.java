@@ -144,7 +144,7 @@ public class WFSClient extends AbstractOWSClient<WFSCapabilitiesAdapter> {
      *             if a communication/network problem occured
      */
     public WFSClient( URL capaUrl ) throws OWSExceptionReport, XMLStreamException, IOException {
-        super( capaUrl );
+        super( capaUrl, null );
         wfsFts = capaDoc.parseFeatureTypeList();
         for ( WFSFeatureType wfsFt : wfsFts ) {
             ftNameTowfsFt.put( wfsFt.getName(), wfsFt );

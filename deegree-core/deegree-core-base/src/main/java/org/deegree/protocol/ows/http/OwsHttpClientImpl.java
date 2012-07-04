@@ -35,6 +35,8 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.ows.http;
 
+import static org.deegree.commons.utils.net.HttpUtils.handleProxies;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -49,8 +51,10 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.protocol.HttpContext;
 import org.deegree.commons.utils.io.StreamBufferStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,21 +71,48 @@ public class OwsHttpClientImpl implements OwsHttpClient {
 
     private static final Logger LOG = LoggerFactory.getLogger( OwsHttpClientImpl.class );
 
+    private static final int DEFAULT_CONNECTION_TIMEOUT_MILLIS = 5 * 1000;
+
+    private static final int DEFAULT_READ_TIMEOUT_MILLIS = 30 * 1000;
+
     private final String user;
 
     private final String pass;
 
-    private final DefaultHttpClient httpClient;
+    private final int connectionTimeoutMillis;
 
-    public OwsHttpClientImpl( String user, String pass ) {
-        this.user = user;
-        this.pass = pass;
-        this.httpClient = initHttpClient();
+    private final int readTimeoutMillis;
+
+    /**
+     * Creates a new {@link OwsHttpClientImpl} instance.
+     * 
+     * @param connectionTimeoutMillis
+     *            timeout for establishing the connection, not applied if zero or negative
+     * @param readTimeoutMillis
+     *            timeout for reading from the connection, not applied if zero or negative
+     * @param httpBasicUser
+     *            user name for http basic authentication, can be <code>null</code> (no authentication)
+     * @param httpBasicPass
+     *            password for http basic authentication, can be <code>null</code> (no authentication)
+     */
+    public OwsHttpClientImpl( int connectionTimeoutMillis, int readTimeoutMillis, String httpBasicUser,
+                              String httpBasicPass ) {
+        if ( connectionTimeoutMillis > 0 ) {
+            this.connectionTimeoutMillis = connectionTimeoutMillis;
+        } else {
+            this.connectionTimeoutMillis = DEFAULT_CONNECTION_TIMEOUT_MILLIS;
+        }
+        if ( readTimeoutMillis > 0 ) {
+            this.readTimeoutMillis = readTimeoutMillis;
+        } else {
+            this.readTimeoutMillis = DEFAULT_READ_TIMEOUT_MILLIS;
+        }
+        this.user = httpBasicUser;
+        this.pass = httpBasicPass;
     }
 
-    private DefaultHttpClient initHttpClient() {
-        ThreadSafeClientConnManager connManager = new ThreadSafeClientConnManager();
-        return new DefaultHttpClient( connManager );
+    public OwsHttpClientImpl() {
+        this( DEFAULT_CONNECTION_TIMEOUT_MILLIS, DEFAULT_READ_TIMEOUT_MILLIS, null, null );
     }
 
     @Override
@@ -108,8 +139,8 @@ public class OwsHttpClientImpl implements OwsHttpClient {
             }
 
             query = new URI( sb.toString() );
-            setCredentials( endPoint );
             HttpGet httpGet = new HttpGet( query );
+            DefaultHttpClient httpClient = getInitializedHttpClient( endPoint );
             LOG.info( "Performing GET request: " + query );
             HttpResponse httpResponse = httpClient.execute( httpGet );
             response = new OwsResponse( query, httpResponse );
@@ -128,12 +159,12 @@ public class OwsHttpClientImpl implements OwsHttpClient {
         OwsResponse response = null;
         try {
             HttpPost httpPost = new HttpPost( endPoint.toURI() );
+            DefaultHttpClient httpClient = getInitializedHttpClient( endPoint );
             LOG.debug( "Performing POST request on " + endPoint );
             LOG.debug( "post size: " + body.size() );
             InputStreamEntity entity = new InputStreamEntity( body.getInputStream(), (long) body.size() );
             entity.setContentType( contentType );
             httpPost.setEntity( entity );
-            setCredentials( endPoint );
             HttpResponse httpResponse = httpClient.execute( httpPost );
             response = new OwsResponse( endPoint.toURI(), httpResponse );
         } catch ( Throwable e ) {
@@ -143,10 +174,38 @@ public class OwsHttpClientImpl implements OwsHttpClient {
         return response;
     }
 
-    private void setCredentials( URL url ) {
+    private DefaultHttpClient getInitializedHttpClient( URL url ) {
+        DefaultHttpClient client = new DefaultHttpClient();
+        setTimeouts( client );
+        setProxies( url, client );
+        setCredentials( url, client );
+        return client;
+    }
+
+    private void setProxies( URL url, DefaultHttpClient client ) {
+        String host = url.getHost();
+        String protocol = url.getProtocol().toLowerCase();
+        handleProxies( protocol, client, host );
+    }
+
+    private void setTimeouts( DefaultHttpClient client ) {
+        HttpConnectionParams.setConnectionTimeout( client.getParams(), connectionTimeoutMillis );
+        client.setKeepAliveStrategy( new DefaultConnectionKeepAliveStrategy() {
+            @Override
+            public long getKeepAliveDuration( HttpResponse response, HttpContext context ) {
+                long keepAlive = super.getKeepAliveDuration( response, context );
+                if ( keepAlive == -1 ) {
+                    keepAlive = readTimeoutMillis;
+                }
+                return keepAlive;
+            }
+        } );
+    }
+
+    private void setCredentials( URL url, DefaultHttpClient client ) {
         if ( user != null ) {
-            httpClient.getCredentialsProvider().setCredentials( new AuthScope( url.getHost(), url.getPort() ),
-                                                                new UsernamePasswordCredentials( user, pass ) );
+            client.getCredentialsProvider().setCredentials( new AuthScope( url.getHost(), url.getPort() ),
+                                                            new UsernamePasswordCredentials( user, pass ) );
         }
     }
 

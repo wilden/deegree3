@@ -55,7 +55,7 @@ public class WMTSClientIT {
     public void testConnectAndGetTile()
                             throws MalformedURLException, OWSExceptionReport, XMLStreamException, IOException {
 
-        WMTSClient client = new WMTSClient( new URL( WMTS_CAPABILITIES_URL ) );
+        WMTSClient client = new WMTSClient( new URL( WMTS_CAPABILITIES_URL ), null );
         GetTileResponse response = client.getTile( "medford:hydro", "_null", "image/png", "EPSG:900913",
                                                    "EPSG:900913:24", 6203400, 2660870 );
         BufferedImage img = response.getAsImage();

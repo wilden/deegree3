@@ -58,7 +58,7 @@ import org.deegree.tile.TileMatrix;
  * @version $Revision: 31882 $, $Date: 2011-09-15 02:05:04 +0200 (Thu, 15 Sep 2011) $
  */
 
-public class GeoTIFFTileMatrix implements TileDataLevel {
+public class GeoTIFFTileDataLevel implements TileDataLevel {
 
     private final TileMatrix metadata;
 
@@ -68,11 +68,17 @@ public class GeoTIFFTileMatrix implements TileDataLevel {
 
     private GenericObjectPool readerPool;
 
-    public GeoTIFFTileMatrix( TileMatrix metadata, File file, int imageIndex ) {
+    private final int xoff, yoff, numx, numy;
+
+    public GeoTIFFTileDataLevel( TileMatrix metadata, File file, int imageIndex, int xoff, int yoff, int numx, int numy ) {
         this.metadata = metadata;
         this.imageIndex = imageIndex;
         ImageReaderFactory fac = new ImageReaderFactory( file );
         this.readerPool = new GenericObjectPool( fac );
+        this.xoff = xoff;
+        this.yoff = yoff;
+        this.numx = numx;
+        this.numy = numy;
     }
 
     @Override
@@ -85,13 +91,23 @@ public class GeoTIFFTileMatrix implements TileDataLevel {
         if ( metadata.getNumTilesX() <= x || metadata.getNumTilesY() <= y || x < 0 || y < 0 ) {
             return null;
         }
+        // are requested tiles contained in tiff?
+        if ( x < xoff || y < yoff ) {
+            return null;
+        }
+        x -= xoff;
+        y -= yoff;
+        if ( x >= numx || y >= numy ) {
+            return null;
+        }
         double width = metadata.getTileWidth();
         double height = metadata.getTileHeight();
         Envelope env = metadata.getSpatialMetadata().getEnvelope();
         double minx = width * x + env.getMin().get0();
         double miny = env.getMax().get1() - height * y;
         Envelope envelope = fac.createEnvelope( minx, miny, minx + width, miny - height, env.getCoordinateSystem() );
-        return new GeoTIFFTile( readerPool, imageIndex, x, y, envelope, metadata.getTilePixelsX(), metadata.getTilePixelsY() );
+        return new GeoTIFFTile( readerPool, imageIndex, x, y, envelope, metadata.getTilePixelsX(),
+                                metadata.getTilePixelsY() );
     }
 
 }

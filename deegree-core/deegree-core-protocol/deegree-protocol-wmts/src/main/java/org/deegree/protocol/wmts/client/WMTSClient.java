@@ -62,7 +62,7 @@ import org.deegree.protocol.wmts.WMTSConstants;
  */
 public class WMTSClient extends AbstractOWSClient<WMTSCapabilitiesAdapter> {
 
-    protected WMTSClient( URL capaUrl ) throws OWSExceptionReport, XMLStreamException, IOException {
+    public WMTSClient( URL capaUrl ) throws OWSExceptionReport, XMLStreamException, IOException {
         super( capaUrl );
     }
 

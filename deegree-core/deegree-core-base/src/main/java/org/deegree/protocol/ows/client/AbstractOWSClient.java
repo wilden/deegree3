@@ -125,17 +125,7 @@ public abstract class AbstractOWSClient<T extends OWSCapabilitiesAdapter> {
         httpBasicPass = pass;
         httpClient = initHttpClient();
 
-        OWSResponse response = doGet( capaUrl, null, null );
-        response.assertHttpStatus200();
-        XMLStreamReader responseAsXMLStream = response.getAsXMLStream();
-
-        try {
-            XMLAdapter xmlAdapter = new XMLAdapter( responseAsXMLStream );
-            initCapabilities( xmlAdapter );
-        } finally {
-            responseAsXMLStream.close();
-            response.close();
-        }
+        initCapabilities( capaUrl );
 
         String baseUrl = capaUrl.toString();
         int pos = baseUrl.indexOf( '?' );
@@ -153,6 +143,32 @@ public abstract class AbstractOWSClient<T extends OWSCapabilitiesAdapter> {
         initCapabilities( capabilities );
         httpClient = initHttpClient();
         capaBaseUrl = getGetUrl( "GetCapabilities" );
+    }
+
+    private void initCapabilities( URL capaUrl )
+                            throws IOException, OWSExceptionReport, XMLStreamException {
+
+        if ( shouldUseGet( capaUrl ) ) {
+            OWSResponse response = doGet( capaUrl, null, null );
+            response.assertHttpStatus200();
+            XMLStreamReader responseAsXMLStream = response.getAsXMLStream();
+
+            try {
+                XMLAdapter xmlAdapter = new XMLAdapter( responseAsXMLStream );
+                initCapabilities( xmlAdapter );
+            } finally {
+                responseAsXMLStream.close();
+                response.close();
+            }
+        } else {
+            XMLAdapter xmlAdapter = new XMLAdapter( capaUrl );
+            initCapabilities( xmlAdapter );
+        }
+    }
+
+    private boolean shouldUseGet( URL capaUrl ) {
+        String protocol = capaUrl.getProtocol();
+        return "http".equals( protocol ) || "https".equals( protocol );
     }
 
     protected void initCapabilities( XMLAdapter xmlAdapter )

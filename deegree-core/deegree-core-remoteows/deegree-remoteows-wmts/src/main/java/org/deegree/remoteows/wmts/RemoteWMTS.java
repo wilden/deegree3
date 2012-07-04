@@ -1,7 +1,7 @@
 //$HeadURL$
 /*----------------------------------------------------------------------------
  This file is part of deegree, http://deegree.org/
- Copyright (C) 2001-2010 by:
+ Copyright (C) 2001-2012 by:
  - Department of Geography, University of Bonn -
  and
  - lat/lon GmbH -
@@ -33,18 +33,45 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.remoteows;
+package org.deegree.remoteows.wmts;
 
-import java.util.List;
-
-import org.deegree.commons.config.ExtendedResourceProvider;
+import org.deegree.commons.config.DeegreeWorkspace;
+import org.deegree.commons.config.ResourceInitException;
+import org.deegree.protocol.wmts.client.WMTSClient;
+import org.deegree.remoteows.RemoteOWS;
 
 /**
+ * {@link RemoteOWS} implementation for remote <a href="http://www.opengeospatial.org/standards/wmts">Web Map Tile
+ * Services</a>.
  * 
- * @author <a href="mailto:schmitz@lat-lon.de">Andreas Schmitz</a>
+ * @author <a href="mailto:schneider@occamlabs.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
  */
-public interface RemoteOWSProvider extends ExtendedResourceProvider<RemoteOWS> {
+public class RemoteWMTS implements RemoteOWS {
+
+    private final WMTSClient client;
+
+    /**
+     * @param client
+     */
+    public RemoteWMTS( WMTSClient client ) {
+        this.client = client;
+    }
+
+    public WMTSClient getClient() {
+        return client;
+    }
+
+    @Override
+    public void destroy() {
+        // nothing to do
+    }
+
+    @Override
+    public void init( DeegreeWorkspace workspace )
+                            throws ResourceInitException {
+        // nothing to do
+    }
 }

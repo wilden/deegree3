@@ -208,16 +208,6 @@ public abstract class AbstractOWSClient<T extends OWSCapabilitiesAdapter> {
     }
 
     /**
-     * Called in the contructor, can be overwritten to set special parameters (e.g. a connection timeout).
-     * 
-     * @return the initialised {@link HttpClient}.
-     */
-    protected DefaultHttpClient initHttpClient() {
-        ThreadSafeClientConnManager connManager = new ThreadSafeClientConnManager();
-        return new DefaultHttpClient( connManager );
-    }
-
-    /**
      * Returns an {@link OWSCapabilitiesAdapter} instance suitable for the specific service and version.
      * 
      * @param rootEl

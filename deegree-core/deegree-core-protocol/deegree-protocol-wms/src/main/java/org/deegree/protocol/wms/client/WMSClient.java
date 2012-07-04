@@ -224,14 +224,6 @@ public class WMSClient extends AbstractOWSClient<WMSCapabilitiesAdapter> {
         checkCapabilities();
     }
 
-    @Override
-    protected DefaultHttpClient initHttpClient() {
-        DefaultHttpClient initHttpClient = super.initHttpClient();
-        DefaultHttpClient defaultHttpClient = new DefaultHttpClient( initHttpClient.getConnectionManager() );
-        HttpConnectionParams.setConnectionTimeout( defaultHttpClient.getParams(), connectionTimeout );
-        return initHttpClient;
-    }
-
     /**
      * Sets the maximum map size that the server will process. If a larger map is requested, it will be broken down into
      * multiple GetMap requests.

@@ -190,6 +190,7 @@ public class OwsHttpClientImpl implements OwsHttpClient {
 
     private void setTimeouts( DefaultHttpClient client ) {
         HttpConnectionParams.setConnectionTimeout( client.getParams(), connectionTimeoutMillis );
+        HttpConnectionParams.setSoTimeout( client.getParams(), readTimeoutMillis );        
         client.setKeepAliveStrategy( new DefaultConnectionKeepAliveStrategy() {
             @Override
             public long getKeepAliveDuration( HttpResponse response, HttpContext context ) {

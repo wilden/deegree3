@@ -49,8 +49,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.axiom.om.OMElement;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.params.HttpConnectionParams;
 import org.deegree.commons.tom.ows.Version;
 import org.deegree.commons.utils.Pair;
 import org.deegree.commons.utils.io.StreamBufferStore;
@@ -105,8 +103,6 @@ import org.deegree.protocol.ows.metadata.operation.Operation;
  */
 public class CSWClient extends AbstractOWSClient<CSWCapabilitiesAdapter> {
 
-    private int connectionTimeout = 0, readTimeout = 0;
-
     /**
      * Creates a new {@link CSWClient} instance with infinite timeout.
      * 
@@ -140,8 +136,6 @@ public class CSWClient extends AbstractOWSClient<CSWCapabilitiesAdapter> {
     public CSWClient( URL capaUrl, int connectionTimeout, int readTimeout ) throws OWSExceptionReport,
                             XMLStreamException, IOException {
         super( capaUrl, new OwsHttpClientImpl( connectionTimeout, 0, null, null ) );
-        this.connectionTimeout = connectionTimeout;
-        this.readTimeout = readTimeout;
     }
 
     @Override
@@ -263,15 +257,6 @@ public class CSWClient extends AbstractOWSClient<CSWCapabilitiesAdapter> {
             throw new UnsupportedOperationException( "Operation " + operationName + " is not supported!" );
     }
 
-    @Override
-    protected DefaultHttpClient initHttpClient() {
-        DefaultHttpClient initHttpClient = super.initHttpClient();
-        DefaultHttpClient defaultHttpClient = new DefaultHttpClient( initHttpClient.getConnectionManager() );
-        HttpConnectionParams.setConnectionTimeout( defaultHttpClient.getParams(), connectionTimeout );
-        HttpConnectionParams.setSoTimeout( defaultHttpClient.getParams(), readTimeout );
-        return initHttpClient;
-    }
-
     /**
      * Cope with <code>OperationMetadata</code> sections that specify separate SOAP and XML endpoints.
      * 
@@ -319,5 +304,4 @@ public class CSWClient extends AbstractOWSClient<CSWCapabilitiesAdapter> {
         }
         return getPostUrl( GetRecords.name() );
     }
-
 }

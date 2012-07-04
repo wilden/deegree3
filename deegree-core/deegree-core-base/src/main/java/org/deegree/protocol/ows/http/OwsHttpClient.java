@@ -35,11 +35,11 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.ows.http;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
 
 import org.deegree.commons.utils.io.StreamBufferStore;
-import org.deegree.protocol.ows.client.OWSResponse;
 
 /**
  * Performs HTTP requests (against remote OWS).
@@ -51,7 +51,43 @@ import org.deegree.protocol.ows.client.OWSResponse;
  */
 public interface OwsHttpClient {
 
-    OWSResponse doGet( URL endPoint, Map<String, String> params, Map<String, String> headers );
+    /**
+     * Performs an HTTP-GET request to the specified service endpoint.
+     * <p>
+     * NOTE: The caller <b>must</b> call {@link OwsResponse#close()} on the returned object eventually, otherwise
+     * underlying resources (connections) may not be freed.
+     * </p>
+     * 
+     * @param endPoint
+     *            service endpoint to send to request to, must not be <code>null</code>
+     * @param params
+     *            KVP parameters, may be <code>null</code>
+     * @param headers
+     *            HTTP headers, may be <code>null</code>
+     * @return service response, never <code>null</code>
+     * @throws IOException
+     */
+    OwsResponse doGet( URL endPoint, Map<String, String> params, Map<String, String> headers )
+                            throws IOException;
 
-    OWSResponse doPost( URL endPoint, String contentType, StreamBufferStore body, Map<String, String> headers );
+    /**
+     * Performs an HTTP-POST request to the specified service endpoint.
+     * <p>
+     * NOTE: The caller <b>must</b> call {@link OwsResponse#close()} on the returned object eventually, otherwise
+     * underlying resources (connections) may not be freed.
+     * </p>
+     * 
+     * @param endPoint
+     *            service endpoint to send to request to, must not be <code>null</code>
+     * @param contentType
+     *             content type, may be <code>null</code>
+     * @param body
+     *            POST body, may be <code>null</code>
+     * @param headers
+     *            HTTP headers, may be <code>null</code>
+     * @return service response, never <code>null</code>
+     * @throws IOException
+     */
+    OwsResponse doPost( URL endPoint, String contentType, StreamBufferStore body, Map<String, String> headers )
+                            throws IOException;
 }

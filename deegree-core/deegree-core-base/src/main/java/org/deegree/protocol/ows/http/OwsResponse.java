@@ -33,7 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.ows.client;
+package org.deegree.protocol.ows.http;
 
 import static org.deegree.commons.xml.stax.XMLStreamUtils.skipStartDocument;
 import static org.deegree.protocol.ows.exception.OWSException.NO_APPLICABLE_CODE;
@@ -52,6 +52,7 @@ import javax.xml.stream.XMLStreamReader;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
+import org.deegree.protocol.ows.client.AbstractOWSClient;
 import org.deegree.protocol.ows.exception.OWSException;
 import org.deegree.protocol.ows.exception.OWSExceptionReport;
 import org.slf4j.Logger;
@@ -71,9 +72,9 @@ import org.slf4j.LoggerFactory;
  * 
  * @version $Revision$, $Date$
  */
-public class OWSResponse {
+public class OwsResponse {
 
-    private static Logger LOG = LoggerFactory.getLogger( OWSResponse.class );
+    private static Logger LOG = LoggerFactory.getLogger( OwsResponse.class );
 
     private static final XMLInputFactory xmlFac = XMLInputFactory.newInstance();
 
@@ -83,7 +84,7 @@ public class OWSResponse {
 
     private final InputStream is;
 
-    OWSResponse( URI uri, HttpResponse httpResponse ) throws IllegalStateException, IOException {
+    OwsResponse( URI uri, HttpResponse httpResponse ) throws IllegalStateException, IOException {
         this.uri = uri;
         this.httpResponse = httpResponse;
         HttpEntity entity = httpResponse.getEntity();
@@ -120,7 +121,7 @@ public class OWSResponse {
     }
 
     /**
-     * Throws an {@link OWSExceptionReport} if the status code of this {@link OWSResponse} is not 200.
+     * Throws an {@link OWSExceptionReport} if the status code of this {@link OwsResponse} is not 200.
      * 
      * @throws OWSExceptionReport
      *             if status code isn't 200

@@ -47,8 +47,8 @@ import javax.xml.stream.XMLStreamException;
 
 import org.apache.axiom.om.OMElement;
 import org.deegree.protocol.ows.client.AbstractOWSClient;
-import org.deegree.protocol.ows.client.OWSResponse;
 import org.deegree.protocol.ows.exception.OWSExceptionReport;
+import org.deegree.protocol.ows.http.OwsResponse;
 import org.deegree.protocol.wmts.WMTSConstants;
 
 /**
@@ -103,7 +103,7 @@ public class WMTSClient extends AbstractOWSClient<WMTSCapabilitiesAdapter> {
         kvp.put( "tileCol", "" + tileCol );
 
         URL endPoint = getGetUrl( WMTSConstants.WMTSRequestType.GetTile.name() );
-        OWSResponse response = doGet( endPoint, kvp, null );
+        OwsResponse response = httpClient.doGet( endPoint, kvp, null );
         return new GetTileResponse( response );
     }
 

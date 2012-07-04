@@ -44,8 +44,8 @@ import javax.xml.stream.XMLStreamException;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.deegree.commons.utils.net.HttpUtils;
-import org.deegree.protocol.ows.client.OWSResponse;
 import org.deegree.protocol.ows.exception.OWSExceptionReport;
+import org.deegree.protocol.ows.http.OwsResponse;
 
 /**
  * The server response to a WMTS <code>GetTile</code> request.
@@ -61,9 +61,9 @@ import org.deegree.protocol.ows.exception.OWSExceptionReport;
  */
 public class GetTileResponse {
 
-    private final OWSResponse rawResponse;
+    private final OwsResponse rawResponse;
 
-    GetTileResponse( OWSResponse rawResponse ) {
+    GetTileResponse( OwsResponse rawResponse ) {
         this.rawResponse = rawResponse;
     }
 
@@ -105,7 +105,7 @@ public class GetTileResponse {
      * 
      * @return the raw server response, never <code>null</code>
      */
-    public OWSResponse getAsRawResponse() {
+    public OwsResponse getAsRawResponse() {
         return rawResponse;
     }
 

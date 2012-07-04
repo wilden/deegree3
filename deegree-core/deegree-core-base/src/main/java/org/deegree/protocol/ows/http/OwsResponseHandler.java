@@ -33,7 +33,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.protocol.ows.client;
+package org.deegree.protocol.ows.http;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,7 +43,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
 
-public class OWSResponseHandler implements ResponseHandler<InputStream> {
+public class OwsResponseHandler implements ResponseHandler<InputStream> {
 
     @Override
     public InputStream handleResponse( HttpResponse response )

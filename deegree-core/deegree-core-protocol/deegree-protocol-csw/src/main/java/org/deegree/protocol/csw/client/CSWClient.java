@@ -49,7 +49,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.axiom.om.OMElement;
-import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpConnectionParams;
 import org.deegree.commons.tom.ows.Version;
@@ -66,8 +65,8 @@ import org.deegree.protocol.csw.client.getrecords.GetRecordsXMLEncoder;
 import org.deegree.protocol.csw.client.transaction.TransactionResponse;
 import org.deegree.protocol.csw.client.transaction.TransactionXMLEncoder;
 import org.deegree.protocol.ows.client.AbstractOWSClient;
-import org.deegree.protocol.ows.client.OWSResponse;
 import org.deegree.protocol.ows.exception.OWSExceptionReport;
+import org.deegree.protocol.ows.http.OwsResponse;
 import org.deegree.protocol.ows.metadata.OperationsMetadata;
 import org.deegree.protocol.ows.metadata.domain.AllowedValues;
 import org.deegree.protocol.ows.metadata.domain.Domain;
@@ -137,7 +136,8 @@ public class CSWClient extends AbstractOWSClient<CSWCapabilitiesAdapter> {
      * @throws IOException
      *             if a communication/network problem occured
      */
-    public CSWClient( URL capaUrl, int connectionTimeout, int readTimeout ) throws OWSExceptionReport, XMLStreamException, IOException {
+    public CSWClient( URL capaUrl, int connectionTimeout, int readTimeout ) throws OWSExceptionReport,
+                            XMLStreamException, IOException {
         super( capaUrl );
         this.connectionTimeout = connectionTimeout;
         this.readTimeout = readTimeout;
@@ -207,7 +207,7 @@ public class CSWClient extends AbstractOWSClient<CSWCapabilitiesAdapter> {
         } catch ( Throwable t ) {
             throw new RuntimeException( "Error creating XML request: " + getRecords );
         }
-        OWSResponse response = doPost( endPoint, "text/xml", request, null );
+        OwsResponse response = httpClient.doPost( endPoint, "text/xml", request, null );
         return new GetRecordsResponse( response );
 
     }
@@ -235,7 +235,7 @@ public class CSWClient extends AbstractOWSClient<CSWCapabilitiesAdapter> {
         } catch ( Throwable t ) {
             throw new RuntimeException( "Error insering " + records.size() + " records" );
         }
-        OWSResponse response = doPost( endPoint, "text/xml", request, null );
+        OwsResponse response = httpClient.doPost( endPoint, "text/xml", request, null );
         return new TransactionResponse( response );
     }
 

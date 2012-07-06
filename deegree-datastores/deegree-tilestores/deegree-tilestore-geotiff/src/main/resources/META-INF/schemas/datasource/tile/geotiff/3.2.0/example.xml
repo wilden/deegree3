@@ -8,8 +8,6 @@
     <!-- [1]: if of the used tile matrix set. Note that the GeoTIFF file may contain only a part of the tiles, the only requirement 
       is that the tile edges fit smoothly into the tile matrix set. -->
     <TileMatrixSetId>utah</TileMatrixSetId>
-    <!-- [0..1]: can be used to override/set the CRS of the GeoTIFF. -->
-    <StorageCRS>EPSG:26912</StorageCRS>
     <!-- [1]: the actual GeoTIFF file -->
     <File>../../data/test.tif</File>
     <!-- [0..1]: the mime type of the desired image output format. Default is image/png -->
@@ -22,8 +20,6 @@
     <!-- [1]: if of the used tile matrix set. Note that the GeoTIFF file may contain only a part of the tiles, the only requirement 
       is that the tile edges fit smoothly into the tile matrix set. -->
     <TileMatrixSetId>utah</TileMatrixSetId>
-    <!-- [0..1]: can be used to override/set the CRS of the GeoTIFF. -->
-    <StorageCRS>EPSG:26912</StorageCRS>
     <!-- [1]: the actual GeoTIFF file -->
     <File>../../data/test2.tif</File>
     <!-- [0..1]: the mime type of the desired image output format. Default is image/png -->

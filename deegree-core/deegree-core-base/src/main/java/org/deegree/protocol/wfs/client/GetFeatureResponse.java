@@ -44,7 +44,7 @@ import org.deegree.cs.exceptions.UnknownCRSException;
 import org.deegree.feature.types.AppSchema;
 import org.deegree.gml.GMLVersion;
 import org.deegree.protocol.ows.exception.OWSExceptionReport;
-import org.deegree.protocol.ows.http.OwsResponse;
+import org.deegree.protocol.ows.http.OwsHttpResponse;
 
 /**
  * Encapsulates the response to a WFS <code>GetFeature</code> request.
@@ -60,7 +60,7 @@ import org.deegree.protocol.ows.http.OwsResponse;
  */
 public class GetFeatureResponse<T> {
 
-    private final OwsResponse response;
+    private final OwsHttpResponse response;
 
     private final AppSchema appSchema;
 
@@ -72,7 +72,7 @@ public class GetFeatureResponse<T> {
      * @param appSchema
      * @param gmlVersion
      */
-    GetFeatureResponse( OwsResponse response, AppSchema appSchema, GMLVersion gmlVersion ) {
+    GetFeatureResponse( OwsHttpResponse response, AppSchema appSchema, GMLVersion gmlVersion ) {
         this.response = response;
         this.appSchema = appSchema;
         this.gmlVersion = gmlVersion;
@@ -83,7 +83,7 @@ public class GetFeatureResponse<T> {
      * 
      * @return the raw response, never <code>null</code>
      */
-    public OwsResponse getAsRawResponse() {
+    public OwsHttpResponse getAsRawResponse() {
         return response;
     }
 

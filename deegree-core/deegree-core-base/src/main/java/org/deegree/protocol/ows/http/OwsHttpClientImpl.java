@@ -51,10 +51,8 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.InputStreamEntity;
-import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.protocol.HttpContext;
 import org.deegree.commons.utils.io.StreamBufferStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,10 +114,10 @@ public class OwsHttpClientImpl implements OwsHttpClient {
     }
 
     @Override
-    public OwsResponse doGet( URL endPoint, Map<String, String> params, Map<String, String> headers )
+    public OwsHttpResponse doGet( URL endPoint, Map<String, String> params, Map<String, String> headers )
                             throws IOException {
 
-        OwsResponse response = null;
+        OwsHttpResponse response = null;
         URI query = null;
         try {
             URL normalizedEndpointUrl = normalizeGetUrl( endPoint );
@@ -143,7 +141,7 @@ public class OwsHttpClientImpl implements OwsHttpClient {
             DefaultHttpClient httpClient = getInitializedHttpClient( endPoint );
             LOG.info( "Performing GET request: " + query );
             HttpResponse httpResponse = httpClient.execute( httpGet );
-            response = new OwsResponse( query, httpResponse );
+            response = new OwsHttpResponse( httpResponse, httpClient.getConnectionManager(), sb.toString() );
         } catch ( Throwable e ) {
             e.printStackTrace();
             String msg = "Error performing GET request on '" + query + "': " + e.getMessage();
@@ -153,10 +151,10 @@ public class OwsHttpClientImpl implements OwsHttpClient {
     }
 
     @Override
-    public OwsResponse doPost( URL endPoint, String contentType, StreamBufferStore body, Map<String, String> headers )
+    public OwsHttpResponse doPost( URL endPoint, String contentType, StreamBufferStore body, Map<String, String> headers )
                             throws IOException {
 
-        OwsResponse response = null;
+        OwsHttpResponse response = null;
         try {
             HttpPost httpPost = new HttpPost( endPoint.toURI() );
             DefaultHttpClient httpClient = getInitializedHttpClient( endPoint );
@@ -166,7 +164,7 @@ public class OwsHttpClientImpl implements OwsHttpClient {
             entity.setContentType( contentType );
             httpPost.setEntity( entity );
             HttpResponse httpResponse = httpClient.execute( httpPost );
-            response = new OwsResponse( endPoint.toURI(), httpResponse );
+            response = new OwsHttpResponse( httpResponse, httpClient.getConnectionManager(), endPoint.toString() );
         } catch ( Throwable e ) {
             String msg = "Error performing POST request on '" + endPoint + "': " + e.getMessage();
             throw new IOException( msg );
@@ -190,17 +188,7 @@ public class OwsHttpClientImpl implements OwsHttpClient {
 
     private void setTimeouts( DefaultHttpClient client ) {
         HttpConnectionParams.setConnectionTimeout( client.getParams(), connectionTimeoutMillis );
-        HttpConnectionParams.setSoTimeout( client.getParams(), readTimeoutMillis );        
-        client.setKeepAliveStrategy( new DefaultConnectionKeepAliveStrategy() {
-            @Override
-            public long getKeepAliveDuration( HttpResponse response, HttpContext context ) {
-                long keepAlive = super.getKeepAliveDuration( response, context );
-                if ( keepAlive == -1 ) {
-                    keepAlive = readTimeoutMillis;
-                }
-                return keepAlive;
-            }
-        } );
+        HttpConnectionParams.setSoTimeout( client.getParams(), readTimeoutMillis );
     }
 
     private void setCredentials( URL url, DefaultHttpClient client ) {

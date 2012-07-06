@@ -42,7 +42,6 @@ import static org.deegree.protocol.ows.exception.OWSExceptionReader.parseExcepti
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.util.Collections;
 
 import javax.xml.stream.XMLInputFactory;
@@ -52,7 +51,7 @@ import javax.xml.stream.XMLStreamReader;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
-import org.deegree.protocol.ows.client.AbstractOWSClient;
+import org.apache.http.conn.ClientConnectionManager;
 import org.deegree.protocol.ows.exception.OWSException;
 import org.deegree.protocol.ows.exception.OWSExceptionReport;
 import org.slf4j.Logger;
@@ -61,32 +60,39 @@ import org.slf4j.LoggerFactory;
 /**
  * Encapsulates an HTTP response from an OGC web service.
  * <p>
- * NOTE: The receiver <b>must</b> call {@link #close()} eventually, otherwise system resources (connections) may not be
- * freed.
+ * NOTE: The receiver <b>must</b> call {@link #close()} eventually, otherwise the HTTP connection will not be freed.
  * </p>
- * 
- * @see AbstractOWSClient
- * 
- * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
- * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
  */
-public class OwsResponse {
+public class OwsHttpResponse {
 
-    private static Logger LOG = LoggerFactory.getLogger( OwsResponse.class );
+    private static Logger LOG = LoggerFactory.getLogger( OwsHttpResponse.class );
 
     private static final XMLInputFactory xmlFac = XMLInputFactory.newInstance();
 
-    private final URI uri;
-
     private final HttpResponse httpResponse;
+
+    private final ClientConnectionManager connManager;
+
+    private final String url;
 
     private final InputStream is;
 
-    OwsResponse( URI uri, HttpResponse httpResponse ) throws IllegalStateException, IOException {
-        this.uri = uri;
+    /**
+     * Creates a new {@link OwsHttpResponse} instance.
+     * 
+     * @param httpResponse
+     * @param httpClient
+     * @param url
+     * @throws IllegalStateException
+     * @throws IOException
+     */
+    OwsHttpResponse( HttpResponse httpResponse, ClientConnectionManager connManager, String url )
+                            throws IllegalStateException, IOException {
         this.httpResponse = httpResponse;
+        this.connManager = connManager;
+        this.url = url;
         HttpEntity entity = httpResponse.getEntity();
         if ( entity == null ) {
             // TODO exception
@@ -94,17 +100,36 @@ public class OwsResponse {
         is = entity.getContent();
     }
 
+    /**
+     * Provides access to the raw response.
+     * 
+     * @return http response, never <code>null</code>
+     */
     public HttpResponse getAsHttpResponse() {
         return httpResponse;
     }
 
+    /**
+     * Provides access to the response body as a binary stream.
+     * 
+     * @return binary stream, never <code>null</code>
+     */
     public InputStream getAsBinaryStream() {
         return is;
     }
 
+    /**
+     * Provides access to the response body as an XML stream.
+     * 
+     * @return xml stream, never <code>null</code>
+     * @throws OWSExceptionReport
+     *             if the stream contains an XML-encoded OWS Exception report
+     * @throws XMLStreamException
+     *             if accessing the stream fails (e.g. no XML payload)
+     */
     public XMLStreamReader getAsXMLStream()
                             throws OWSExceptionReport, XMLStreamException {
-        XMLStreamReader xmlStream = xmlFac.createXMLStreamReader( uri.toString(), is );
+        XMLStreamReader xmlStream = xmlFac.createXMLStreamReader( url, is );
         assertNoExceptionReport( xmlStream );
         LOG.debug( "Response root element: " + xmlStream.getName() );
         String version = xmlStream.getAttributeValue( null, "version" );
@@ -121,7 +146,7 @@ public class OwsResponse {
     }
 
     /**
-     * Throws an {@link OWSExceptionReport} if the status code of this {@link OwsResponse} is not 200.
+     * Throws an {@link OWSExceptionReport} if the status code is not 200 (OK).
      * 
      * @throws OWSExceptionReport
      *             if status code isn't 200
@@ -132,7 +157,7 @@ public class OwsResponse {
         int statusCode = statusLine.getStatusCode();
         if ( statusCode != 200 ) {
             try {
-                XMLStreamReader xmlStream = xmlFac.createXMLStreamReader( uri.toString(), is );
+                XMLStreamReader xmlStream = xmlFac.createXMLStreamReader( url, is );
                 assertNoExceptionReport( xmlStream );
             } catch ( OWSExceptionReport e ) {
                 throw e;
@@ -150,8 +175,10 @@ public class OwsResponse {
         throw new OWSExceptionReport( Collections.singletonList( exception ), null, null );
     }
 
-    public void close()
-                            throws IOException {
-        is.close();
+    /**
+     * Closes the HTTP connection.
+     */
+    public void close() {
+        connManager.shutdown();
     }
 }

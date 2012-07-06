@@ -65,7 +65,7 @@ import org.deegree.protocol.csw.client.transaction.TransactionXMLEncoder;
 import org.deegree.protocol.ows.client.AbstractOWSClient;
 import org.deegree.protocol.ows.exception.OWSExceptionReport;
 import org.deegree.protocol.ows.http.OwsHttpClientImpl;
-import org.deegree.protocol.ows.http.OwsResponse;
+import org.deegree.protocol.ows.http.OwsHttpResponse;
 import org.deegree.protocol.ows.metadata.OperationsMetadata;
 import org.deegree.protocol.ows.metadata.domain.AllowedValues;
 import org.deegree.protocol.ows.metadata.domain.Domain;
@@ -202,7 +202,7 @@ public class CSWClient extends AbstractOWSClient<CSWCapabilitiesAdapter> {
         } catch ( Throwable t ) {
             throw new RuntimeException( "Error creating XML request: " + getRecords );
         }
-        OwsResponse response = httpClient.doPost( endPoint, "text/xml", request, null );
+        OwsHttpResponse response = httpClient.doPost( endPoint, "text/xml", request, null );
         return new GetRecordsResponse( response );
 
     }
@@ -230,7 +230,7 @@ public class CSWClient extends AbstractOWSClient<CSWCapabilitiesAdapter> {
         } catch ( Throwable t ) {
             throw new RuntimeException( "Error insering " + records.size() + " records" );
         }
-        OwsResponse response = httpClient.doPost( endPoint, "text/xml", request, null );
+        OwsHttpResponse response = httpClient.doPost( endPoint, "text/xml", request, null );
         return new TransactionResponse( response );
     }
 

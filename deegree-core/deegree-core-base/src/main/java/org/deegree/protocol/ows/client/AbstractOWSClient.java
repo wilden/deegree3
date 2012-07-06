@@ -45,15 +45,12 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.apache.axiom.om.OMElement;
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.protocol.ows.capabilities.OWSCapabilitiesAdapter;
 import org.deegree.protocol.ows.exception.OWSExceptionReport;
 import org.deegree.protocol.ows.http.OwsHttpClient;
 import org.deegree.protocol.ows.http.OwsHttpClientImpl;
-import org.deegree.protocol.ows.http.OwsResponse;
+import org.deegree.protocol.ows.http.OwsHttpResponse;
 import org.deegree.protocol.ows.metadata.OperationsMetadata;
 import org.deegree.protocol.ows.metadata.ServiceIdentification;
 import org.deegree.protocol.ows.metadata.ServiceProvider;
@@ -162,7 +159,7 @@ public abstract class AbstractOWSClient<T extends OWSCapabilitiesAdapter> {
                             throws IOException, OWSExceptionReport, XMLStreamException {
 
         if ( shouldUseGet( capaUrl ) ) {
-            OwsResponse response = httpClient.doGet( capaUrl, null, null );
+            OwsHttpResponse response = httpClient.doGet( capaUrl, null, null );
             response.assertHttpStatus200();
             XMLStreamReader responseAsXMLStream = response.getAsXMLStream();
 

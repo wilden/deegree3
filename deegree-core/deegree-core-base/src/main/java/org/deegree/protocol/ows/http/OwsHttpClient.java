@@ -54,8 +54,8 @@ public interface OwsHttpClient {
     /**
      * Performs an HTTP-GET request to the specified service endpoint.
      * <p>
-     * NOTE: The caller <b>must</b> call {@link OwsResponse#close()} on the returned object eventually, otherwise
-     * underlying resources (connections) may not be freed.
+     * NOTE: The caller <b>must</b> call {@link OwsHttpResponse#close()} on the returned object eventually, otherwise
+     * the HTTP connection will not be freed.
      * </p>
      * 
      * @param endPoint
@@ -67,20 +67,20 @@ public interface OwsHttpClient {
      * @return service response, never <code>null</code>
      * @throws IOException
      */
-    OwsResponse doGet( URL endPoint, Map<String, String> params, Map<String, String> headers )
+    OwsHttpResponse doGet( URL endPoint, Map<String, String> params, Map<String, String> headers )
                             throws IOException;
 
     /**
      * Performs an HTTP-POST request to the specified service endpoint.
      * <p>
-     * NOTE: The caller <b>must</b> call {@link OwsResponse#close()} on the returned object eventually, otherwise
-     * underlying resources (connections) may not be freed.
+     * NOTE: The caller <b>must</b> call {@link OwsHttpResponse#close()} on the returned object eventually, otherwise
+     * the HTTP connection will not be freed.
      * </p>
      * 
      * @param endPoint
      *            service endpoint to send to request to, must not be <code>null</code>
      * @param contentType
-     *             content type, may be <code>null</code>
+     *            content type, may be <code>null</code>
      * @param body
      *            POST body, may be <code>null</code>
      * @param headers
@@ -88,6 +88,6 @@ public interface OwsHttpClient {
      * @return service response, never <code>null</code>
      * @throws IOException
      */
-    OwsResponse doPost( URL endPoint, String contentType, StreamBufferStore body, Map<String, String> headers )
+    OwsHttpResponse doPost( URL endPoint, String contentType, StreamBufferStore body, Map<String, String> headers )
                             throws IOException;
 }

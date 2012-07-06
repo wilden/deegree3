@@ -87,8 +87,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.apache.axiom.om.OMElement;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.params.HttpConnectionParams;
 import org.deegree.commons.concurrent.Executor;
 import org.deegree.commons.struct.Tree;
 import org.deegree.commons.tom.gml.property.Property;
@@ -132,7 +130,7 @@ import org.slf4j.Logger;
  * API-level client for accessing servers that implement the <a
  * href="http://www.opengeospatial.org/standards/wms">OpenGIS Web Map Service (WMS) 1.1.1/1.3.0</a> protocol.
  * 
- * TODO refactor timeout and tiled request code
+ * TODO refactor to use {@link AbstractOWSClient#httpClient}
  * 
  * @author <a href="mailto:schmitz@lat-lon.de">Andreas Schmitz</a>
  * @author last edited by: $Author: aschmitz $

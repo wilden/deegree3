@@ -46,7 +46,7 @@ import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.XMLProcessingException;
 import org.deegree.commons.xml.XPath;
 import org.deegree.protocol.ows.exception.OWSExceptionReport;
-import org.deegree.protocol.ows.http.OwsResponse;
+import org.deegree.protocol.ows.http.OwsHttpResponse;
 
 /**
  * TODO add class documentation here
@@ -58,17 +58,17 @@ import org.deegree.protocol.ows.http.OwsResponse;
  */
 public class TransactionResponse extends XMLAdapter {
 
-    private final OwsResponse response;
+    private final OwsHttpResponse response;
 
     static {
         nsContext.addNamespace( CSW_202_PREFIX, CSW_202_NS );
     }
 
-    public OwsResponse getResponse() {
+    public OwsHttpResponse getResponse() {
         return response;
     }
 
-    public TransactionResponse( OwsResponse response ) throws XMLProcessingException, OWSExceptionReport,
+    public TransactionResponse( OwsHttpResponse response ) throws XMLProcessingException, OWSExceptionReport,
                             XMLStreamException {
         this.response = response;
         this.load( response.getAsXMLStream() );

@@ -48,6 +48,7 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
@@ -141,7 +142,11 @@ public class OwsHttpResponse {
                             throws OWSExceptionReport, XMLStreamException {
         skipStartDocument( xmlStream );
         if ( isExceptionReport( xmlStream.getName() ) ) {
-            throw parseExceptionReport( xmlStream );
+            try {
+                throw parseExceptionReport( xmlStream );
+            } finally {
+                close();
+            }
         }
     }
 
@@ -173,6 +178,27 @@ public class OwsHttpResponse {
         OWSException exception = new OWSException( "Request failed with HTTP status " + statusLine.getStatusCode()
                                                    + ": " + statusLine.getReasonPhrase(), NO_APPLICABLE_CODE );
         throw new OWSExceptionReport( Collections.singletonList( exception ), null, null );
+    }
+
+    /**
+     * Throws an {@link OWSExceptionReport} if the <code>Content-Type</code> header indicates an XML response and the
+     * contained document actually is an exception report.
+     * 
+     * @throws OWSExceptionReport
+     *             if XML content type and payload is an exception report
+     */
+    public void assertNoXmlContentTypeAndExceptionReport()
+                            throws OWSExceptionReport, XMLStreamException {
+
+        Header contentType = httpResponse.getFirstHeader( "Content-Type" );
+        if ( contentType != null && contentType.getValue().startsWith( "text/xml" ) ) {
+            XMLStreamReader xmlStream = xmlFac.createXMLStreamReader( url, is );
+            try {
+                assertNoExceptionReport( xmlStream );
+            } finally {
+                xmlStream.close();
+            }
+        }
     }
 
     /**

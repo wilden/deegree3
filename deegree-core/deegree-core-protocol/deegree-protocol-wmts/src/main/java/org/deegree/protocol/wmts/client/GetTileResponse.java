@@ -41,8 +41,6 @@ import java.io.InputStream;
 
 import javax.xml.stream.XMLStreamException;
 
-import org.apache.http.Header;
-import org.apache.http.HttpResponse;
 import org.deegree.commons.utils.net.HttpUtils;
 import org.deegree.protocol.ows.exception.OWSExceptionReport;
 import org.deegree.protocol.ows.http.OwsHttpResponse;
@@ -78,7 +76,7 @@ public class GetTileResponse {
     public BufferedImage getAsImage()
                             throws IOException, OWSExceptionReport, XMLStreamException {
 
-        checkForXmlContentTypeAndExceptionReport();
+        rawResponse.assertNoXmlContentTypeAndExceptionReport();
 
         BufferedImage image = null;
         try {
@@ -88,16 +86,6 @@ public class GetTileResponse {
             rawResponse.close();
         }
         return image;
-    }
-
-    private void checkForXmlContentTypeAndExceptionReport()
-                            throws OWSExceptionReport, XMLStreamException {
-
-        HttpResponse httpResponse = rawResponse.getAsHttpResponse();
-        Header contentType = httpResponse.getFirstHeader( "Content-Type" );
-        if ( contentType != null && contentType.getValue().startsWith( "text/xml" ) ) {
-            rawResponse.getAsXMLStream();
-        }
     }
 
     /**

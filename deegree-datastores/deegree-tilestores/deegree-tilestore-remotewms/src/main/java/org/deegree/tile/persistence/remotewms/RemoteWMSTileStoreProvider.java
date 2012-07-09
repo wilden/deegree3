@@ -151,8 +151,8 @@ public class RemoteWMSTileStoreProvider implements TileStoreProvider {
 
         List<TileDataLevel> dataLevels = new ArrayList<TileDataLevel>();
         for ( TileMatrix tm : tms.getTileMatrices() ) {
-            TileDataLevel m = new RemoteWMSTileMatrix( tm, format, layers, styles, client, outputFormat );
-            dataLevels.add( m );
+            TileDataLevel m = new RemoteWMSTileDataLevel( tm, format, layers, styles, client, outputFormat );
+            dataLevels.add( 0, m );
         }
 
         return new DefaultTileDataSet( dataLevels, tms, outputFormat );

@@ -53,7 +53,7 @@ import org.deegree.tile.TileMatrix;
  * 
  * @version $Revision$, $Date$
  */
-class RemoteWMSTileMatrix implements TileDataLevel {
+class RemoteWMSTileDataLevel implements TileDataLevel {
 
     private static final GeometryFactory fac = new GeometryFactory();
 
@@ -72,7 +72,7 @@ class RemoteWMSTileMatrix implements TileDataLevel {
     private final String outputFormat;
 
     /**
-     * Creates a new {@link RemoteWMSTileMatrix} instance.
+     * Creates a new {@link RemoteWMSTileDataLevel} instance.
      * 
      * @param tileMd
      *            matrix metadata, must not be <code>null</code>
@@ -87,7 +87,7 @@ class RemoteWMSTileMatrix implements TileDataLevel {
      * @param outputFormat
      *            if not null, images will be recoded into specified output format (use ImageIO like formats, eg. 'png')
      */
-    RemoteWMSTileMatrix( TileMatrix tileMd, String format, List<String> layers, List<String> styles,
+    RemoteWMSTileDataLevel( TileMatrix tileMd, String format, List<String> layers, List<String> styles,
                          WMSClient client, String outputFormat ) {
         this.metadata = tileMd;
         this.format = format;

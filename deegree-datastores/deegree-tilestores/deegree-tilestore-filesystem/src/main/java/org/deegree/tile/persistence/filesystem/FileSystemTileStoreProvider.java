@@ -119,7 +119,11 @@ public class FileSystemTileStoreProvider implements TileStoreProvider {
                     list.add( new FileSystemTileDataLevel( tm, layout ) );
                 }
 
-                map.put( id, new DefaultTileDataSet( list, tms, layout.getFileType() ) );
+                String format = "image/" + layout.getFileType();
+
+                DefaultTileDataSet dataset = new DefaultTileDataSet( list, tms, format );
+                layout.setTileMatrixSet( dataset );
+                map.put( id, dataset );
             }
 
             return new FileSystemTileStore( map );

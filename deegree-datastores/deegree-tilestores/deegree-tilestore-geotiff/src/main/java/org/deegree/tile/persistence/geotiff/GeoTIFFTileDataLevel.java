@@ -100,6 +100,7 @@ public class GeoTIFFTileDataLevel implements TileDataLevel {
         if ( x >= numx || y >= numy ) {
             return null;
         }
+
         double width = metadata.getTileWidth();
         double height = metadata.getTileHeight();
         Envelope env = metadata.getSpatialMetadata().getEnvelope();

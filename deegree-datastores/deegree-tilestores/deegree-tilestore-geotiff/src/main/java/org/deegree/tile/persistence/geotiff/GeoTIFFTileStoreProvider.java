@@ -171,16 +171,13 @@ public class GeoTIFFTileStoreProvider implements TileStoreProvider {
         double x = envelope.getMin().get0() - tms.getSpatialMetadata().getEnvelope().getMin().get0();
         double y = envelope.getMax().get1() - tms.getSpatialMetadata().getEnvelope().getMax().get1();
 
-        int idx = tms.getTileMatrices().size();
+        int idx = 0;
         for ( TileMatrix tm : tms.getTileMatrices() ) {
-            System.out.println(x);
-            System.out.println(tm.getTileWidth());
             int xoff = (int) Math.round( x / tm.getTileWidth() );
             int yoff = (int) Math.round( y / tm.getTileHeight() );
             int numx = (int) Math.round( envelope.getSpan0() / tm.getTileWidth() );
             int numy = (int) Math.round( envelope.getSpan1() / tm.getTileHeight() );
-            levels.add( new GeoTIFFTileDataLevel( tm, file, --idx, xoff, yoff, numx, numy ) );
-            System.out.println(xoff + "/" + yoff + "/" + numx + "/" + numy);
+            levels.add( new GeoTIFFTileDataLevel( tm, file, idx++, xoff, yoff, numx, numy ) );
         }
 
         return new DefaultTileDataSet( levels, tms, format );

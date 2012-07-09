@@ -123,6 +123,10 @@ public class GeoTIFFTileMatrixSetProvider implements TileMatrixSetProvider {
 
             File file = new File( configUrl.toURI().resolve( cfg.getFile() ) );
 
+            if ( !file.exists() ) {
+                throw new ResourceInitException( "The file " + file + " does not exist." );
+            }
+
             iis = createImageInputStream( file );
             // this is already checked in provider
             reader.setInput( iis, false, true );

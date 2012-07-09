@@ -10,7 +10,7 @@
 
   <TileDataSet>
     <Identifier>remotewms4326_130</Identifier>
-    <TileMatrixSetId>utah</TileMatrixSetId>
+    <TileMatrixSetId>utah4326</TileMatrixSetId>
     <OutputFormat>image/png</OutputFormat>
     <RequestParams>
       <!-- [1] Comma-separated list of layer names -->

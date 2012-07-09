@@ -108,15 +108,15 @@ public class RemoteWMSTileStoreTest {
         TileDataSet dataSet = store.getTileDataSet( "tiles26912" );
 
         assertEquals( 10, dataSet.getTileDataLevels().size() );
-        double scale = 512000.0;
+        double scale = 1000.0;
         double resolution = MapUtils.DEFAULT_PIXEL_SIZE * scale;
         for ( TileDataLevel matrix : dataSet.getTileDataLevels() ) {
             TileMatrix md = matrix.getMetadata();
             assertEquals( resolution, md.getResolution(), 0.001 );
             assertEquals( resolution * md.getTilePixelsX(), md.getTileWidth(), 0.001 );
             assertEquals( resolution * md.getTilePixelsY(), md.getTileHeight(), 0.001 );
-            scale /= 2.0;
-            resolution /= 2.0;
+            scale *= 2.0;
+            resolution *= 2.0;
         }
     }
 

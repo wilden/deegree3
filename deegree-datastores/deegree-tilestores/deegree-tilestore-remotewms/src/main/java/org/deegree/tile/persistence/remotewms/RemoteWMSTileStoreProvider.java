@@ -149,13 +149,17 @@ public class RemoteWMSTileStoreProvider implements TileStoreProvider {
         List<String> styles = splitNullSafe( requestParams.getStyles() );
         String format = requestParams.getFormat();
 
+        if ( outputFormat.startsWith( "image/" ) ) {
+            outputFormat = outputFormat.substring( 6 );
+        }
+
         List<TileDataLevel> dataLevels = new ArrayList<TileDataLevel>();
         for ( TileMatrix tm : tms.getTileMatrices() ) {
             TileDataLevel m = new RemoteWMSTileDataLevel( tm, format, layers, styles, client, outputFormat );
             dataLevels.add( 0, m );
         }
 
-        return new DefaultTileDataSet( dataLevels, tms, outputFormat );
+        return new DefaultTileDataSet( dataLevels, tms, "image/" + outputFormat );
     }
 
     @SuppressWarnings("unchecked")

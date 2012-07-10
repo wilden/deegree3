@@ -54,8 +54,8 @@ public interface OwsHttpClient {
     /**
      * Performs an HTTP-GET request to the specified service endpoint.
      * <p>
-     * NOTE: The caller <b>must</b> call {@link OwsHttpResponse#close()} on the returned object eventually, otherwise
-     * the HTTP connection will not be freed.
+     * NOTE: The caller <b>must</b> call {@link OwsHttpResponseImpl#close()} on the returned object eventually,
+     * otherwise the HTTP connection will not be freed.
      * </p>
      * 
      * @param endPoint
@@ -73,8 +73,8 @@ public interface OwsHttpClient {
     /**
      * Performs an HTTP-POST request to the specified service endpoint.
      * <p>
-     * NOTE: The caller <b>must</b> call {@link OwsHttpResponse#close()} on the returned object eventually, otherwise
-     * the HTTP connection will not be freed.
+     * NOTE: The caller <b>must</b> call {@link OwsHttpResponseImpl#close()} on the returned object eventually,
+     * otherwise the HTTP connection will not be freed.
      * </p>
      * 
      * @param endPoint

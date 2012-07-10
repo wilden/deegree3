@@ -117,7 +117,7 @@ public class OwsHttpClientImpl implements OwsHttpClient {
     public OwsHttpResponse doGet( URL endPoint, Map<String, String> params, Map<String, String> headers )
                             throws IOException {
 
-        OwsHttpResponse response = null;
+        OwsHttpResponseImpl response = null;
         URI query = null;
         try {
             URL normalizedEndpointUrl = normalizeGetUrl( endPoint );
@@ -141,7 +141,7 @@ public class OwsHttpClientImpl implements OwsHttpClient {
             DefaultHttpClient httpClient = getInitializedHttpClient( endPoint );
             LOG.info( "Performing GET request: " + query );
             HttpResponse httpResponse = httpClient.execute( httpGet );
-            response = new OwsHttpResponse( httpResponse, httpClient.getConnectionManager(), sb.toString() );
+            response = new OwsHttpResponseImpl( httpResponse, httpClient.getConnectionManager(), sb.toString() );
         } catch ( Throwable e ) {
             e.printStackTrace();
             String msg = "Error performing GET request on '" + query + "': " + e.getMessage();
@@ -164,7 +164,7 @@ public class OwsHttpClientImpl implements OwsHttpClient {
             entity.setContentType( contentType );
             httpPost.setEntity( entity );
             HttpResponse httpResponse = httpClient.execute( httpPost );
-            response = new OwsHttpResponse( httpResponse, httpClient.getConnectionManager(), endPoint.toString() );
+            response = new OwsHttpResponseImpl( httpResponse, httpClient.getConnectionManager(), endPoint.toString() );
         } catch ( Throwable e ) {
             String msg = "Error performing POST request on '" + endPoint + "': " + e.getMessage();
             throw new IOException( msg );

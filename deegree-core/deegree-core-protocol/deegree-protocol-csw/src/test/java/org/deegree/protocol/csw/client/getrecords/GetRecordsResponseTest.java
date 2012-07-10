@@ -51,8 +51,8 @@ import javax.xml.stream.XMLStreamReader;
 import org.deegree.metadata.MetadataRecord;
 import org.deegree.metadata.iso.ISORecord;
 import org.deegree.protocol.ows.exception.OWSExceptionReport;
-import org.deegree.protocol.ows.http.OwsHttpResponse;
-import org.deegree.protocol.ows.http.OwsHttpResponse;
+import org.deegree.protocol.ows.http.OwsHttpResponseImpl;
+import org.deegree.protocol.ows.http.OwsHttpResponseImpl;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -70,7 +70,7 @@ public class GetRecordsResponseTest {
     public void testGeoNetworksResponse()
                             throws XMLStreamException, FactoryConfigurationError, OWSExceptionReport {
 
-        OwsHttpResponse mock = Mockito.mock( OwsHttpResponse.class );
+        OwsHttpResponseImpl mock = Mockito.mock( OwsHttpResponseImpl.class );
         XMLStreamReader xmlStream = getExampleResponseReader( "geonetworks_response.invalid" );
         Mockito.when( mock.getAsXMLStream() ).thenReturn( xmlStream );
 

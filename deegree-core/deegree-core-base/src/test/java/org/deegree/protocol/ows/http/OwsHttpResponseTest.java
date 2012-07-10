@@ -248,28 +248,28 @@ public class OwsHttpResponseTest {
                             throws Exception {
         InputStream payload = OwsHttpResponseTest.class.getResourceAsStream( SCENARIO1_RESPONSE );
         HttpResponse httpResponse = mockHttpResponse( payload, 200 );
-        return new OwsHttpResponse( httpResponse, connManager, "" );
+        return new OwsHttpResponseImpl( httpResponse, connManager, "" );
     }
 
     private OwsHttpResponse createScenario2()
                             throws Exception {
         InputStream payload = OwsHttpResponseTest.class.getResourceAsStream( SCENARIO2_RESPONSE );
         HttpResponse httpResponse = mockHttpResponse( payload, 200 );
-        return new OwsHttpResponse( httpResponse, connManager, "" );
+        return new OwsHttpResponseImpl( httpResponse, connManager, "" );
     }
 
     private OwsHttpResponse createScenario3()
                             throws Exception {
         InputStream payload = OwsHttpResponseTest.class.getResourceAsStream( SCENARIO3_RESPONSE );
         HttpResponse httpResponse = mockHttpResponse( payload, 200 );
-        return new OwsHttpResponse( httpResponse, connManager, "" );
+        return new OwsHttpResponseImpl( httpResponse, connManager, "" );
     }
 
     private OwsHttpResponse createScenario4()
                             throws Exception {
         InputStream payload = new ByteArrayInputStream( new byte[0] );
         HttpResponse httpResponse = mockHttpResponse( payload, 500 );
-        return new OwsHttpResponse( httpResponse, connManager, "" );
+        return new OwsHttpResponseImpl( httpResponse, connManager, "" );
     }
 
     private HttpResponse mockHttpResponse( InputStream payload, int status )

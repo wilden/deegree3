@@ -37,57 +37,86 @@ package org.deegree.protocol.wmts.client;
 
 import static junit.framework.Assert.assertNotNull;
 
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
 
 import javax.xml.stream.XMLStreamException;
 
 import org.deegree.protocol.ows.exception.OWSExceptionReport;
-import org.deegree.protocol.ows.http.OwsHttpClient;
+import org.deegree.protocol.ows.http.OwsHttpClientMock;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 /**
- * TODO add class documentation here
+ * Test cases for {@link WMTSClient}.
  * 
- * @author <a href="mailto:name@company.com">Your Name</a>
+ * @author <a href="mailto:schneider@occamlabs.de">Markus Schneider</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
  */
 public class WMTSClientTest {
 
-//    private WMTSClient scenario1;
-//
-//    @Before
-//    public void setup()
-//                            throws OWSExceptionReport, XMLStreamException, IOException {
-//        scenario1 = createScenario1();
-//    }
-//
-//    private WMTSClient createScenario1()
-//                            throws OWSExceptionReport, XMLStreamException, IOException {
-//        URL capaUrl = WMTSClientTest.class.getResource( "scenario1_capabilities.xml" );
-//        OwsHttpClient mockedClient = Mockito.mock( OwsHttpClient.class );
-//        Mockito.when(  )
-//        return new WMTSClient( capaUrl, mockedClient );
-//    }
-//
-//    /**
-//     * Test method for
-//     * {@link org.deegree.protocol.wmts.client.WMTSClient#getTile(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, int, int)}
-//     * .
-//     */
-//    @Test
-//    public void testGetTile()
-//                            throws IOException, OWSExceptionReport, XMLStreamException {
-//        GetTileResponse response = scenario1.getTile( "medford:hydro", "_null", "image/png", "EPSG:900913",
-//                                                      "EPSG:900913:24", 6203400, 2660870 );
-//        BufferedImage img = response.getAsImage();
-//        assertNotNull( img );
-//    }
+    private OwsHttpClientMock httpClientMock;
+
+    private WMTSClient client;
+
+    @Before
+    public void setup()
+                            throws OWSExceptionReport, XMLStreamException, IOException {
+        URL capaUrl = WMTSClientTest.class.getResource( "wmts100_capabilities_example.xml" );
+        httpClientMock = new OwsHttpClientMock();
+        client = new WMTSClient( capaUrl, httpClientMock );
+    }
+
+    /**
+     * Test method for
+     * {@link org.deegree.protocol.wmts.client.WMTSClient#getTile(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, int, int)}
+     * .
+     */
+    @Test
+    public void testGetTileOK()
+                            throws IOException, OWSExceptionReport, XMLStreamException {
+
+        URL responseUrl = WMTSClientTest.class.getResource( "gettile_response1.png" );
+        httpClientMock.setResponse( responseUrl, "image/png", 200 );
+
+        GetTileResponse response = client.getTile( "medford:hydro", "_null", "image/png", "EPSG:900913",
+                                                   "EPSG:900913:24", 6203400, 2660870 );
+        assertNotNull( response );
+    }
+
+    /**
+     * Test method for
+     * {@link org.deegree.protocol.wmts.client.WMTSClient#getTile(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, int, int)}
+     * .
+     */
+    @Test(expected = OWSExceptionReport.class)
+    public void testGetTileHttpStatus500()
+                            throws IOException, OWSExceptionReport, XMLStreamException {
+
+        URL responseUrl = WMTSClientTest.class.getResource( "gettile_response1.png" );
+        httpClientMock.setResponse( responseUrl, "image/png", 500 );
+
+        client.getTile( "medford:hydro", "_null", "image/png", "EPSG:900913", "EPSG:900913:24", 6203400, 2660870 );
+    }
+
+    /**
+     * Test method for
+     * {@link org.deegree.protocol.wmts.client.WMTSClient#getTile(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, int, int)}
+     * .
+     */
+    @Test(expected = OWSExceptionReport.class)
+    public void testGetTileExceptionReport()
+                            throws IOException, OWSExceptionReport, XMLStreamException {
+
+        URL responseUrl = WMTSClientTest.class.getResource( "wmts100_exception_report.xml" );
+        httpClientMock.setResponse( responseUrl, "text/xml", 200 );
+
+        GetTileResponse tile = client.getTile( "medford:hydro", "_null", "image/png", "EPSG:900913", "EPSG:900913:24",
+                                               6203400, 2660870 );
+        tile.getAsImage();
+    }
 
     // /**
     // * Test method for

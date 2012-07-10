@@ -96,10 +96,12 @@ public class WMTSClient extends AbstractOWSClient<WMTSCapabilitiesAdapter> {
      *            column index of tile matrix, value between 0 and (matrix width-1)
      * @return server response, never <code>null</code>
      * @throws IOException
+     * @throws OWSExceptionReport 
+     * @throws XMLStreamException 
      */
     public GetTileResponse getTile( String layer, String style, String format, String tileMatrixSet, String tileMatrix,
                                     int tileRow, int tileCol )
-                            throws IOException {
+                            throws IOException, OWSExceptionReport, XMLStreamException {
 
         LinkedHashMap<String, String> kvp = new LinkedHashMap<String, String>();
         kvp.put( "service", "WMTS" );
@@ -115,6 +117,8 @@ public class WMTSClient extends AbstractOWSClient<WMTSCapabilitiesAdapter> {
 
         URL endPoint = getGetUrl( WMTSConstants.WMTSRequestType.GetTile.name() );
         OwsHttpResponse response = httpClient.doGet( endPoint, kvp, null );
+        response.assertHttpStatus200();
+        response.assertNoXmlContentTypeAndExceptionReport();
         return new GetTileResponse( response );
     }
 

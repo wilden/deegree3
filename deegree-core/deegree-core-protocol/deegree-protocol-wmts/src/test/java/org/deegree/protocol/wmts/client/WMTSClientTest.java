@@ -44,6 +44,7 @@ import javax.xml.stream.XMLStreamException;
 
 import org.deegree.protocol.ows.exception.OWSExceptionReport;
 import org.deegree.protocol.ows.http.OwsHttpClientMock;
+import org.deegree.protocol.wmts.ops.GetTile;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -80,9 +81,8 @@ public class WMTSClientTest {
 
         URL responseUrl = WMTSClientTest.class.getResource( "gettile_response1.png" );
         httpClientMock.setResponse( responseUrl, "image/png", 200 );
-
-        GetTileResponse response = client.getTile( "medford:hydro", "_null", "image/png", "EPSG:900913",
-                                                   "EPSG:900913:24", 6203400, 2660870 );
+        GetTile request = buildExampleRequest();
+        GetTileResponse response = client.getTile( request );
         assertNotNull( response );
     }
 
@@ -97,8 +97,8 @@ public class WMTSClientTest {
 
         URL responseUrl = WMTSClientTest.class.getResource( "gettile_response1.png" );
         httpClientMock.setResponse( responseUrl, "image/png", 500 );
-
-        client.getTile( "medford:hydro", "_null", "image/png", "EPSG:900913", "EPSG:900913:24", 6203400, 2660870 );
+        GetTile request = buildExampleRequest();
+        client.getTile( request );
     }
 
     /**
@@ -112,10 +112,13 @@ public class WMTSClientTest {
 
         URL responseUrl = WMTSClientTest.class.getResource( "wmts100_exception_report.xml" );
         httpClientMock.setResponse( responseUrl, "text/xml", 200 );
+        GetTile request = buildExampleRequest();
+        GetTileResponse response = client.getTile( request );
+        response.getAsImage();
+    }
 
-        GetTileResponse tile = client.getTile( "medford:hydro", "_null", "image/png", "EPSG:900913", "EPSG:900913:24",
-                                               6203400, 2660870 );
-        tile.getAsImage();
+    private GetTile buildExampleRequest() {
+        return new GetTile( "medford:hydro", "_null", "image/png", "EPSG:900913", "EPSG:900913:24", 6203400, 2660870 );
     }
 
     // /**

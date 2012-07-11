@@ -81,7 +81,7 @@ public class TileMatrixSet implements Resource {
     }
 
     /**
-     * Returns the identifier for the {@link TileDataSet}.
+     * Returns the identifier.
      * 
      * @return identifier, never <code>null</code>
      */
@@ -113,5 +113,4 @@ public class TileMatrixSet implements Resource {
     public void destroy() {
         // nothing to do
     }
-
 }

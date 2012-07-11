@@ -41,6 +41,7 @@ import static org.deegree.protocol.wmts.WMTSConstants.WMTS_100_NS;
 import java.io.IOException;
 import java.net.URL;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
@@ -51,6 +52,7 @@ import org.deegree.protocol.ows.exception.OWSExceptionReport;
 import org.deegree.protocol.ows.http.OwsHttpClient;
 import org.deegree.protocol.ows.http.OwsHttpResponse;
 import org.deegree.protocol.wmts.WMTSConstants;
+import org.deegree.protocol.wmts.ops.GetTile;
 
 /**
  * API-level client for accessing servers that implement the <a
@@ -67,7 +69,10 @@ public class WMTSClient extends AbstractOWSClient<WMTSCapabilitiesAdapter> {
      * Creates a new {@link WMTSClient} instance.
      * 
      * @param capaUrl
+     *            URL of a WMTS capabilities document, usually this is a KVP-encoded <code>GetCapabilities</code>
+     *            request to a WMTS service, must not be <code>null</code>
      * @param httpClient
+     *            client for performing HTTP requests, can be <code>null</code> (use default)
      * @throws OWSExceptionReport
      * @throws XMLStreamException
      * @throws IOException
@@ -78,48 +83,38 @@ public class WMTSClient extends AbstractOWSClient<WMTSCapabilitiesAdapter> {
     }
 
     /**
-     * Fetches the specified tile using a <code>GetTile</code> request.
+     * Performs the given {@link GetTile} request.
      * 
-     * @param layer
-     *            layer identifier, must not be <code>null</code>
-     * @param style
-     *            style identifier, must not be <code>null</code>
-     * @param format
-     *            output format of the tile, must not be <code>null</code>
-     * @param tileMatrixSet
-     *            tile matrix set identifier, must not be <code>null</code>
-     * @param tileMatrix
-     *            tile matrix identifier, must not be <code>null</code>
-     * @param tileRow
-     *            row index of tile matrix, value between 0 and (matrix height-1)
-     * @param tileCol
-     *            column index of tile matrix, value between 0 and (matrix width-1)
+     * @param request
+     *            <code>GetTile</code> requests, must not be <code>null</code>
      * @return server response, never <code>null</code>
      * @throws IOException
-     * @throws OWSExceptionReport 
-     * @throws XMLStreamException 
+     * @throws OWSExceptionReport
+     * @throws XMLStreamException
      */
-    public GetTileResponse getTile( String layer, String style, String format, String tileMatrixSet, String tileMatrix,
-                                    int tileRow, int tileCol )
+    public GetTileResponse getTile( GetTile request )
                             throws IOException, OWSExceptionReport, XMLStreamException {
-
-        LinkedHashMap<String, String> kvp = new LinkedHashMap<String, String>();
-        kvp.put( "service", "WMTS" );
-        kvp.put( "request", "GetTile" );
-        kvp.put( "version", VERSION_100.toString() );
-        kvp.put( "layer", layer );
-        kvp.put( "style", style );
-        kvp.put( "format", format );
-        kvp.put( "tileMatrixSet", tileMatrixSet );
-        kvp.put( "tileMatrix", tileMatrix );
-        kvp.put( "tileRow", "" + tileRow );
-        kvp.put( "tileCol", "" + tileCol );
-
+        Map<String, String> kvp = buildGetTileKvpMap( request );
         URL endPoint = getGetUrl( WMTSConstants.WMTSRequestType.GetTile.name() );
         OwsHttpResponse response = httpClient.doGet( endPoint, kvp, null );
         response.assertHttpStatus200();
         response.assertNoXmlContentTypeAndExceptionReport();
         return new GetTileResponse( response );
+    }
+
+    private Map<String, String> buildGetTileKvpMap( GetTile request ) {
+        Map<String, String> kvp = new LinkedHashMap<String, String>();
+        kvp.put( "service", "WMTS" );
+        kvp.put( "request", "GetTile" );
+        kvp.put( "version", VERSION_100.toString() );
+        kvp.put( "layer", request.getLayer() );
+        kvp.put( "style", request.getStyle() );
+        kvp.put( "format", request.getFormat() );
+        kvp.put( "tileMatrixSet", request.getTileMatrixSet() );
+        kvp.put( "tileMatrix", request.getTileMatrix() );
+        kvp.put( "tileRow", "" + request.getTileRow() );
+        kvp.put( "tileCol", "" + request.getTileCol() );
+        return kvp;
     }
 
     @Override

@@ -53,23 +53,24 @@ import org.deegree.geometry.Envelope;
 import org.slf4j.Logger;
 
 /**
- * The <code>DefaultTileMatrixSet</code> is an implementation of the <code>TileMatrixSet</code> that selects tile
- * matrices manually based on the tile matrix metadata. It can be used in conjunction with any tile matrix
- * implementation.
+ * Default implementation of {@link TileDataSet}.
+ * <p>
+ * It selects tile matrices manually based on the tile matrix metadata. It can be used in conjunction with any tile
+ * matrix implementation.
+ * </p>
  * 
  * @author <a href="mailto:schmitz@occamlabs.de">Andreas Schmitz</a>
  * @author last edited by: $Author: mschneider $
  * 
  * @version $Revision: 31882 $, $Date: 2011-09-15 02:05:04 +0200 (Thu, 15 Sep 2011) $
  */
-
 public class DefaultTileDataSet implements TileDataSet {
 
     private static final Logger LOG = getLogger( DefaultTileDataSet.class );
 
     private final Map<String, TileDataLevel> levels;
 
-    private TileMatrixSet metadata;
+    private final TileMatrixSet metadata;
 
     private final String format;
 
@@ -154,5 +155,4 @@ public class DefaultTileDataSet implements TileDataSet {
     public String getNativeImageFormat() {
         return format;
     }
-
 }

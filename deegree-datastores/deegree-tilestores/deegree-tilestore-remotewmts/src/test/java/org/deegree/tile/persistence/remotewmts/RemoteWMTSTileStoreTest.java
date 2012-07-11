@@ -38,7 +38,7 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-package org.deegree.tile.persistence.remotewms;
+package org.deegree.tile.persistence.remotewmts;
 
 import static junit.framework.Assert.assertEquals;
 
@@ -73,14 +73,14 @@ import org.junit.Test;
  * 
  * @version $Revision$
  */
-public class RemoteWMSTileStoreTest {
+public class RemoteWMTSTileStoreTest {
 
     private DeegreeWorkspace ws;
 
     @Before
     public void setup()
                             throws UnknownCRSException, IOException, URISyntaxException, ResourceInitException {
-        URL wsUrl = RemoteWMSTileStoreTest.class.getResource( "workspace" );
+        URL wsUrl = RemoteWMTSTileStoreTest.class.getResource( "workspace" );
         ws = DeegreeWorkspace.getInstance( "remotewmstilestoretest", new File( wsUrl.toURI() ) );
         ws.initAll();
     }

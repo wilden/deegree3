@@ -48,7 +48,7 @@ import org.deegree.protocol.ows.http.OwsHttpResponse;
 /**
  * The server response to a WMTS <code>GetTile</code> request.
  * <p>
- * NOTE: The receiver <b>must</b> call {@link #getAsImage()} or {@link #close()} eventually, otherwise the HTTP
+ * NOTE: The receiver <b>must</b> either call {@link #getAsImage()} or {@link #close()} eventually, otherwise the HTTP
  * connection will stay open.
  * </p>
  * 

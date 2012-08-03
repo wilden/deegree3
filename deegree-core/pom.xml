@@ -43,6 +43,7 @@
     <module>deegree-core-theme</module>
     <module>deegree-core-tile</module>    
     <module>deegree-core-protocol</module>
+    <module>deegree-core-workspace</module>
   </modules>
 
 </project>

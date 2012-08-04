@@ -59,7 +59,13 @@ public interface Resource {
      * Usually called by the {@link ResourceManager} upon workspace shutdown.
      */
     public void destroy();
-    
+
+    /**
+     * It is recommended to use the {@link AbstractResource} class to provide an automatic and correct implementation
+     * for this method. Failing to provide proper metadata will cause problems when re-initializing resources.
+     * 
+     * @return the metadata corresponding to this resource, never null
+     */
     public ResourceMetadata getMetadata();
-    
+
 }

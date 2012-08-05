@@ -39,12 +39,18 @@
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
 
-package org.deegree.workspace;
+package org.deegree.workspace.standard;
 
-import java.net.URL;
+import java.util.List;
+
+import org.deegree.workspace.Resource;
+import org.deegree.workspace.ResourceIdentifier;
+import org.deegree.workspace.ResourceLocator;
+import org.deegree.workspace.ResourceMetadata;
+import org.deegree.workspace.Workspace;
 
 /**
- * <code>ResourceProvider</code>
+ * <code>DefaultWorkspace</code>
  * 
  * @author <a href="mailto:schmitz@occamlabs.de">Andreas Schmitz</a>
  * @author last edited by: $Author: mschneider $
@@ -52,38 +58,26 @@ import java.net.URL;
  * @version $Revision: 31882 $, $Date: 2011-09-15 02:05:04 +0200 (Thu, 15 Sep 2011) $
  */
 
-public interface ResourceProvider<T extends Resource> {
+public class DefaultWorkspace implements Workspace {
 
-    /**
-     * Returns the namespace for configuration documents that this provider handles.
-     * 
-     * @return the namespace for configuration documents, never <code>null</code>
-     */
-    String getConfigNamespace();
+    @Override
+    public <T extends Resource> ResourceMetadata<T> getResourceMetadata( ResourceIdentifier<T> id ) {
+        return null;
+    }
 
-    /**
-     * Returns the URL for retrieving the configuration document schema.
-     * 
-     * @return the URL for retrieving the configuration document schema, may be <code>null</code>
-     */
-    URL getConfigSchema();
+    @Override
+    public <T extends Resource> T getResource( ResourceIdentifier<T> id ) {
+        return null;
+    }
 
-    /**
-     * Will be called before any call to #create.
-     * 
-     * @param workspace
-     */
-    void init( Workspace workspace );
+    @Override
+    public ClassLoader getModuleClassLoader() {
+        return null;
+    }
 
-    /**
-     * Initialization happens in two phases. The first phase will call this method, the second phase will call #create.
-     * Please note that #createMetadata can happen in any order, while {@link ResourceMetadata#create} happens in the
-     * proper order defined by the {@link ResourceMetadata}s dependencies.
-     * 
-     * @return new resource metadata created from the configuration url, never <code>null</code>
-     * @throws ResourceInitException
-     */
-    ResourceMetadata<T> createMetadata( ResourceLocator<T> locator )
-                            throws ResourceInitException;
+    @Override
+    public <T extends Resource> List<ResourceLocator<T>> locateResources( String loc ) {
+        return null;
+    }
 
 }

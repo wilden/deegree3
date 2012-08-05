@@ -49,32 +49,29 @@ import java.net.URL;
 public interface ResourceManager<T extends Resource> {
 
     /**
-     * Is called upon workspace startup.
+     * Is called upon workspace startup, first phase. Should be used to scan for {@link ResourceProvider}s and collect
+     * configured resources and scan for their dependencies.
      */
-    public void startup( Workspace workspace )
+    void scan( Workspace workspace )
+                            throws ResourceInitException;
+
+    /**
+     * Is called upon workspace startup, second phase.
+     */
+    void startup( Workspace workspace )
                             throws ResourceInitException;
 
     /**
      * Is called upon workspace shutdown.
      */
-    public void shutdown();
-
-    /**
-     * @return an empty array if there are no dependencies
-     */
-    public Class<? extends ResourceManager>[] getDependencies();
-
-    /**
-     * @return a metadata object, may be null
-     */
-//    public ResourceManagerMetadata getMetadata();
+    void shutdown();
 
     /**
      * Returns the state of all resources.
      * 
      * @return the states, never <code>null</code>
      */
-    public ResourceState<?>[] getStates();
+    ResourceState<?>[] getStates();
 
     /**
      * Returns the state of the resource.
@@ -83,7 +80,7 @@ public interface ResourceManager<T extends Resource> {
      *            resource identifier, must not be <code>null</code>
      * @return the state or <code>null</code> (if the specified resource does not exist)
      */
-    public ResourceState<?> getState( String id );
+    ResourceState<?> getState( String id );
 
     /**
      * Activates the resource with the given identifier.
@@ -92,7 +89,7 @@ public interface ResourceManager<T extends Resource> {
      *            resource identifier, must not be <code>null</code>
      * @return resource state after activation (may be unsuccessful), but never <code>null</code>
      */
-    public ResourceState<?> activate( String id );
+    ResourceState<?> activate( String id );
 
     /**
      * Deactivates the resource with the given identifier.
@@ -101,7 +98,7 @@ public interface ResourceManager<T extends Resource> {
      *            resource identifier, must not be <code>null</code>
      * @return resource state after deactivation (may be unsuccessful), but never <code>null</code>
      */
-    public ResourceState<?> deactivate( String id );
+    ResourceState<?> deactivate( String id );
 
     /**
      * Creates a new {@link Resource} (which is initially in state {@link StateType#deactivated}).
@@ -114,7 +111,7 @@ public interface ResourceManager<T extends Resource> {
      * @throws IllegalArgumentException
      *             if a resource with the specified identifier already exists
      */
-    public ResourceState<?> createResource( String id, InputStream config )
+    ResourceState<?> createResource( String id, InputStream config )
                             throws IllegalArgumentException;
 
     /**
@@ -124,19 +121,7 @@ public interface ResourceManager<T extends Resource> {
      *            resource identifier, must not be <code>null</code>
      * @return resource state after deletion, usually <code>null</code> (if not, deletion failed)
      */
-    public ResourceState<?> deleteResource( String id );
-
-    /**
-     * Initializes the metadata (can be used to scan for resource providers, important so transitive dependencies work).
-     * 
-     * @param workspace
-     */
-    void initMetadata( Workspace workspace );
-
-    /**
-     * @return a metadata object for use in GUIs, may be null
-     */
-//    ResourceManagerMetadata<T> getMetadata();
+    ResourceState<?> deleteResource( String id );
 
     /**
      * Is used to obtain a resource instance from a configuration url and register it. The creation is usually delegated

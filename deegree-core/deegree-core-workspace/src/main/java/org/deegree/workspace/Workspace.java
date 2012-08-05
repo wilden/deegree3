@@ -41,6 +41,8 @@
 
 package org.deegree.workspace;
 
+import java.util.List;
+
 /**
  * The deegree workspace workflow:
  * 
@@ -61,6 +63,14 @@ package org.deegree.workspace;
  * @version $Revision: 31882 $, $Date: 2011-09-15 02:05:04 +0200 (Thu, 15 Sep 2011) $
  */
 
-public class Workspace {
+public interface Workspace {
+
+    <T extends Resource> ResourceMetadata<T> getResourceMetadata( ResourceIdentifier<T> id );
+
+    <T extends Resource> T getResource( ResourceIdentifier<T> id );
+
+    ClassLoader getModuleClassLoader();
+
+    <T extends Resource> List<ResourceLocator<T>> locateResources( String loc );
 
 }

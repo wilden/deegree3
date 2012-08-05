@@ -52,19 +52,24 @@ package org.deegree.workspace;
 
 public class ResourceIdentifier<T extends Resource> {
 
-    private Class<? extends ResourceManager<T>> resourceManager;
+    private Class<? extends ResourceProvider<T>> resourceProvider;
 
     private String id;
 
     /**
      * Uniquely identifies a resource within one workspace.
      * 
-     * @param resourceManager
+     * @param resourceProvider
+     *            must be the marker interface for the resource type
      * @param id
      */
-    public ResourceIdentifier( Class<? extends ResourceManager<T>> resourceManager, String id ) {
-        this.resourceManager = resourceManager;
+    public ResourceIdentifier( Class<? extends ResourceProvider<T>> resourceProvider, String id ) {
+        this.resourceProvider = resourceProvider;
         this.id = id;
+    }
+
+    public String getId() {
+        return id;
     }
 
     @Override
@@ -73,7 +78,7 @@ public class ResourceIdentifier<T extends Resource> {
             return false;
         }
         ResourceIdentifier<?> oth = (ResourceIdentifier<?>) obj;
-        return resourceManager.equals( oth.resourceManager ) && id.equals( oth.id );
+        return resourceProvider.equals( oth.resourceProvider ) && id.equals( oth.id );
     }
 
     /**
@@ -100,7 +105,7 @@ public class ResourceIdentifier<T extends Resource> {
     public int hashCode() {
         // the 2nd millionth prime, :-)
         long code = 32452843;
-        code = code * 37 + resourceManager.hashCode();
+        code = code * 37 + resourceProvider.hashCode();
         code = code * 37 + id.hashCode();
         return (int) ( code >>> 32 ) ^ (int) code;
     }

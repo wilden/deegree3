@@ -41,10 +41,12 @@
 
 package org.deegree.workspace;
 
-import java.net.URL;
-
 /**
- * <code>ResourceProvider</code>
+ * Describes a {@link ResourceManager} in the workspace. It holds the name (human readable), pathname (a kind of
+ * abstract path name in the workspace, like 'datasource/feature') and the {@link ResourceProvider} class.
+ * 
+ * With this information, most of the {@link ResourceManager} implementations should become obsolete, and can be
+ * replaced with the default implementation.
  * 
  * @author <a href="mailto:schmitz@occamlabs.de">Andreas Schmitz</a>
  * @author last edited by: $Author: mschneider $
@@ -52,38 +54,30 @@ import java.net.URL;
  * @version $Revision: 31882 $, $Date: 2011-09-15 02:05:04 +0200 (Thu, 15 Sep 2011) $
  */
 
-public interface ResourceProvider<T extends Resource> {
+public class ResourceManagerMetadata<T extends Resource> {
 
-    /**
-     * Returns the namespace for configuration documents that this provider handles.
-     * 
-     * @return the namespace for configuration documents, never <code>null</code>
-     */
-    String getConfigNamespace();
+    private Class<? extends ResourceProvider<T>> providerClass;
 
-    /**
-     * Returns the URL for retrieving the configuration document schema.
-     * 
-     * @return the URL for retrieving the configuration document schema, may be <code>null</code>
-     */
-    URL getConfigSchema();
+    private String pathname;
 
-    /**
-     * Will be called before any call to #create.
-     * 
-     * @param workspace
-     */
-    void init( Workspace workspace );
+    private String name;
 
-    /**
-     * Initialization happens in two phases. The first phase will call this method, the second phase will call #create.
-     * Please note that #createMetadata can happen in any order, while {@link ResourceMetadata#create} happens in the
-     * proper order defined by the {@link ResourceMetadata}s dependencies.
-     * 
-     * @return new resource metadata created from the configuration url, never <code>null</code>
-     * @throws ResourceInitException
-     */
-    ResourceMetadata<T> createMetadata( ResourceLocator<T> locator )
-                            throws ResourceInitException;
+    public ResourceManagerMetadata( Class<? extends ResourceProvider<T>> providerClass, String pathname, String name ) {
+        this.providerClass = providerClass;
+        this.pathname = pathname;
+        this.name = name;
+    }
+
+    public Class<? extends ResourceProvider<T>> getProviderClass() {
+        return providerClass;
+    }
+
+    public String getPathName() {
+        return pathname;
+    }
+
+    public String getName() {
+        return name;
+    }
 
 }

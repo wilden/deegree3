@@ -51,7 +51,7 @@ public interface ResourceManager<T extends Resource> {
     /**
      * Is called upon workspace startup.
      */
-    public void startup( DeegreeWorkspace workspace )
+    public void startup( Workspace workspace )
                             throws ResourceInitException;
 
     /**
@@ -131,7 +131,7 @@ public interface ResourceManager<T extends Resource> {
      * 
      * @param workspace
      */
-    void initMetadata( DeegreeWorkspace workspace );
+    void initMetadata( Workspace workspace );
 
     /**
      * @return a metadata object for use in GUIs, may be null

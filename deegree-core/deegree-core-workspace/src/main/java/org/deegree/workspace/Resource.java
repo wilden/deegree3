@@ -36,7 +36,7 @@
 package org.deegree.workspace;
 
 /**
- * A resource of a {@link DeegreeWorkspace}.
+ * A resource of a {@link Workspace}.
  * 
  * @author <a href="mailto:schmitz@lat-lon.de">Andreas Schmitz</a>
  * @author last edited by: $Author: mschneider $
@@ -52,7 +52,7 @@ public interface Resource {
      *            the workspace the resource belongs to, may be null
      * @throws ResourceInitException
      */
-    public void init( DeegreeWorkspace workspace )
+    public void init( Workspace workspace )
                             throws ResourceInitException;
 
     /**

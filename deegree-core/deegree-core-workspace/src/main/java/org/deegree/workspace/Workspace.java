@@ -42,7 +42,18 @@
 package org.deegree.workspace;
 
 /**
- * <code>DeegreeWorkspace</code>
+ * The deegree workspace workflow:
+ * 
+ * <ul>
+ * <li>scan for {@link ResourceManager}s and {@link ResourceProvider}s on the classpath (also scan the modules directory
+ * of the current workspace if available)</li>
+ * <li>initial scan of the workspace resources</li>
+ * <li>resource managers now have a list of {@link ResourceMetadata}s, with a {@link ResourceIdentifier} each, and a
+ * list of {@link ResourceIdentifier}s identifying their dependencies</li>
+ * <li>compute an order of initialization, compute which resources are not available (could not be found even in the
+ * initial scan)</li>
+ * <li>initialize all resources with satisfied dependencies in proper order</li>
+ * </ul>
  * 
  * @author <a href="mailto:schmitz@occamlabs.de">Andreas Schmitz</a>
  * @author last edited by: $Author: mschneider $
@@ -50,6 +61,6 @@ package org.deegree.workspace;
  * @version $Revision: 31882 $, $Date: 2011-09-15 02:05:04 +0200 (Thu, 15 Sep 2011) $
  */
 
-public class DeegreeWorkspace {
+public class Workspace {
 
 }

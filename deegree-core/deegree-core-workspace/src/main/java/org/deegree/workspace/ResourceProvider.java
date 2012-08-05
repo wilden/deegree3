@@ -74,7 +74,7 @@ public interface ResourceProvider<T extends Resource> {
      * 
      * @param workspace
      */
-    void init( DeegreeWorkspace workspace );
+    void init( Workspace workspace );
 
     /**
      * Initialization happens in two phases. The first phase will call this method, the second phase will call #create.

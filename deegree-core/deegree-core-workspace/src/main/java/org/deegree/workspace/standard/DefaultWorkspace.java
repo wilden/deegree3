@@ -41,13 +41,20 @@
 
 package org.deegree.workspace.standard;
 
+import java.io.File;
+import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.deegree.workspace.Resource;
 import org.deegree.workspace.ResourceIdentifier;
+import org.deegree.workspace.ResourceInitException;
 import org.deegree.workspace.ResourceLocator;
+import org.deegree.workspace.ResourceManagerMetadata;
 import org.deegree.workspace.ResourceMetadata;
 import org.deegree.workspace.Workspace;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <code>DefaultWorkspace</code>
@@ -59,6 +66,14 @@ import org.deegree.workspace.Workspace;
  */
 
 public class DefaultWorkspace implements Workspace {
+
+    private static final Logger LOG = LoggerFactory.getLogger( DefaultWorkspace.class );
+
+    private File directory;
+
+    public DefaultWorkspace( File directory ) {
+        this.directory = directory;
+    }
 
     @Override
     public <T extends Resource> ResourceMetadata<T> getResourceMetadata( ResourceIdentifier<T> id ) {
@@ -76,8 +91,25 @@ public class DefaultWorkspace implements Workspace {
     }
 
     @Override
-    public <T extends Resource> List<ResourceLocator<T>> locateResources( String loc ) {
-        return null;
+    public <T extends Resource> List<ResourceLocator<T>> locateResources( ResourceManagerMetadata<T> md ) {
+        List<ResourceLocator<T>> list = new ArrayList<ResourceLocator<T>>();
+        File[] fs = new File( directory, md.getPathName() ).listFiles();
+        if ( fs == null ) {
+            return list;
+        }
+        // TODO recursive?
+        for ( File f : fs ) {
+            try {
+                ResourceIdentifier<T> id = new ResourceIdentifier<T>( md.getProviderClass(), f.getName() );
+                list.add( new DefaultResourceLocator<T>( id, f.toURI().toURL() ) );
+            } catch ( MalformedURLException e ) {
+                LOG.error( "Resolving file to URL failed: {}", e.getLocalizedMessage() );
+                LOG.trace( "Stack trace:", e );
+            } catch ( ResourceInitException e ) {
+                LOG.warn( "Could not scan file {}: {}", f, e.getLocalizedMessage() );
+                LOG.trace( "Stack trace:", e );
+            }
+        }
+        return list;
     }
-
 }

@@ -41,6 +41,7 @@
 
 package org.deegree.workspace.standard;
 
+import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
@@ -93,6 +94,11 @@ public class DefaultResourceManager<T extends Resource> implements ResourceManag
         for ( ResourceProvider<T> provider : ServiceLoader.load( metadata.getProviderClass(),
                                                                  workspace.getModuleClassLoader() ) ) {
             LOG.debug( "Found resource provider {}.", provider.getClass().getName() );
+            if ( provider.getConfigNamespace() == null ) {
+                LOG.debug( "Resource provider does not use configuration files." );
+                continue;
+            }
+            LOG.debug( "Provider uses namespace {}.", provider.getConfigNamespace() );
             nsToProvider.put( provider.getConfigNamespace(), provider );
         }
         LOG.info( "Scanning for {} resources...", metadata.getName() );
@@ -101,7 +107,7 @@ public class DefaultResourceManager<T extends Resource> implements ResourceManag
 
     protected void scanForResources()
                             throws ResourceInitException {
-        List<ResourceLocator<T>> list = workspace.locateResources( metadata.getPathName() );
+        List<ResourceLocator<T>> list = workspace.locateResources( metadata );
         if ( list.isEmpty() ) {
             LOG.info( "No {} resources found.", metadata.getName() );
             return;
@@ -115,8 +121,14 @@ public class DefaultResourceManager<T extends Resource> implements ResourceManag
             if ( provider == null ) {
                 LOG.warn( "No resource provider for namespace {} available.", loc.getNamespace() );
             } else {
-                LOG.info( "Found resource with id {}.", loc.getIdentifier().getId() );
-                metadataMap.put( loc.getIdentifier(), provider.createMetadata( loc ) );
+                try {
+                    metadataMap.put( loc.getIdentifier(), provider.createMetadata( loc ) );
+                    LOG.info( "Found resource with id {}.", loc.getIdentifier().getId() );
+                } catch ( ResourceInitException e ) {
+                    LOG.warn( "Scanning resource with id {} failed: {}.", loc.getIdentifier().getId(),
+                              e.getLocalizedMessage() );
+                    LOG.trace( "Stack trace:", e );
+                }
             }
         }
 
@@ -183,6 +195,12 @@ public class DefaultResourceManager<T extends Resource> implements ResourceManag
     public T get( String id ) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    public static void main( String[] args ) {
+        DefaultWorkspace ws = new DefaultWorkspace(
+                                                    new File(
+                                                              "/home/stranger/.deegree/deegree-workspace-utah-3.2-pre2-20111206.011140-33/" ) );
     }
 
 }

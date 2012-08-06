@@ -71,6 +71,6 @@ public interface Workspace {
 
     ClassLoader getModuleClassLoader();
 
-    <T extends Resource> List<ResourceLocator<T>> locateResources( String loc );
+    <T extends Resource> List<ResourceLocator<T>> locateResources( ResourceManagerMetadata<T> metadata );
 
 }

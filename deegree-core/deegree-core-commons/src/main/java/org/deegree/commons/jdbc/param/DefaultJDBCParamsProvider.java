@@ -37,13 +37,9 @@ package org.deegree.commons.jdbc.param;
 
 import java.net.URL;
 
-import javax.xml.bind.JAXBException;
-
-import org.deegree.commons.config.DeegreeWorkspace;
-import org.deegree.commons.config.ResourceInitException;
-import org.deegree.commons.config.ResourceManager;
-import org.deegree.commons.jdbc.jaxb.JDBCConnection;
-import org.deegree.commons.xml.jaxb.JAXBUtils;
+import org.deegree.workspace.ResourceLocator;
+import org.deegree.workspace.ResourceMetadata;
+import org.deegree.workspace.Workspace;
 
 /**
  * {@link JDBCParamsProvider} for {@link DefaultJDBCParams}.
@@ -57,35 +53,15 @@ public class DefaultJDBCParamsProvider implements JDBCParamsProvider {
 
     private static final String CONFIG_NAMESPACE = "http://www.deegree.org/jdbc";
 
-    private static final URL CONFIG_SCHEMA_URL = DefaultJDBCParamsProvider.class.getResource( "/META-INF/schemas/jdbc/3.0.0/jdbc.xsd" );
+    static final URL CONFIG_SCHEMA_URL = DefaultJDBCParamsProvider.class.getResource( "/META-INF/schemas/jdbc/3.0.0/jdbc.xsd" );
 
-    private static final String CONFIG_JAXB_PACKAGE = "org.deegree.commons.jdbc.jaxb";
+    static final String CONFIG_JAXB_PACKAGE = "org.deegree.commons.jdbc.jaxb";
 
-    private DeegreeWorkspace workspace;
+    private Workspace workspace;
 
     @Override
-    public void init( DeegreeWorkspace workspace ) {
+    public void init( Workspace workspace ) {
         this.workspace = workspace;
-    }
-
-    @Override
-    public JDBCParams create( URL configUrl )
-                            throws ResourceInitException {
-        try {
-            JDBCConnection cfg = (JDBCConnection) JAXBUtils.unmarshall( CONFIG_JAXB_PACKAGE, CONFIG_SCHEMA_URL,
-                                                                        configUrl, workspace );
-            return new DefaultJDBCParams( cfg.getUrl(), cfg.getUser(), cfg.getPassword(),
-                                          cfg.isReadOnly() == null ? false : cfg.isReadOnly() );
-        } catch ( JAXBException e ) {
-            throw new ResourceInitException( "Error parsing JDBC configuration '" + configUrl + "': "
-                                             + e.getLocalizedMessage(), e );
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public Class<? extends ResourceManager>[] getDependencies() {
-        return new Class[0];
     }
 
     @Override
@@ -96,5 +72,11 @@ public class DefaultJDBCParamsProvider implements JDBCParamsProvider {
     @Override
     public URL getConfigSchema() {
         return CONFIG_SCHEMA_URL;
+    }
+
+    @Override
+    public ResourceMetadata<JDBCParams> createMetadata( ResourceLocator<JDBCParams> locator )
+                            throws org.deegree.workspace.ResourceInitException {
+        return new DefaultJDBCParamsMetadata( locator, workspace );
     }
 }

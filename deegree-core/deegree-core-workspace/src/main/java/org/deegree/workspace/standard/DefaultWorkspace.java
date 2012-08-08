@@ -76,6 +76,14 @@ public class DefaultWorkspace implements Workspace {
     }
 
     @Override
+    public void startup(){
+    }
+    
+    @Override
+    public void shutdown(){
+    }
+    
+    @Override
     public <T extends Resource> ResourceMetadata<T> getResourceMetadata( ResourceIdentifier<T> id ) {
         return null;
     }

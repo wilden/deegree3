@@ -35,7 +35,7 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.commons.jdbc.param;
 
-import org.deegree.commons.config.ExtendedResourceProvider;
+import org.deegree.workspace.ResourceProvider;
 
 /**
  * {@link ExtendedResourceProvider} for {@link JDBCParams}.
@@ -45,6 +45,6 @@ import org.deegree.commons.config.ExtendedResourceProvider;
  * 
  * @version $Revision$, $Date$
  */
-public interface JDBCParamsProvider extends ExtendedResourceProvider<JDBCParams> {
+public interface JDBCParamsProvider extends ResourceProvider<JDBCParams> {
     // specializes type parameter
 }

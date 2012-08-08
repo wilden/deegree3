@@ -35,8 +35,9 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.commons.jdbc.param;
 
-import org.deegree.commons.config.DeegreeWorkspace;
-import org.deegree.commons.config.ResourceInitException;
+import org.deegree.workspace.ResourceMetadata;
+import org.deegree.workspace.Workspace;
+import org.deegree.workspace.ResourceInitException;
 
 /**
  * Default implementation of {@link JDBCParams} that is just a generic bean.
@@ -64,7 +65,7 @@ public class DefaultJDBCParams implements JDBCParams {
     }
 
     @Override
-    public void init( DeegreeWorkspace workspace )
+    public void init( Workspace workspace )
                             throws ResourceInitException {
         // nothing to do
     }
@@ -92,5 +93,11 @@ public class DefaultJDBCParams implements JDBCParams {
     @Override
     public boolean isReadOnly() {
         return readOnly;
+    }
+
+    @Override
+    public ResourceMetadata<JDBCParams> getMetadata() {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

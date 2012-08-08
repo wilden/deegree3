@@ -37,19 +37,16 @@ package org.deegree.commons.jdbc.param;
 
 import static java.sql.DriverManager.registerDriver;
 
-import java.sql.Connection;
 import java.sql.Driver;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ServiceLoader;
 
-import org.deegree.commons.config.AbstractResourceManager;
 import org.deegree.commons.config.DeegreeWorkspace;
-import org.deegree.commons.config.DefaultResourceManagerMetadata;
-import org.deegree.commons.config.ResourceInitException;
-import org.deegree.commons.config.ResourceManager;
-import org.deegree.commons.config.ResourceManagerMetadata;
 import org.deegree.commons.jdbc.DriverWrapper;
+import org.deegree.workspace.ResourceInitException;
+import org.deegree.workspace.ResourceManagerMetadata;
+import org.deegree.workspace.Workspace;
+import org.deegree.workspace.standard.DefaultResourceManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,15 +58,16 @@ import org.slf4j.LoggerFactory;
  * 
  * @version $Revision$, $Date$
  */
-@SuppressWarnings("unchecked")
-public class JDBCParamsManager extends AbstractResourceManager<JDBCParams> {
+public class JDBCParamsManager extends DefaultResourceManager<JDBCParams> {
 
     private static Logger LOG = LoggerFactory.getLogger( JDBCParamsManager.class );
 
-    private JDBCParamsManagerMetadata metadata;
+    public JDBCParamsManager() {
+        super( new ResourceManagerMetadata<JDBCParams>( JDBCParamsProvider.class, "jdbc", "jdbc params" ) );
+    }
 
     @Override
-    public void startup( DeegreeWorkspace workspace )
+    public void startup( Workspace workspace )
                             throws ResourceInitException {
         try {
             for ( Driver d : ServiceLoader.load( Driver.class, workspace.getModuleClassLoader() ) ) {
@@ -82,43 +80,23 @@ public class JDBCParamsManager extends AbstractResourceManager<JDBCParams> {
         super.startup( workspace );
     }
 
-    @Override
-    public void initMetadata( DeegreeWorkspace workspace ) {
-        metadata = new JDBCParamsManagerMetadata( workspace );
-    }
+    // @Override
+    // protected void add( JDBCParams params )
+    // throws ResourceInitException {
+    // Connection conn = null;
+    // try {
+    // conn = DriverManager.getConnection( params.getUrl(), params.getUser(), params.getPassword() );
+    // } catch ( SQLException e ) {
+    // throw new ResourceInitException( e.getMessage() );
+    // } finally {
+    // if ( conn != null ) {
+    // try {
+    // conn.close();
+    // } catch ( SQLException e ) {
+    // // nothing to do
+    // }
+    // }
+    // }
+    // }
 
-    @Override
-    public ResourceManagerMetadata<JDBCParams> getMetadata() {
-        return metadata;
-    }
-
-    @Override
-    public Class<? extends ResourceManager>[] getDependencies() {
-        return new Class[0];
-    }
-
-    @Override
-    protected void add( JDBCParams params )
-                            throws ResourceInitException {
-        Connection conn = null;
-        try {
-            conn = DriverManager.getConnection( params.getUrl(), params.getUser(), params.getPassword() );
-        } catch ( SQLException e ) {
-            throw new ResourceInitException( e.getMessage() );
-        } finally {
-            if ( conn != null ) {
-                try {
-                    conn.close();
-                } catch ( SQLException e ) {
-                    // nothing to do
-                }
-            }
-        }
-    }
-
-    static class JDBCParamsManagerMetadata extends DefaultResourceManagerMetadata<JDBCParams> {
-        JDBCParamsManagerMetadata( DeegreeWorkspace workspace ) {
-            super( "jdbc params", "jdbc/", JDBCParamsProvider.class, workspace );
-        }
-    }
 }

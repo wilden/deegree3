@@ -109,32 +109,32 @@ public class ConnectionManager extends AbstractBasicResourceManager implements R
     @SuppressWarnings("unchecked")
     public void init( File jdbcDir, DeegreeWorkspace workspace ) {
 
-        JDBCParamsManager paramsMgr = workspace.getSubsystemManager( JDBCParamsManager.class );
-        if ( paramsMgr.getStates().length == 0 ) {
-            LOG.info( "No 'jdbc' connections defined -- skipping initialization of JDBC connection pools." );
-            return;
-        }
-        LOG.info( "--------------------------------------------------------------------------------" );
-        LOG.info( "Setting up JDBC connection pools." );
-        LOG.info( "--------------------------------------------------------------------------------" );
-        for ( ResourceState<JDBCParams> state : paramsMgr.getStates() ) {
-            if ( state.getType() == init_ok ) {
-                String connId = state.getId();
-                LOG.info( "Setting up JDBC connection pool for connection id '" + connId + "'..." + "" );
-                try {
-                    addPool( connId, state.getResource(), workspace );
-                    getConnection( connId ).close();
-                    idToState.put( connId, new ResourceState( connId, state.getConfigLocation(), this, init_ok, null,
-                                                              null ) );
-                } catch ( Throwable t ) {
-                    ResourceInitException e = new ResourceInitException( t.getMessage(), t );
-                    idToState.put( connId, new ResourceState( connId, state.getConfigLocation(), this, init_error,
-                                                              null, e ) );
-                    LOG.error( "Error initializing JDBC connection pool: " + t.getMessage(), t );
-                }
-            }
-        }
-        LOG.info( "" );
+//        JDBCParamsManager paramsMgr = workspace.getSubsystemManager( JDBCParamsManager.class );
+//        if ( paramsMgr.getStates().length == 0 ) {
+//            LOG.info( "No 'jdbc' connections defined -- skipping initialization of JDBC connection pools." );
+//            return;
+//        }
+//        LOG.info( "--------------------------------------------------------------------------------" );
+//        LOG.info( "Setting up JDBC connection pools." );
+//        LOG.info( "--------------------------------------------------------------------------------" );
+//        for ( ResourceState<JDBCParams> state : paramsMgr.getStates() ) {
+//            if ( state.getType() == init_ok ) {
+//                String connId = state.getId();
+//                LOG.info( "Setting up JDBC connection pool for connection id '" + connId + "'..." + "" );
+//                try {
+//                    addPool( connId, state.getResource(), workspace );
+//                    getConnection( connId ).close();
+//                    idToState.put( connId, new ResourceState( connId, state.getConfigLocation(), this, init_ok, null,
+//                                                              null ) );
+//                } catch ( Throwable t ) {
+//                    ResourceInitException e = new ResourceInitException( t.getMessage(), t );
+//                    idToState.put( connId, new ResourceState( connId, state.getConfigLocation(), this, init_error,
+//                                                              null, e ) );
+//                    LOG.error( "Error initializing JDBC connection pool: " + t.getMessage(), t );
+//                }
+//            }
+//        }
+//        LOG.info( "" );
     }
 
     public static void destroy( String connid ) {

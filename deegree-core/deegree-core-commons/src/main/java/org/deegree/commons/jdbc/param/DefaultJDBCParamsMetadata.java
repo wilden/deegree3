@@ -39,25 +39,27 @@
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
 
-package org.deegree.workspace.standard;
+package org.deegree.commons.jdbc.param;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
+import static org.deegree.commons.jdbc.param.DefaultJDBCParamsProvider.CONFIG_JAXB_PACKAGE;
+import static org.deegree.commons.jdbc.param.DefaultJDBCParamsProvider.CONFIG_SCHEMA_URL;
 
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
+import java.util.Collections;
+import java.util.Set;
 
-import org.apache.commons.io.IOUtils;
+import javax.xml.bind.JAXBException;
+
+import org.deegree.commons.jdbc.jaxb.JDBCConnection;
+import org.deegree.commons.xml.jaxb.JAXBUtils;
 import org.deegree.workspace.Resource;
 import org.deegree.workspace.ResourceIdentifier;
 import org.deegree.workspace.ResourceInitException;
 import org.deegree.workspace.ResourceLocator;
+import org.deegree.workspace.ResourceMetadata;
+import org.deegree.workspace.Workspace;
 
 /**
- * <code>DefaultResourceLocator</code>
+ * <code>DefaultJDBCParamsMetadata</code>
  * 
  * @author <a href="mailto:schmitz@occamlabs.de">Andreas Schmitz</a>
  * @author last edited by: $Author: mschneider $
@@ -65,56 +67,34 @@ import org.deegree.workspace.ResourceLocator;
  * @version $Revision: 31882 $, $Date: 2011-09-15 02:05:04 +0200 (Thu, 15 Sep 2011) $
  */
 
-public class DefaultResourceLocator<T extends Resource> implements ResourceLocator<T> {
+public class DefaultJDBCParamsMetadata implements ResourceMetadata<JDBCParams> {
 
-    private ResourceIdentifier<T> id;
+    private ResourceLocator<JDBCParams> locator;
 
-    private URL url;
+    private Workspace workspace;
 
-    // TODO really keep the config in memory all the time? Maybe at least gzip compress it?
-    private byte[] config;
-
-    public DefaultResourceLocator( ResourceIdentifier<T> id, URL location ) throws ResourceInitException {
-        this.id = id;
-        this.url = location;
-        InputStream in = null;
-        try {
-            config = IOUtils.toByteArray( in = location.openStream() );
-        } catch ( IOException e ) {
-            throw new ResourceInitException( "Could not read resource configuration: " + e.getLocalizedMessage(), e );
-        } finally {
-            IOUtils.closeQuietly( in );
-        }
+    public DefaultJDBCParamsMetadata( ResourceLocator<JDBCParams> locator, Workspace workspace ) {
+        this.locator = locator;
+        this.workspace = workspace;
     }
 
     @Override
-    public ResourceIdentifier<T> getIdentifier() {
-        return id;
-    }
-
-    @Override
-    public String getNamespace()
+    public JDBCParams create()
                             throws ResourceInitException {
-        XMLInputFactory fac = XMLInputFactory.newInstance();
-        XMLStreamReader reader = null;
         try {
-            reader = fac.createXMLStreamReader( getConfiguration() );
-            reader.next();
-            reader.nextTag();
-            return reader.getNamespaceURI();
-        } catch ( XMLStreamException e ) {
-            throw new ResourceInitException( "Could not read resource configuration: " + e.getLocalizedMessage(), e );
+            JDBCConnection cfg = (JDBCConnection) JAXBUtils.unmarshall( CONFIG_JAXB_PACKAGE, CONFIG_SCHEMA_URL,
+                                                                        locator.getConfiguration(), workspace );
+            return new DefaultJDBCParams( cfg.getUrl(), cfg.getUser(), cfg.getPassword(),
+                                          cfg.isReadOnly() == null ? false : cfg.isReadOnly() );
+        } catch ( JAXBException e ) {
+            throw new ResourceInitException( "Error parsing JDBC configuration '" + locator + "': "
+                                             + e.getLocalizedMessage(), e );
         }
     }
 
     @Override
-    public InputStream getConfiguration() {
-        return new ByteArrayInputStream( config );
-    }
-
-    @Override
-    public String toString() {
-        return url.toExternalForm();
+    public Set<ResourceIdentifier<? extends Resource>> getDependencies() {
+        return Collections.emptySet();
     }
 
 }

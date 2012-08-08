@@ -65,6 +65,10 @@ import java.util.List;
 
 public interface Workspace {
 
+    void startup();
+    
+    void shutdown();
+    
     <T extends Resource> ResourceMetadata<T> getResourceMetadata( ResourceIdentifier<T> id );
 
     <T extends Resource> T getResource( ResourceIdentifier<T> id );

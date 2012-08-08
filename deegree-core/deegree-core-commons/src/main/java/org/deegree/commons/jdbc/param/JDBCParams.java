@@ -35,7 +35,7 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.commons.jdbc.param;
 
-import org.deegree.commons.config.Resource;
+import org.deegree.workspace.Resource;
 
 /**
  * {@link Resource} that defines the parameters for a JDBC connection.

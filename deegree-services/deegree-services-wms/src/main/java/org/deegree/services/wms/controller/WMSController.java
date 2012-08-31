@@ -460,12 +460,12 @@ public class WMSController extends AbstractOWS {
             controllers.get( version ).sendException( new OWSException( get( "WMS.OPERATION_NOT_KNOWN",
                                                                              map.get( "REQUEST" ) ),
                                                                         OWSException.OPERATION_NOT_SUPPORTED ),
-                                                      response );
+                                                      response, this );
             return;
         } catch ( NullPointerException e ) {
             controllers.get( version ).sendException( new OWSException( get( "WMS.PARAM_MISSING", "REQUEST" ),
                                                                         OWSException.OPERATION_NOT_SUPPORTED ),
-                                                      response );
+                                                      response, this );
             return;
         }
 
@@ -997,7 +997,7 @@ public class WMSController extends AbstractOWS {
     }
 
     @Override
-    public Pair<XMLExceptionSerializer<OWSException>, String> getExceptionSerializer( Version requestVersion ) {
+    public XMLExceptionSerializer getExceptionSerializer( Version requestVersion ) {
 
         WMSControllerBase controller = requestVersion == null ? null : controllers.get( requestVersion );
         if ( controller == null ) {
@@ -1006,7 +1006,7 @@ public class WMSController extends AbstractOWS {
                 controller = iterator.next();
             }
         }
-        return new Pair<XMLExceptionSerializer<OWSException>, String>( controller.EXCEPTIONS, controller.EXCEPTION_MIME );
+        return controller.exceptionSerializer;
     }
 
     public List<OMElement> getExtendedCapabilities( String version ) {
@@ -1063,7 +1063,7 @@ public class WMSController extends AbstractOWS {
          * @param response
          * @throws ServletException
          */
-        void sendException( OWSException ex, HttpResponseBuffer response )
+        void sendException( OWSException ex, HttpResponseBuffer response, WMSController controller )
                                 throws ServletException;
 
         /**

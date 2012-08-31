@@ -52,10 +52,8 @@ import org.deegree.protocol.ows.exception.OWSException;
 import org.deegree.protocol.ows.metadata.ServiceIdentification;
 import org.deegree.protocol.ows.metadata.ServiceProvider;
 import org.deegree.protocol.wms.Utils;
-import org.deegree.services.controller.AbstractOWS;
 import org.deegree.services.controller.utils.HttpResponseBuffer;
 import org.deegree.services.metadata.OWSMetadataProvider;
-import org.deegree.services.ows.NamespacelessOWSExceptionXMLAdapter;
 import org.deegree.services.wms.MapService;
 import org.deegree.services.wms.controller.capabilities.Capabilities111XMLAdapter;
 
@@ -77,16 +75,15 @@ public class WMSController111 extends WMSControllerBase {
         EXCEPTION_BLANK = "application/vnd.ogc.se_blank";
         EXCEPTION_INIMAGE = "application/vnd.ogc.se_inimage";
 
-        EXCEPTIONS = new NamespacelessOWSExceptionXMLAdapter();
+        exceptionSerializer = new WMS111ExceptionReportSerializer();
 
         EXCEPTION_MIME = EXCEPTION_DEFAULT;
     }
 
     @Override
-    public void sendException( OWSException ex, HttpResponseBuffer response )
+    public void sendException( OWSException ex, HttpResponseBuffer response, WMSController controller )
                             throws ServletException {
-        AbstractOWS.sendException( "application/vnd.ogc.se_xml", "UTF-8", null, 200, EXCEPTIONS,
-                                   IMPLEMENTATION_METADATA, ex, response );
+        controller.sendException( null, exceptionSerializer, ex, response );
     }
 
     @Override

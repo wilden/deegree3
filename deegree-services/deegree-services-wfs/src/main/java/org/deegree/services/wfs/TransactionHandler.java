@@ -108,15 +108,15 @@ import org.deegree.gml.GMLVersion;
 import org.deegree.gml.feature.FeatureReference;
 import org.deegree.gml.feature.GMLFeatureReader;
 import org.deegree.protocol.ows.exception.OWSException;
-import org.deegree.protocol.wfs.transaction.Delete;
-import org.deegree.protocol.wfs.transaction.IDGenMode;
-import org.deegree.protocol.wfs.transaction.Insert;
-import org.deegree.protocol.wfs.transaction.Native;
-import org.deegree.protocol.wfs.transaction.PropertyReplacement;
+import org.deegree.protocol.wfs.transaction.ReleaseAction;
 import org.deegree.protocol.wfs.transaction.Transaction;
-import org.deegree.protocol.wfs.transaction.Transaction.ReleaseAction;
 import org.deegree.protocol.wfs.transaction.TransactionOperation;
-import org.deegree.protocol.wfs.transaction.Update;
+import org.deegree.protocol.wfs.transaction.action.Delete;
+import org.deegree.protocol.wfs.transaction.action.IDGenMode;
+import org.deegree.protocol.wfs.transaction.action.Insert;
+import org.deegree.protocol.wfs.transaction.action.Native;
+import org.deegree.protocol.wfs.transaction.action.PropertyReplacement;
+import org.deegree.protocol.wfs.transaction.action.Update;
 import org.deegree.services.controller.utils.HttpResponseBuffer;
 import org.deegree.services.i18n.Messages;
 import org.slf4j.Logger;
@@ -347,11 +347,11 @@ class TransactionHandler {
         }
 
         ICRS defaultCRS = null;
-        if ( insert.getSRSName() != null ) {
+        if ( insert.getSrsName() != null ) {
             try {
-                defaultCRS = CRSManager.lookup( insert.getSRSName() );
+                defaultCRS = CRSManager.lookup( insert.getSrsName() );
             } catch ( UnknownCRSException e ) {
-                String msg = "Cannot perform insert. Specified srsName '" + insert.getSRSName()
+                String msg = "Cannot perform insert. Specified srsName '" + insert.getSrsName()
                              + "' is not supported by this WFS.";
                 throw new OWSException( msg, OWSException.INVALID_PARAMETER_VALUE, "srsName" );
             }

@@ -53,7 +53,6 @@ import java.util.TreeSet;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.JAXBException;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
@@ -69,7 +68,6 @@ import org.apache.commons.io.FileUtils;
 import org.deegree.commons.config.DeegreeWorkspace;
 import org.deegree.commons.config.ResourceInitException;
 import org.deegree.commons.tom.ows.Version;
-import org.deegree.commons.utils.Pair;
 import org.deegree.commons.utils.kvp.InvalidParameterValueException;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.jaxb.JAXBUtils;
@@ -84,7 +82,6 @@ import org.deegree.services.controller.exception.serializer.SOAPExceptionSeriali
 import org.deegree.services.controller.exception.serializer.SerializerProvider;
 import org.deegree.services.controller.exception.serializer.XMLExceptionSerializer;
 import org.deegree.services.controller.utils.HttpResponseBuffer;
-import org.deegree.services.controller.utils.LoggingHttpResponseWrapper;
 import org.deegree.services.i18n.Messages;
 import org.deegree.services.jaxb.controller.DeegreeServiceControllerType;
 import org.deegree.services.jaxb.metadata.AddressType;
@@ -92,7 +89,7 @@ import org.deegree.services.jaxb.metadata.DeegreeServicesMetadataType;
 import org.deegree.services.jaxb.metadata.ServiceContactType;
 import org.deegree.services.jaxb.metadata.ServiceIdentificationType;
 import org.deegree.services.jaxb.metadata.ServiceProviderType;
-import org.deegree.services.ows.OWSException110XMLAdapter;
+import org.deegree.services.ows.OWS110ExceptionReportSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -504,29 +501,11 @@ public abstract class AbstractOWS implements OWS {
         return agreedVersion;
     }
 
-    public <E extends OWSException> void sendException( String contentType, String encoding,
-                                                        Map<String, String> additionalHeaders, int httpStatusCode,
-                                                        ExceptionSerializer<E> serializer, E exception,
-                                                        HttpServletResponse response )
-                            throws ServletException {
-        sendException( contentType, encoding, additionalHeaders, httpStatusCode, serializer,
-                       getImplementationMetadata(), exception, response );
-    }
-
     /**
      * Sends an exception to the client.
      * 
-     * @param <E>
-     *            the type of the Exception, which should be subtype of controller exception
-     * 
-     * @param contentType
-     *            of the exception response
-     * @param encoding
-     *            of the exception response
      * @param additionalHeaders
      *            to add to the response.
-     * @param httpStatusCode
-     *            of the exception response
      * @param serializer
      *            responsible for creating the appropriate response format of the exception. Could be overridden by a
      *            matching {@link SerializerProvider} on the classpath.
@@ -537,27 +516,14 @@ public abstract class AbstractOWS implements OWS {
      * @throws ServletException
      *             if the exception could not be sent.
      */
-    public static <E extends OWSException> void sendException( String contentType, String encoding,
-                                                               Map<String, String> additionalHeaders,
-                                                               int httpStatusCode, ExceptionSerializer<E> serializer,
-                                                               ImplementationMetadata<?> md, E exception,
-                                                               HttpServletResponse response )
+    public void sendException( Map<String, String> additionalHeaders, ExceptionSerializer serializer,
+                               OWSException exception, HttpResponseBuffer response )
                             throws ServletException {
+
+        ImplementationMetadata<?> md = getImplementationMetadata();
         for ( SerializerProvider p : exceptionSerializers ) {
             if ( p.matches( md ) ) {
                 serializer = p.getSerializer( md, serializer );
-            }
-        }
-
-        // take care of proper request logging
-        LoggingHttpResponseWrapper wrapper = null;
-        if ( response instanceof LoggingHttpResponseWrapper ) {
-            wrapper = (LoggingHttpResponseWrapper) response;
-        }
-        if ( response instanceof HttpResponseBuffer ) {
-            HttpServletResponse wrappee = ( (HttpResponseBuffer) response ).getWrappee();
-            if ( wrappee instanceof LoggingHttpResponseWrapper ) {
-                wrapper = (LoggingHttpResponseWrapper) wrappee;
             }
         }
 
@@ -569,8 +535,6 @@ public abstract class AbstractOWS implements OWS {
                 throw new ServletException( e );
             }
 
-            response.setContentType( contentType );
-            response.setCharacterEncoding( encoding );
             if ( additionalHeaders != null && additionalHeaders.size() > 0 ) {
                 for ( String key : additionalHeaders.keySet() ) {
                     String value = additionalHeaders.get( key );
@@ -579,18 +543,14 @@ public abstract class AbstractOWS implements OWS {
                     }
                 }
             }
-            response.setStatus( httpStatusCode );
 
             try {
-                serializer.serializeException( response.getOutputStream(), exception, encoding );
-            } catch ( IOException e ) {
+                serializer.serializeException( response, exception );
+            } catch ( Exception e ) {
                 LOG.error( "An error occurred while trying to send an exception: " + e.getLocalizedMessage(), e );
                 throw new ServletException( e );
             }
-            if ( wrapper != null ) {
-                wrapper.setExceptionSent();
-                wrapper.finalizeLogging();
-            }
+            response.setExceptionSent();
         }
     }
 
@@ -619,8 +579,8 @@ public abstract class AbstractOWS implements OWS {
      * @throws ServletException
      */
     public void sendSOAPException( SOAPHeader header, SOAPFactory factory, HttpResponseBuffer response,
-                                   OWSException exception, XMLExceptionSerializer<OWSException> serializer,
-                                   String SOAPFaultCode, String SOAPMessage, String SOAPaction, String characterEncoding )
+                                   OWSException exception, XMLExceptionSerializer serializer, String SOAPFaultCode,
+                                   String SOAPMessage, String SOAPaction, String characterEncoding )
                             throws ServletException {
 
         String faultCode = SOAPFaultCode;
@@ -642,15 +602,10 @@ public abstract class AbstractOWS implements OWS {
             action = SOAPaction;
         }
 
-        int statusCode = 200;
-        String contentType = "application/soap+xml; action=" + action;
         if ( "http://schemas.xmlsoap.org/soap/envelope/".equals( factory.getSoapVersionURI() ) ) {
             extraHeaders.put( "SOAPAction", action );
-            statusCode = 500;
-
         }
-        sendException( contentType, characterEncoding, extraHeaders, statusCode,
-                       new SOAPExceptionSerializer( version, header, factory, serializer ),
+        sendException( extraHeaders, new SOAPExceptionSerializer( version, header, factory, serializer ),
                        new SOAPException( message, faultCode, exception ), response );
     }
 
@@ -783,14 +738,14 @@ public abstract class AbstractOWS implements OWS {
     }
 
     /**
-     * Returns the {@link ExceptionSerializer} and mime-type suitable for the given request version.
+     * Returns the {@link ExceptionSerializer} for the given request version.
      * 
      * @param requestVersion
-     *            version of the request for which the exception has to be produced, may be <code>null</code> (implies
-     *            that the serializer and mime type for the highest supported version shall be returned)
-     * @return an OWSCommon 1.1.0 XML adapter by default, never <code>null</code>
+     *            version of the request, may be <code>null</code> (implies that the serializer for the highest
+     *            supported version shall be returned)
+     * @return suitable XML serializer, never <code>null</code>
      */
-    public Pair<XMLExceptionSerializer<OWSException>, String> getExceptionSerializer( Version requestVersion ) {
-        return new Pair<XMLExceptionSerializer<OWSException>, String>( new OWSException110XMLAdapter(), "text/xml" );
+    public XMLExceptionSerializer getExceptionSerializer( Version requestVersion ) {
+        return new OWS110ExceptionReportSerializer( Version.parseVersion( "1.1.0" ) );
     }
 }

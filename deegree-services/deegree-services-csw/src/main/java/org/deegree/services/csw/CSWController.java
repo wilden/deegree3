@@ -35,6 +35,7 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.services.csw;
 
+import static org.deegree.commons.tom.ows.Version.parseVersion;
 import static org.deegree.protocol.csw.CSWConstants.CSW_202_DISCOVERY_SCHEMA;
 import static org.deegree.protocol.csw.CSWConstants.CSW_202_NS;
 import static org.deegree.protocol.csw.CSWConstants.GMD_NS;
@@ -71,7 +72,6 @@ import org.deegree.commons.config.ResourceInitException;
 import org.deegree.commons.config.ResourceState;
 import org.deegree.commons.tom.ows.Version;
 import org.deegree.commons.utils.ArrayUtils;
-import org.deegree.commons.utils.Pair;
 import org.deegree.commons.utils.kvp.InvalidParameterValueException;
 import org.deegree.commons.utils.kvp.KVPUtils;
 import org.deegree.commons.utils.kvp.MissingParameterException;
@@ -121,8 +121,7 @@ import org.deegree.services.jaxb.controller.DeegreeServiceControllerType;
 import org.deegree.services.jaxb.csw.DeegreeCSW;
 import org.deegree.services.jaxb.csw.ElementName;
 import org.deegree.services.jaxb.metadata.DeegreeServicesMetadataType;
-import org.deegree.services.ows.OWSException110XMLAdapter;
-import org.deegree.services.ows.OWSException120XMLAdapter;
+import org.deegree.services.ows.OWS110ExceptionReportSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -576,9 +575,7 @@ public class CSWController extends AbstractOWS {
 
     private void sendServiceException( OWSException ex, HttpResponseBuffer response )
                             throws ServletException {
-
-        // TODO correct status code?
-        sendException( "application/vnd.ogc.se_xml", "UTF-8", null, 200, new OWSException120XMLAdapter(), ex, response );
+        sendException( null, getExceptionSerializer( parseVersion( "1.2.0" ) ), ex, response );
     }
 
     /**
@@ -629,20 +626,18 @@ public class CSWController extends AbstractOWS {
     }
 
     @Override
-    public Pair<XMLExceptionSerializer<OWSException>, String> getExceptionSerializer( Version requestVersion ) {
-        String mime = "application/vnd.ogc.se_xml";
-        XMLExceptionSerializer<OWSException> serializer = new OWSException110XMLAdapter();
-        return new Pair<XMLExceptionSerializer<OWSException>, String>( serializer, mime );
+    public XMLExceptionSerializer getExceptionSerializer( Version requestVersion ) {
+        return new OWS110ExceptionReportSerializer( Version.parseVersion( "1.2.0" ) );
     }
 
     private void sendSoapException( SOAPEnvelope soapDoc, SOAPFactory factory, HttpResponseBuffer response,
                                     OWSException e, ServletRequest request, SOAPVersion version )
                             throws OMException, ServletException {
-        XMLExceptionSerializer<OWSException> serializer;
+        XMLExceptionSerializer serializer;
         if ( version instanceof SOAP11Version ) {
-            serializer = new OWSException110XMLAdapter();
+            serializer = new OWS110ExceptionReportSerializer( Version.parseVersion( "1.1.0" ) );
         } else {
-            serializer = new OWSException120XMLAdapter();
+            serializer = new OWS110ExceptionReportSerializer( Version.parseVersion( "1.2.0" ) );
         }
         sendSOAPException( soapDoc.getHeader(), factory, response, e, serializer, null, null, request.getServerName(),
                            request.getCharacterEncoding() );

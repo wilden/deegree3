@@ -63,7 +63,6 @@ import org.apache.axiom.om.OMElement;
 import org.apache.commons.fileupload.FileItem;
 import org.deegree.commons.config.ResourceInitException;
 import org.deegree.commons.tom.ows.Version;
-import org.deegree.commons.utils.Pair;
 import org.deegree.commons.utils.kvp.KVPUtils;
 import org.deegree.commons.utils.kvp.MissingParameterException;
 import org.deegree.commons.xml.NamespaceBindings;
@@ -237,10 +236,9 @@ public class WCSController extends AbstractOWS {
                                   response );
         } catch ( OWSException ex ) {
             sendServiceException( ex, response );
-        } catch ( XMLStreamException e ) {
-            sendServiceException( new OWSException( "an error occured while processing a request",
-                                                    OWSException.NO_APPLICABLE_CODE ), response );
-            LOG.error( "an error occured while processing a request", e );
+        } catch ( Throwable e ) {
+            sendServiceException( new OWSException( "an error occured while processing a request", NO_APPLICABLE_CODE ),
+                                  response );
         }
     }
 
@@ -270,10 +268,9 @@ public class WCSController extends AbstractOWS {
             }
         } catch ( OWSException ex ) {
             sendServiceException( ex, response );
-        } catch ( XMLStreamException e ) {
-            sendServiceException( new OWSException( "An error occured while processing a request", NO_APPLICABLE_CODE ),
+        } catch ( Throwable e ) {
+            sendServiceException( new OWSException( "an error occured while processing a request", NO_APPLICABLE_CODE ),
                                   response );
-            LOG.error( "an error occured while processing a request", e );
         }
     }
 
@@ -498,8 +495,7 @@ public class WCSController extends AbstractOWS {
 
     private void sendServiceException( OWSException ex, HttpResponseBuffer response )
                             throws ServletException {
-        sendException( "application/vnd.ogc.se_xml", "UTF-8", null, 200, new ServiceException120XMLAdapter(), ex,
-                       response );
+        sendException( null, new WCS100ServiceExceptionReportSerializer(), ex, response );
     }
 
     private void checkRequiredKeys( Map<String, String> param )
@@ -546,9 +542,7 @@ public class WCSController extends AbstractOWS {
     }
 
     @Override
-    public Pair<XMLExceptionSerializer<OWSException>, String> getExceptionSerializer( Version requestVersion ) {
-        return new Pair<XMLExceptionSerializer<OWSException>, String>( new ServiceException120XMLAdapter(),
-                                                                       "application/vnd.ogc.se_xml" );
+    public XMLExceptionSerializer getExceptionSerializer( Version requestVersion ) {
+        return new WCS100ServiceExceptionReportSerializer();
     }
-
 }

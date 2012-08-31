@@ -175,7 +175,7 @@ class DescribeFeatureTypeHandler {
 
         LOG.debug( "doDescribeFeatureType: " + request );
 
-        String mimeType = GMLFormat.getContentType( request.getOutputFormat(), request.getVersion() );
+        String mimeType = format.getMimeType();
         GMLVersion version = format.gmlVersion;
 
         LOG.debug( "contentType:" + response.getContentType() );
@@ -429,7 +429,7 @@ class DescribeFeatureTypeHandler {
                 FeatureType ft = service.lookupFeatureType( ftName );
                 if ( ft == null ) {
                     throw new OWSException( Messages.get( "WFS_FEATURE_TYPE_NOT_SERVED", ftName ),
-                                            OWSException.INVALID_PARAMETER_VALUE );
+                                            OWSException.INVALID_PARAMETER_VALUE, "typenames" );
                 }
                 set.add( ft.getName().getNamespaceURI() );
             }

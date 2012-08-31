@@ -37,6 +37,7 @@ package org.deegree.services.controller;
 
 import static java.io.File.createTempFile;
 import static java.util.Collections.emptyList;
+import static org.deegree.commons.tom.ows.Version.parseVersion;
 import static org.deegree.protocol.ows.exception.OWSException.NO_APPLICABLE_CODE;
 import static org.reflections.util.ClasspathHelper.forClassLoader;
 import static org.reflections.util.ClasspathHelper.forWebInfLib;
@@ -48,6 +49,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -101,7 +103,6 @@ import org.deegree.commons.config.ResourceInitException;
 import org.deegree.commons.modules.ModuleInfo;
 import org.deegree.commons.tom.ows.Version;
 import org.deegree.commons.utils.DeegreeAALogoUtils;
-import org.deegree.commons.utils.Pair;
 import org.deegree.commons.utils.io.LoggingInputStream;
 import org.deegree.commons.utils.kvp.KVPUtils;
 import org.deegree.commons.xml.XMLAdapter;
@@ -117,7 +118,7 @@ import org.deegree.services.controller.security.SecurityConfiguration;
 import org.deegree.services.controller.utils.HttpResponseBuffer;
 import org.deegree.services.controller.utils.LoggingHttpResponseWrapper;
 import org.deegree.services.jaxb.controller.DeegreeServiceControllerType;
-import org.deegree.services.ows.OWSException110XMLAdapter;
+import org.deegree.services.ows.OWS110ExceptionReportSerializer;
 import org.slf4j.Logger;
 
 /**
@@ -302,21 +303,15 @@ public class OGCFrontController extends HttpServlet {
     @Override
     protected void doGet( HttpServletRequest request, HttpServletResponse response )
                             throws ServletException, IOException {
+
+        HttpResponseBuffer responseBuffer = createHttpResponseBuffer( request, response );
+
         try {
             long entryTime = System.currentTimeMillis();
 
-            if ( LOG.isDebugEnabled() ) {
-                LOG.debug( "HTTP headers:" );
-                Enumeration<String> headerEnum = request.getHeaderNames();
-                while ( headerEnum.hasMoreElements() ) {
-                    String headerName = headerEnum.nextElement();
-                    LOG.debug( "- " + headerName + "='" + request.getHeader( headerName ) + "'" );
-                }
-            }
-
-            addHeaders( response );
-
-            response = handleCompression( response );
+            logHeaders( request );
+            addHeaders( responseBuffer );
+            responseBuffer = handleCompression( responseBuffer );
 
             String queryString = request.getQueryString();
             try {
@@ -329,10 +324,10 @@ public class OGCFrontController extends HttpServlet {
                     try {
                         ows = determineOWSByPathQuirk( request );
                     } catch ( OWSException e ) {
-                        sendException( null, e, response, null );
+                        sendException( null, e, responseBuffer, null );
                         return;
                     }
-                    sendException( ows, ex, response, null );
+                    sendException( ows, ex, responseBuffer, null );
                     return;
                 }
 
@@ -353,22 +348,22 @@ public class OGCFrontController extends HttpServlet {
                         xmlStream = XMLInputFactory.newInstance().createXMLStreamReader( dummySystemId, reader );
                     }
                     if ( isSOAPRequest( xmlStream ) ) {
-                        dispatchSOAPRequest( xmlStream, request, response, multiParts );
+                        dispatchSOAPRequest( xmlStream, request, responseBuffer, multiParts );
                     } else {
-                        dispatchXMLRequest( xmlStream, request, response, multiParts );
+                        dispatchXMLRequest( xmlStream, request, responseBuffer, multiParts );
                     }
                 } else {
                     // for GET requests, there is no standard way for defining the used encoding
                     Map<String, String> normalizedKVPParams = KVPUtils.getNormalizedKVPMap( request.getQueryString(),
                                                                                             DEFAULT_ENCODING );
                     LOG.debug( "parameter map: " + normalizedKVPParams );
-                    dispatchKVPRequest( normalizedKVPParams, request, response, multiParts, entryTime );
+                    dispatchKVPRequest( normalizedKVPParams, request, responseBuffer, multiParts, entryTime );
                 }
             } catch ( XMLProcessingException e ) {
                 // the message might be more meaningful
                 OWSException ex = new OWSException( "The request did not contain KVP parameters and no parseable XML.",
                                                     "MissingParameterValue", "request" );
-                sendException( null, ex, response, null );
+                sendException( null, ex, responseBuffer, null );
                 return;
             } catch ( Throwable e ) {
                 e.printStackTrace();
@@ -376,13 +371,28 @@ public class OGCFrontController extends HttpServlet {
                            + " ms before sending exception." );
                 LOG.debug( e.getMessage(), e );
                 OWSException ex = new OWSException( e.getLocalizedMessage(), e, "InvalidRequest" );
-                sendException( null, ex, response, null );
+                sendException( null, ex, responseBuffer, null );
                 return;
             }
             LOG.debug( "Handling HTTP-GET request with status 'success' took: "
                        + ( System.currentTimeMillis() - entryTime ) + " ms." );
         } finally {
             getInstance().CONTEXT.remove();
+            responseBuffer.flushBuffer();
+            if ( mainConfig.isValidateResponses() != null && mainConfig.isValidateResponses() ) {
+                validateResponse( responseBuffer );
+            }
+        }
+    }
+
+    private void logHeaders( HttpServletRequest request ) {
+        if ( LOG.isDebugEnabled() ) {
+            LOG.debug( "HTTP headers:" );
+            Enumeration<String> headerEnum = request.getHeaderNames();
+            while ( headerEnum.hasMoreElements() ) {
+                String headerName = headerEnum.nextElement();
+                LOG.debug( "- " + headerName + "='" + request.getHeader( headerName ) + "'" );
+            }
         }
     }
 
@@ -406,23 +416,16 @@ public class OGCFrontController extends HttpServlet {
     @Override
     protected void doPost( HttpServletRequest request, HttpServletResponse response )
                             throws ServletException, IOException {
+
+        HttpResponseBuffer responseBuffer = createHttpResponseBuffer( request, response );
+
         try {
-            if ( LOG.isDebugEnabled() ) {
-                LOG.debug( "HTTP headers:" );
-                Enumeration<String> headerEnum = request.getHeaderNames();
-                while ( headerEnum.hasMoreElements() ) {
-                    String headerName = headerEnum.nextElement();
-                    LOG.debug( "- " + headerName + "='" + request.getHeader( headerName ) + "'" );
-                }
-            }
-
-            addHeaders( response );
-
-            response = handleCompression( response );
+            logHeaders( request );
+            addHeaders( responseBuffer );
+            responseBuffer = handleCompression( responseBuffer );
 
             LOG.debug( "doPost(), contentType: '" + request.getContentType() + "'" );
 
-            LoggingHttpResponseWrapper logging = null;
             long entryTime = System.currentTimeMillis();
             try {
                 // check if content-type implies that it's a KVP request
@@ -433,31 +436,6 @@ public class OGCFrontController extends HttpServlet {
                 }
                 List<FileItem> multiParts = checkAndRetrieveMultiparts( request );
                 InputStream is = request.getInputStream();
-                if ( multiParts == null ) {
-                    // TODO log multiparts requests
-                    if ( !isKVP && serviceConfiguration.getRequestLogger() != null ) {
-                        String dir = mainConfig.getRequestLogging().getOutputDirectory();
-                        File file;
-                        if ( dir == null ) {
-                            file = createTempFile( "request", ".body" );
-                        } else {
-                            File directory = new File( dir );
-                            if ( !directory.exists() ) {
-                                directory.mkdirs();
-                            }
-                            file = createTempFile( "request", ".body", directory );
-                        }
-                        is = new LoggingInputStream( is, new FileOutputStream( file ) );
-                        Boolean conf = mainConfig.getRequestLogging().isOnlySuccessful();
-                        boolean onlySuccessful = conf != null && conf;
-                        response = logging = new LoggingHttpResponseWrapper( request.getRequestURL().toString(),
-                                                                             response, file, onlySuccessful, entryTime,
-                                                                             null,
-                                                                             serviceConfiguration.getRequestLogger(),
-                                                                             is );
-                        // TODO obtain/set credentials somewhere
-                    }
-                }
 
                 if ( isKVP ) {
                     String queryString = readPostBodyAsString( is );
@@ -472,7 +450,7 @@ public class OGCFrontController extends HttpServlet {
                         LOG.debug( "Client encoding information :" + encoding );
                         normalizedKVPParams = KVPUtils.getNormalizedKVPMap( queryString, encoding );
                     }
-                    dispatchKVPRequest( normalizedKVPParams, request, response, multiParts, entryTime );
+                    dispatchKVPRequest( normalizedKVPParams, request, responseBuffer, multiParts, entryTime );
                 } else {
                     // if( handle multiparts, get first body from multipart (?)
                     // body->requestDoc
@@ -505,12 +483,9 @@ public class OGCFrontController extends HttpServlet {
                     // skip to start tag of root element
                     XMLStreamUtils.nextElement( xmlStream );
                     if ( isSOAPRequest( xmlStream ) ) {
-                        dispatchSOAPRequest( xmlStream, request, response, multiParts );
+                        dispatchSOAPRequest( xmlStream, request, responseBuffer, multiParts );
                     } else {
-                        dispatchXMLRequest( xmlStream, request, response, multiParts );
-                    }
-                    if ( logging != null ) {
-                        logging.finalizeLogging();
+                        dispatchXMLRequest( xmlStream, request, responseBuffer, multiParts );
                     }
                 }
             } catch ( Throwable e ) {
@@ -518,13 +493,53 @@ public class OGCFrontController extends HttpServlet {
                            + " ms before sending exception." );
                 LOG.debug( e.getMessage(), e );
                 OWSException ex = new OWSException( e.getLocalizedMessage(), "InvalidRequest" );
-                sendException( null, ex, response, null );
+                sendException( null, ex, responseBuffer, null );
             }
             LOG.debug( "Handling HTTP-POST request with status 'success' took: "
                        + ( System.currentTimeMillis() - entryTime ) + " ms." );
         } finally {
             instance.CONTEXT.remove();
+            responseBuffer.flushBuffer();
+            if ( mainConfig.isValidateResponses() != null && mainConfig.isValidateResponses() ) {
+                validateResponse( responseBuffer );
+            }
         }
+    }
+
+    private HttpResponseBuffer createHttpResponseBuffer( HttpServletRequest request, HttpServletResponse response )
+                            throws FileNotFoundException, IOException {
+        if ( serviceConfiguration.getRequestLogger() != null ) {
+            response = createLoggingResponseWrapper( request, response );
+        }
+        return new HttpResponseBuffer( response );
+    }
+
+    private HttpServletResponse createLoggingResponseWrapper( HttpServletRequest request, HttpServletResponse response )
+                            throws IOException, FileNotFoundException {
+
+        Boolean conf = mainConfig.getRequestLogging().isOnlySuccessful();
+        boolean onlySuccessful = conf != null && conf;
+
+        if ( "POST".equals( request.getMethod() ) && serviceConfiguration.getRequestLogger() != null ) {
+            String dir = mainConfig.getRequestLogging().getOutputDirectory();
+            File file;
+            if ( dir == null ) {
+                file = createTempFile( "request", ".body" );
+            } else {
+                File directory = new File( dir );
+                if ( !directory.exists() ) {
+                    directory.mkdirs();
+                }
+                file = createTempFile( "request", ".body", directory );
+            }
+            InputStream is = new LoggingInputStream( request.getInputStream(), new FileOutputStream( file ) );
+            response = new LoggingHttpResponseWrapper( request.getRequestURL().toString(), response, file,
+                                                       onlySuccessful, serviceConfiguration.getRequestLogger(), is );
+        } else {
+            response = new LoggingHttpResponseWrapper( response, request.getQueryString(), onlySuccessful,
+                                                       serviceConfiguration.getRequestLogger(), null );
+        }
+        return response;
     }
 
     private OWS determineOWSByPath( HttpServletRequest request )
@@ -573,7 +588,7 @@ public class OGCFrontController extends HttpServlet {
         return ows;
     }
 
-    private static HttpServletResponse handleCompression( HttpServletResponse response ) {
+    private static HttpResponseBuffer handleCompression( HttpResponseBuffer response ) {
         // TODO check if we should enable this in any case (XML, images, ...)
         // String encoding = request.getHeader( "Accept-Encoding" );
         // boolean supportsGzip = encoding != null && encoding.toLowerCase().contains( "gzip" );
@@ -649,7 +664,7 @@ public class OGCFrontController extends HttpServlet {
      * @throws IOException
      */
     private void dispatchKVPRequest( Map<String, String> normalizedKVPParams, HttpServletRequest requestWrapper,
-                                     HttpServletResponse response, List<FileItem> multiParts, long entryTime )
+                                     HttpResponseBuffer response, List<FileItem> multiParts, long entryTime )
                             throws ServletException, IOException {
 
         OWS ows = null;
@@ -660,8 +675,6 @@ public class OGCFrontController extends HttpServlet {
             return;
         }
 
-        LoggingHttpResponseWrapper logging = null;
-
         CredentialsProvider credentialsProvider = securityConfiguration == null ? null
                                                                                : securityConfiguration.getCredentialsProvider();
 
@@ -671,20 +684,13 @@ public class OGCFrontController extends HttpServlet {
             Credentials cred = null;
             if ( credentialsProvider != null ) {
                 cred = credentialsProvider.doKVP( normalizedKVPParams, requestWrapper, response );
+                response.setCredentials (cred);                
             }
             LOG.debug( "credentials: " + cred );
             bindContextToThread( requestWrapper, cred );
 
             String service = normalizedKVPParams.get( "SERVICE" );
             String request = normalizedKVPParams.get( "REQUEST" );
-
-            if ( serviceConfiguration.getRequestLogger() != null ) {
-                Boolean conf = mainConfig.getRequestLogging().isOnlySuccessful();
-                boolean onlySuccessful = conf != null && conf;
-                response = logging = new LoggingHttpResponseWrapper( response, requestWrapper.getQueryString(),
-                                                                     onlySuccessful, entryTime, cred,
-                                                                     serviceConfiguration.getRequestLogger(), null );
-            }
 
             if ( ows == null ) {
                 // first try service parameter, SERVICE-parameter is mandatory for each service and request (except WMS
@@ -769,19 +775,11 @@ public class OGCFrontController extends HttpServlet {
             }
 
             LOG.debug( "Dispatching request to OWS class: " + ows.getClass().getName() );
-            HttpResponseBuffer responseWrapper = new HttpResponseBuffer( response );
             long dispatchTime = FrontControllerStats.requestDispatched();
             try {
-                ows.doKVP( normalizedKVPParams, requestWrapper, responseWrapper, multiParts );
+                ows.doKVP( normalizedKVPParams, requestWrapper, response, multiParts );
             } finally {
                 FrontControllerStats.requestFinished( dispatchTime );
-            }
-            if ( mainConfig.isValidateResponses() != null && mainConfig.isValidateResponses() ) {
-                validateResponse( responseWrapper );
-            }
-            responseWrapper.flushBuffer();
-            if ( logging != null ) {
-                logging.finalizeLogging();
             }
         } catch ( SecurityException e ) {
             if ( credentialsProvider != null ) {
@@ -813,7 +811,7 @@ public class OGCFrontController extends HttpServlet {
      * @throws IOException
      */
     private void dispatchXMLRequest( XMLStreamReader xmlStream, HttpServletRequest requestWrapper,
-                                     HttpServletResponse response, List<FileItem> multiParts )
+                                     HttpResponseBuffer response, List<FileItem> multiParts )
                             throws ServletException, IOException {
 
         OWS ows = null;
@@ -832,6 +830,7 @@ public class OGCFrontController extends HttpServlet {
             Credentials cred = null;
             if ( credentialsProvider != null ) {
                 cred = credentialsProvider.doXML( xmlStream, requestWrapper, response );
+                response.setCredentials (cred);                
             }
             LOG.debug( "credentials: " + cred );
             bindContextToThread( requestWrapper, cred );
@@ -861,17 +860,12 @@ public class OGCFrontController extends HttpServlet {
             }
             if ( ows != null ) {
                 LOG.debug( "Dispatching request to OWS: " + ows.getClass().getName() );
-                HttpResponseBuffer responseWrapper = new HttpResponseBuffer( response );
                 long dispatchTime = FrontControllerStats.requestDispatched();
                 try {
-                    ows.doXML( xmlStream, requestWrapper, responseWrapper, multiParts );
+                    ows.doXML( xmlStream, requestWrapper, response, multiParts );
                 } finally {
                     FrontControllerStats.requestFinished( dispatchTime );
                 }
-                if ( mainConfig.isValidateResponses() != null && mainConfig.isValidateResponses() ) {
-                    validateResponse( responseWrapper );
-                }
-                responseWrapper.flushBuffer();
             }
         } catch ( SecurityException e ) {
             if ( credentialsProvider != null ) {
@@ -900,7 +894,7 @@ public class OGCFrontController extends HttpServlet {
      * @throws IOException
      */
     private void dispatchSOAPRequest( XMLStreamReader xmlStream, HttpServletRequest requestWrapper,
-                                      HttpServletResponse response, List<FileItem> multiParts )
+                                      HttpResponseBuffer response, List<FileItem> multiParts )
                             throws ServletException, IOException {
 
         OWS ows = null;
@@ -933,12 +927,13 @@ public class OGCFrontController extends HttpServlet {
 
         try {
             // TODO handle multiple authentication methods
-            Credentials cred = null;
+            Credentials creds = null;
             if ( credentialsProvider != null ) {
-                cred = credentialsProvider.doSOAP( env, requestWrapper );
+                creds = credentialsProvider.doSOAP( env, requestWrapper );
+                response.setCredentials( creds );
             }
-            LOG.debug( "credentials: " + cred );
-            bindContextToThread( requestWrapper, cred );
+            LOG.debug( "credentials: " + creds );
+            bindContextToThread( requestWrapper, creds );
 
             // extract (deegree specific) security information and bind to current thread
             // String user = null;
@@ -990,10 +985,6 @@ public class OGCFrontController extends HttpServlet {
             } finally {
                 FrontControllerStats.requestFinished( dispatchTime );
             }
-            if ( mainConfig.isValidateResponses() != null && mainConfig.isValidateResponses() ) {
-                validateResponse( responseWrapper );
-            }
-            responseWrapper.flushBuffer();
         } catch ( SecurityException e ) {
             if ( credentialsProvider != null ) {
                 LOG.debug( "A security exception was thrown, let the credential provider handle the job." );
@@ -1432,7 +1423,7 @@ public class OGCFrontController extends HttpServlet {
      *            response object
      * @throws ServletException
      */
-    private void sendException( OWS ows, OWSException e, HttpServletResponse res, Version requestVersion )
+    private void sendException( OWS ows, OWSException e, HttpResponseBuffer res, Version requestVersion )
                             throws ServletException {
         if ( ows == null ) {
             Collection<List<OWS>> values = serviceConfiguration.getAll().values();
@@ -1443,13 +1434,32 @@ public class OGCFrontController extends HttpServlet {
         if ( ows != null ) {
             // use exception serializer / mime type from first registered controller (fair chance that this will be
             // correct)
-            Pair<XMLExceptionSerializer<OWSException>, String> serializerAndMime = ows.getExceptionSerializer( requestVersion );
-            ( (AbstractOWS) ows ).sendException( serializerAndMime.second, "UTF-8", null, 200, serializerAndMime.first,
-                                                 e, res );
+            XMLExceptionSerializer serializer = ows.getExceptionSerializer( requestVersion );
+            ( (AbstractOWS) ows ).sendException( null, serializer, e, res );
         } else {
             // use the most common serializer (OWS 1.1.0)
-            AbstractOWS.sendException( "text/xml", "UTF-8", null, 200, new OWSException110XMLAdapter(), null, e, res );
+            XMLExceptionSerializer serializer = null;
+            if ( requestVersion == null ) {
+                serializer = new OWS110ExceptionReportSerializer( parseVersion( "1.1.0" ) );
+            } else {
+                serializer = new OWS110ExceptionReportSerializer( requestVersion );
+            }
+
+            if ( !res.isCommitted() ) {
+                try {
+                    res.reset();
+                } catch ( IllegalStateException e2 ) {
+                    // rb: the illegal state exception occurred.
+                    throw new ServletException( e2 );
+                }
+                try {
+                    serializer.serializeException( res, e );
+                } catch ( Exception e2 ) {
+                    LOG.error( "An error occurred while trying to send an exception: " + e2.getLocalizedMessage(), e );
+                    throw new ServletException( e2 );
+                }
+                res.setExceptionSent();
+            }
         }
     }
-
 }

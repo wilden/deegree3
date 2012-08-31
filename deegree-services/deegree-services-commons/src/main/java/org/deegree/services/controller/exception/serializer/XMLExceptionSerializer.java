@@ -37,59 +37,32 @@
 package org.deegree.services.controller.exception.serializer;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
-import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.deegree.commons.xml.XMLAdapter;
-import org.deegree.commons.xml.stax.IndentingXMLStreamWriter;
 import org.deegree.protocol.ows.exception.OWSException;
+import org.deegree.services.controller.utils.HttpResponseBuffer;
 
 /**
  * The <code>XMLExceptionSerializer</code> class TODO add class documentation here.
  * 
  * @author <a href="mailto:bezema@lat-lon.de">Rutger Bezema</a>
- * 
  * @author last edited by: $Author$
  * 
- * @version $Revision$, $Date$
- * @param <T>
- *            the exception which will be serialized, a subtype of {@link ControllerException}
- * 
+ * @version $Revision$, $Date$ *
  */
-public abstract class XMLExceptionSerializer<T extends OWSException> extends XMLAdapter implements
-                                                                                       ExceptionSerializer<T> {
+public abstract class XMLExceptionSerializer implements ExceptionSerializer {
 
-    /**
-     * Wraps a {@link IndentingXMLStreamWriter} around the given output stream and calls
-     * {@link #serializeExceptionToXML(XMLStreamWriter, ControllerException)}. The writer will prepare namespaces and
-     * will start and end the XML document.
-     * 
-     * @param outputStream
-     *            which will be wrapped.
-     * @param exception
-     *            which must be serialized
-     */
     @Override
-    public final void serializeException( OutputStream outputStream, T exception, String requestedEncoding )
-                            throws IOException {
-        XMLOutputFactory factory = XMLOutputFactory.newInstance();
-        try {
-            if ( requestedEncoding == null ) {
-                requestedEncoding = "UTF-8";
-            }
-            IndentingXMLStreamWriter xmlWriter = new IndentingXMLStreamWriter(
-                                                                               factory.createXMLStreamWriter( outputStream,
-                                                                                                              requestedEncoding ) );
-            xmlWriter.writeStartDocument( requestedEncoding, "1.0" );
-            serializeExceptionToXML( xmlWriter, exception );
-            xmlWriter.writeEndDocument();
-            xmlWriter.close();
-        } catch ( XMLStreamException e ) {
-            throw new IOException( e );
-        }
+    public void serializeException( HttpResponseBuffer response, OWSException exception )
+                            throws IOException, XMLStreamException {
+
+        response.reset();
+        response.setCharacterEncoding( "UTF-8" );
+        response.setContentType( "application/vnd.ogc.se_xml" );
+        response.setStatus( 200 );
+        serializeExceptionToXML( response.getXMLWriter(), exception );
     }
 
     /**
@@ -102,7 +75,7 @@ public abstract class XMLExceptionSerializer<T extends OWSException> extends XML
      * @throws XMLStreamException
      *             if an error occurred while serializing the given exception.
      */
-    public abstract void serializeExceptionToXML( XMLStreamWriter writer, T exception )
+    protected abstract void serializeExceptionToXML( XMLStreamWriter writer, OWSException exception )
                             throws XMLStreamException;
 
 }

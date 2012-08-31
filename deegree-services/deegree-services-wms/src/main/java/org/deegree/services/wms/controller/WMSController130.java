@@ -37,7 +37,6 @@
 package org.deegree.services.wms.controller;
 
 import static org.deegree.services.i18n.Messages.get;
-import static org.deegree.services.wms.controller.WMSProvider.IMPLEMENTATION_METADATA;
 
 import java.io.IOException;
 
@@ -53,10 +52,9 @@ import org.deegree.protocol.ows.exception.OWSException;
 import org.deegree.protocol.ows.metadata.ServiceIdentification;
 import org.deegree.protocol.ows.metadata.ServiceProvider;
 import org.deegree.protocol.wms.Utils;
-import org.deegree.services.controller.AbstractOWS;
 import org.deegree.services.controller.utils.HttpResponseBuffer;
 import org.deegree.services.metadata.OWSMetadataProvider;
-import org.deegree.services.ows.OGCExceptionXMLAdapter;
+import org.deegree.services.ows.PreOWSExceptionReportSerializer;
 import org.deegree.services.wms.MapService;
 import org.deegree.services.wms.controller.capabilities.Capabilities130XMLAdapter;
 
@@ -77,14 +75,13 @@ public class WMSController130 extends WMSControllerBase {
         EXCEPTION_DEFAULT = "XML";
         EXCEPTION_BLANK = "BLANK";
         EXCEPTION_INIMAGE = "INIMAGE";
-
-        EXCEPTIONS = new OGCExceptionXMLAdapter();
+        exceptionSerializer = new PreOWSExceptionReportSerializer( EXCEPTION_MIME );
     }
 
     @Override
-    public void sendException( OWSException ex, HttpResponseBuffer response )
+    public void sendException( OWSException ex, HttpResponseBuffer response, WMSController controller )
                             throws ServletException {
-        AbstractOWS.sendException( "text/xml", "UTF-8", null, 200, EXCEPTIONS, IMPLEMENTATION_METADATA, ex, response );
+        controller.sendException( null, exceptionSerializer, ex, response );
     }
 
     @Override

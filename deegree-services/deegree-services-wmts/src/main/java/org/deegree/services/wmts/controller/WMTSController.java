@@ -45,6 +45,7 @@ import static org.deegree.commons.tom.ows.Version.parseVersion;
 import static org.deegree.protocol.ows.exception.OWSException.INVALID_PARAMETER_VALUE;
 import static org.deegree.protocol.ows.exception.OWSException.NO_APPLICABLE_CODE;
 import static org.deegree.protocol.ows.exception.OWSException.OPERATION_NOT_SUPPORTED;
+import static org.deegree.protocol.wmts.WMTSConstants.VERSION_100;
 import static org.deegree.services.metadata.MetadataUtils.convertFromJAXB;
 import static org.deegree.services.wmts.WMTSProvider.IMPLEMENTATION_METADATA;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -81,7 +82,7 @@ import org.deegree.services.jaxb.controller.DeegreeServiceControllerType;
 import org.deegree.services.jaxb.metadata.DeegreeServicesMetadataType;
 import org.deegree.services.metadata.OWSMetadataProvider;
 import org.deegree.services.metadata.OWSMetadataProviderManager;
-import org.deegree.services.ows.OWSException110XMLAdapter;
+import org.deegree.services.ows.OWS110ExceptionReportSerializer;
 import org.deegree.services.wmts.controller.capabilities.WMTSCapabilitiesWriter;
 import org.deegree.services.wmts.jaxb.DeegreeWMTS;
 import org.deegree.theme.Theme;
@@ -213,7 +214,7 @@ public class WMTSController extends AbstractOWS {
 
     private void sendException( OWSException e, HttpResponseBuffer response )
                             throws ServletException {
-        sendException( "text/xml", "UTF-8", null, 200, new OWSException110XMLAdapter(), e, response );
+        sendException( null, new OWS110ExceptionReportSerializer(VERSION_100), e, response );
     }
 
     private void handleRequest( WMTSRequestType req, HttpResponseBuffer response, Map<String, String> map,
@@ -273,7 +274,7 @@ public class WMTSController extends AbstractOWS {
         }
 
         try {
-            copy( t.getAsStream(), response.getOutputStream() );            
+            copy( t.getAsStream(), response.getOutputStream() );
         } catch ( Throwable e ) {
             throw new ServletException( e );
         }

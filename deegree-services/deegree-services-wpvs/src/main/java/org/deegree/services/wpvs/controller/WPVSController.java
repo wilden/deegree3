@@ -39,6 +39,7 @@ package org.deegree.services.wpvs.controller;
 import static java.util.Collections.EMPTY_LIST;
 import static javax.xml.stream.XMLOutputFactory.IS_REPAIRING_NAMESPACES;
 import static org.deegree.protocol.ows.exception.OWSException.NO_APPLICABLE_CODE;
+import static org.deegree.protocol.wpvs.WPVSConstants.VERSION_100;
 import static org.deegree.services.wpvs.controller.WPVSProvider.IMPLEMENTATION_METADATA;
 
 import java.awt.image.BufferedImage;
@@ -64,7 +65,6 @@ import org.apache.axiom.om.OMElement;
 import org.apache.commons.fileupload.FileItem;
 import org.deegree.commons.config.ResourceInitException;
 import org.deegree.commons.tom.ows.Version;
-import org.deegree.commons.utils.Pair;
 import org.deegree.commons.utils.kvp.KVPUtils;
 import org.deegree.commons.utils.kvp.MissingParameterException;
 import org.deegree.commons.xml.NamespaceBindings;
@@ -93,7 +93,7 @@ import org.deegree.services.jaxb.metadata.ServiceProviderType;
 import org.deegree.services.jaxb.wpvs.PublishedInformation;
 import org.deegree.services.jaxb.wpvs.PublishedInformation.AllowedOperations;
 import org.deegree.services.jaxb.wpvs.ServiceConfiguration;
-import org.deegree.services.ows.OWSException110XMLAdapter;
+import org.deegree.services.ows.OWS110ExceptionReportSerializer;
 import org.deegree.services.wpvs.PerspectiveViewService;
 import org.deegree.services.wpvs.controller.capabilities.CapabilitiesXMLAdapter;
 import org.deegree.services.wpvs.controller.getview.GetView;
@@ -368,14 +368,13 @@ public class WPVSController extends AbstractOWS {
     private void sendServiceException( OWSException e, HttpResponseBuffer response )
                             throws ServletException {
         LOG.error( "Unable to forfil request, sending exception.", e );
-        sendException( "application/vnd.ogc.se_xml", "UTF-8", null, 200, new OWSException110XMLAdapter(), e, response );
+        sendException( null, new OWS110ExceptionReportSerializer( VERSION_100 ), e, response );
 
     }
 
     @Override
-    public Pair<XMLExceptionSerializer<OWSException>, String> getExceptionSerializer( Version requestVersion ) {
-        return new Pair<XMLExceptionSerializer<OWSException>, String>( new OWSException110XMLAdapter(),
-                                                                       "application/vnd.ogc.se_xml" );
+    public XMLExceptionSerializer getExceptionSerializer( Version requestVersion ) {
+        return new OWS110ExceptionReportSerializer( VERSION_100 );
     }
 
     @Override

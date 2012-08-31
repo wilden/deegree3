@@ -137,8 +137,8 @@ import org.deegree.protocol.wfs.storedquery.ListStoredQueries;
 import org.deegree.protocol.wfs.storedquery.ListStoredQueriesKVPAdapter;
 import org.deegree.protocol.wfs.storedquery.ListStoredQueriesXMLAdapter;
 import org.deegree.protocol.wfs.transaction.Transaction;
-import org.deegree.protocol.wfs.transaction.TransactionKVPAdapter;
-import org.deegree.protocol.wfs.transaction.TransactionXMLAdapter;
+import org.deegree.protocol.wfs.transaction.kvp.TransactionKVPAdapter;
+import org.deegree.protocol.wfs.transaction.xml.TransactionXMLAdapter;
 import org.deegree.services.OWS;
 import org.deegree.services.controller.AbstractOWS;
 import org.deegree.services.controller.ImplementationMetadata;
@@ -160,9 +160,9 @@ import org.deegree.services.metadata.MetadataUtils;
 import org.deegree.services.metadata.OWSMetadataProvider;
 import org.deegree.services.metadata.OWSMetadataProviderManager;
 import org.deegree.services.metadata.provider.DefaultOWSMetadataProvider;
-import org.deegree.services.ows.OGCExceptionXMLAdapter;
-import org.deegree.services.ows.OWSException100XMLAdapter;
-import org.deegree.services.ows.OWSException110XMLAdapter;
+import org.deegree.services.ows.OWS100ExceptionReportSerializer;
+import org.deegree.services.ows.OWS110ExceptionReportSerializer;
+import org.deegree.services.ows.PreOWSExceptionReportSerializer;
 import org.deegree.services.wfs.format.Format;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -213,6 +213,8 @@ public class WebFeatureService extends AbstractOWS {
     private List<ICRS> queryCRS = new ArrayList<ICRS>();
 
     private final Map<String, Format> mimeTypeToFormat = new LinkedHashMap<String, Format>();
+
+    private final Map<GMLVersion, Format> gmlVersionToFormat = new HashMap<GMLVersion, Format>();
 
     private int maxFeatures;
 
@@ -322,13 +324,17 @@ public class WebFeatureService extends AbstractOWS {
 
                                                                                                                      GML_32 );
             mimeTypeToFormat.put( "application/gml+xml; version=2.1", gml21 );
-            mimeTypeToFormat.put( "application/gml+xml; version=3.0", gml21 );
-            mimeTypeToFormat.put( "application/gml+xml; version=3.1", gml21 );
-            mimeTypeToFormat.put( "application/gml+xml; version=3.2", gml21 );
+            mimeTypeToFormat.put( "application/gml+xml; version=3.0", gml30 );
+            mimeTypeToFormat.put( "application/gml+xml; version=3.1", gml31 );
+            mimeTypeToFormat.put( "application/gml+xml; version=3.2", gml32 );
             mimeTypeToFormat.put( "text/xml; subtype=gml/2.1.2", gml21 );
             mimeTypeToFormat.put( "text/xml; subtype=gml/3.0.1", gml30 );
             mimeTypeToFormat.put( "text/xml; subtype=gml/3.1.1", gml31 );
             mimeTypeToFormat.put( "text/xml; subtype=gml/3.2.1", gml32 );
+            mimeTypeToFormat.put( "text/xml; subtype=\"gml/2.1.2\"", gml21 );
+            mimeTypeToFormat.put( "text/xml; subtype=\"gml/3.0.1\"", gml30 );
+            mimeTypeToFormat.put( "text/xml; subtype=\"gml/3.1.1\"", gml31 );
+            mimeTypeToFormat.put( "text/xml; subtype=\"gml/3.2.1\"", gml32 );
         } else {
             LOG.debug( "Using customized format configuration." );
             for ( JAXBElement<? extends AbstractFormatType> formatEl : formatList ) {
@@ -354,6 +360,12 @@ public class WebFeatureService extends AbstractOWS {
                 for ( String mimeType : mimeTypes ) {
                     mimeTypeToFormat.put( mimeType, format );
                 }
+            }
+        }
+
+        for ( Format f : mimeTypeToFormat.values() ) {
+            if ( f instanceof org.deegree.services.wfs.format.gml.GMLFormat ) {
+                gmlVersionToFormat.put( ( (org.deegree.services.wfs.format.gml.GMLFormat) f ).getGmlVersion(), f );
             }
         }
     }
@@ -575,24 +587,19 @@ public class WebFeatureService extends AbstractOWS {
         } catch ( OWSException e ) {
             LOG.debug( "OWS-Exception: {}", e.getMessage() );
             LOG.trace( e.getMessage(), e );
-            if ( requestVersion != null && requestVersion.equals( VERSION_100 ) ) {
-                sendServiceException100( e, response );
-            } else {
-                // for any other version...
-                sendServiceException110( e, response );
-            }
+            sendServiceException( requestVersion, e, response );
         } catch ( MissingParameterException e ) {
             LOG.debug( "OWS-Exception: {}", e.getMessage() );
             LOG.trace( e.getMessage(), e );
-            sendServiceException110( new OWSException( e ), response );
+            sendServiceException( requestVersion, new OWSException( e ), response );
         } catch ( InvalidParameterValueException e ) {
             LOG.debug( "OWS-Exception: {}", e.getMessage() );
             LOG.trace( e.getMessage(), e );
-            sendServiceException110( new OWSException( e ), response );
+            sendServiceException( requestVersion, new OWSException( e ), response );
         } catch ( Throwable e ) {
             LOG.debug( "OWS-Exception: {}", e.getMessage() );
             LOG.trace( e.getMessage(), e );
-            sendServiceException110( new OWSException( e.getMessage(), NO_APPLICABLE_CODE ), response );
+            sendServiceException( requestVersion, new OWSException( e.getMessage(), NO_APPLICABLE_CODE ), response );
         }
     }
 
@@ -602,12 +609,6 @@ public class WebFeatureService extends AbstractOWS {
             throw new OWSException( Messages.get( "WFS_TRANSACTIONS_DISABLED", requestName ),
                                     OWSException.OPERATION_NOT_SUPPORTED );
         }
-    }
-
-    private void sendServiceException100( OWSException e, HttpResponseBuffer response )
-                            throws ServletException {
-        LOG.debug( "Sending WFS 1.0.0 service exception " + e );
-        sendException( "application/vnd.ogc.se_xml", "UTF-8", null, 200, new OGCExceptionXMLAdapter(), e, response );
     }
 
     @Override
@@ -725,24 +726,19 @@ public class WebFeatureService extends AbstractOWS {
             }
         } catch ( OWSException e ) {
             LOG.debug( e.getMessage(), e );
-            if ( requestVersion != null && requestVersion.equals( VERSION_100 ) ) {
-                sendServiceException100( e, response );
-            } else {
-                // for any other version...
-                sendServiceException110( e, response );
-            }
+            sendServiceException( requestVersion, e, response );
         } catch ( XMLParsingException e ) {
             LOG.trace( "Stack trace:", e );
-            sendServiceException110( new OWSException( e.getMessage(), INVALID_PARAMETER_VALUE ), response );
+            sendServiceException( requestVersion, new OWSException( e.getMessage(), INVALID_PARAMETER_VALUE ), response );
         } catch ( MissingParameterException e ) {
             LOG.trace( "Stack trace:", e );
-            sendServiceException110( new OWSException( e ), response );
+            sendServiceException( requestVersion, new OWSException( e ), response );
         } catch ( InvalidParameterValueException e ) {
             LOG.trace( "Stack trace:", e );
-            sendServiceException110( new OWSException( e ), response );
+            sendServiceException( requestVersion, new OWSException( e ), response );
         } catch ( Throwable e ) {
             LOG.trace( "Stack trace:", e );
-            sendServiceException110( new OWSException( e.getMessage(), NO_APPLICABLE_CODE ), response );
+            sendServiceException( requestVersion, new OWSException( e.getMessage(), NO_APPLICABLE_CODE ), response );
         }
     }
 
@@ -766,6 +762,8 @@ public class WebFeatureService extends AbstractOWS {
         try {
             if ( VERSION_100.equals( version ) && gmlVersion == GMLVersion.GML_2 ) {
                 baseUrl += "XMLSCHEMA";
+            } else if ( VERSION_200.equals( version ) && gmlVersion == GMLVersion.GML_32 ) {
+                baseUrl += URLEncoder.encode( gmlVersion.getMimeType(), "UTF-8" );
             } else {
                 baseUrl += URLEncoder.encode( gmlVersion.getMimeTypeOldStyle(), "UTF-8" );
             }
@@ -908,25 +906,33 @@ public class WebFeatureService extends AbstractOWS {
         return new SchemaLocationXMLStreamWriter( xmlWriter, schemaLocation );
     }
 
-    private void sendServiceException110( OWSException ex, HttpResponseBuffer response )
+    private void sendServiceException( Version requestVersion, OWSException e, HttpResponseBuffer response )
                             throws ServletException {
-
-        LOG.debug( "Sending WFS 1.1.0 service exception " + ex );
-        sendException( "application/vnd.ogc.se_xml", "UTF-8", null, 200, new OWSException100XMLAdapter(), ex, response );
+        XMLExceptionSerializer serializer = getExceptionSerializer( requestVersion );
+        sendException( null, serializer, e, response );
     }
 
     @Override
-    public Pair<XMLExceptionSerializer<OWSException>, String> getExceptionSerializer( Version requestVersion ) {
-        String mime = "application/vnd.ogc.se_xml";
-        XMLExceptionSerializer<OWSException> serializer = new OWSException100XMLAdapter();
+    public XMLExceptionSerializer getExceptionSerializer( Version requestVersion ) {
+        XMLExceptionSerializer serializer = getDefaultExceptionSerializer();
         if ( VERSION_100.equals( requestVersion ) ) {
-            serializer = new OGCExceptionXMLAdapter();
+            serializer = new PreOWSExceptionReportSerializer( "application/vnd.ogc.se_xml" );
         } else if ( VERSION_110.equals( requestVersion ) ) {
-            serializer = new OWSException100XMLAdapter();
+            serializer = new OWS100ExceptionReportSerializer();
         } else if ( VERSION_200.equals( requestVersion ) ) {
-            serializer = new OWSException110XMLAdapter();
+            serializer = new OWS110ExceptionReportSerializer( VERSION_200 );
         }
-        return new Pair<XMLExceptionSerializer<OWSException>, String>( serializer, mime );
+        return serializer;
+    }
+
+    private XMLExceptionSerializer getDefaultExceptionSerializer() {
+        List<String> offeredVersions = getOfferedVersions();
+        if ( offeredVersions.contains( VERSION_200.toString() ) ) {
+            return new OWS110ExceptionReportSerializer( VERSION_200 );
+        } else if ( offeredVersions.contains( VERSION_110.toString() ) ) {
+            return new OWS100ExceptionReportSerializer();
+        }
+        return new PreOWSExceptionReportSerializer( "application/vnd.ogc.se_xml" );
     }
 
     /**
@@ -948,26 +954,17 @@ public class WebFeatureService extends AbstractOWS {
         if ( format == null ) {
             // default values for the different WFS version
             if ( VERSION_100.equals( requestVersion ) ) {
-                outputFormat = mimeTypeToFormat.get( "text/xml; subtype=gml/2.1.2" );
-                if ( outputFormat == null ) {
-                    format = "text/xml; subtype=gml/2.1.2";
-                }
+                outputFormat = gmlVersionToFormat.get( GMLVersion.GML_2 );
             } else if ( VERSION_110.equals( requestVersion ) ) {
-                outputFormat = mimeTypeToFormat.get( "text/xml; subtype=gml/3.1.1" );
-                if ( outputFormat == null ) {
-                    format = "text/xml; subtype=gml/3.1.1";
-                }
+                outputFormat = gmlVersionToFormat.get( GMLVersion.GML_31 );
             } else if ( VERSION_200.equals( requestVersion ) ) {
-                outputFormat = mimeTypeToFormat.get( "text/xml; subtype=gml/3.2.1" );
-                if ( outputFormat == null ) {
-                    format = "text/xml; subtype=gml/3.2.1";
-                }
+                outputFormat = gmlVersionToFormat.get( GMLVersion.GML_32 );
             }
         } else {
             if ( "GML2".equals( format ) || "XMLSCHEMA".equals( format ) ) {
-                outputFormat = mimeTypeToFormat.get( "text/xml; subtype=gml/2.1.2" );
+                outputFormat = gmlVersionToFormat.get( GMLVersion.GML_2 );
             } else if ( "GML3".equals( format ) ) {
-                outputFormat = mimeTypeToFormat.get( "text/xml; subtype=gml/3.1.1" );
+                outputFormat = gmlVersionToFormat.get( GMLVersion.GML_31 );
             } else {
                 outputFormat = mimeTypeToFormat.get( format );
             }

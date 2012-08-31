@@ -46,6 +46,8 @@ import static org.deegree.gml.GMLVersion.GML_31;
 import static org.deegree.gml.GMLVersion.GML_32;
 import static org.deegree.protocol.ows.exception.OWSException.NO_APPLICABLE_CODE;
 import static org.deegree.protocol.ows.exception.OWSException.OPERATION_NOT_SUPPORTED;
+import static org.deegree.protocol.wfs.WFSConstants.GML32_NS;
+import static org.deegree.protocol.wfs.WFSConstants.GML32_SCHEMA_URL;
 import static org.deegree.protocol.wfs.WFSConstants.VERSION_100;
 import static org.deegree.protocol.wfs.WFSConstants.VERSION_110;
 import static org.deegree.protocol.wfs.WFSConstants.VERSION_200;
@@ -104,6 +106,7 @@ import org.deegree.feature.types.FeatureType;
 import org.deegree.feature.types.property.FeaturePropertyType;
 import org.deegree.feature.xpath.GMLObjectXPathEvaluator;
 import org.deegree.filter.FilterEvaluationException;
+import org.deegree.filter.ProjectionClause;
 import org.deegree.geometry.Envelope;
 import org.deegree.geometry.Geometry;
 import org.deegree.geometry.io.CoordinateFormatter;
@@ -113,6 +116,7 @@ import org.deegree.gml.GMLStreamWriter;
 import org.deegree.gml.GMLVersion;
 import org.deegree.gml.feature.GMLFeatureWriter;
 import org.deegree.protocol.ows.exception.OWSException;
+import org.deegree.protocol.wfs.WFSConstants;
 import org.deegree.protocol.wfs.describefeaturetype.DescribeFeatureType;
 import org.deegree.protocol.wfs.getfeature.GetFeature;
 import org.deegree.protocol.wfs.getfeature.ResultType;
@@ -127,7 +131,6 @@ import org.deegree.protocol.wfs.lockfeature.LockOperation;
 import org.deegree.protocol.wfs.query.BBoxQuery;
 import org.deegree.protocol.wfs.query.FeatureIdQuery;
 import org.deegree.protocol.wfs.query.FilterQuery;
-import org.deegree.protocol.wfs.query.ProjectionClause;
 import org.deegree.services.controller.OGCFrontController;
 import org.deegree.services.controller.utils.HttpResponseBuffer;
 import org.deegree.services.i18n.Messages;
@@ -188,6 +191,8 @@ public class GMLFormat implements Format {
 
     private String appSchemaBaseURL;
 
+    private String mimeType;
+
     public GMLFormat( WebFeatureService master, GMLVersion gmlVersion ) {
         this.master = master;
         this.service = master.getStoreManager();
@@ -195,6 +200,7 @@ public class GMLFormat implements Format {
         this.featureLimit = master.getMaxFeatures();
         this.checkAreaOfUse = master.getCheckAreaOfUse();
         this.gmlVersion = gmlVersion;
+        this.mimeType = gmlVersion.getMimeType();
     }
 
     public GMLFormat( WebFeatureService master, org.deegree.services.jaxb.wfs.GMLFormat formatDef )
@@ -258,6 +264,7 @@ public class GMLFormat implements Format {
         }
 
         this.gmlVersion = GMLVersion.valueOf( formatDef.getGmlVersion().value() );
+        this.mimeType = formatDef.getMimeType().get( 0 );
     }
 
     @Override
@@ -334,7 +341,7 @@ public class GMLFormat implements Format {
             throw new OWSException( msg, OPERATION_NOT_SUPPORTED );
         }
 
-        String contentType = getContentType( outputFormat, version );
+        String contentType = mimeType;
         XMLStreamWriter xmlStream = getXMLResponseWriter( response, contentType, schemaLocation );
         GMLStreamWriter gmlStream = createGMLStreamWriter( gmlVersion, xmlStream );
         gmlStream.setOutputCrs( master.getDefaultQueryCrs() );
@@ -384,7 +391,7 @@ public class GMLFormat implements Format {
         // quick check if local references in the output can be ruled out
         boolean localReferencesPossible = localReferencesPossible( analyzer, traverseXLinkDepth );
 
-        String contentType = getContentType( request.getPresentationParams().getOutputFormat(), request.getVersion() );
+        String contentType = mimeType;
         XMLStreamWriter xmlStream = WebFeatureService.getXMLResponseWriter( response, contentType, schemaLocation );
         xmlStream = new BufferableXMLStreamWriter( xmlStream, xLinkTemplate );
 
@@ -474,12 +481,6 @@ public class GMLFormat implements Format {
         QueryAnalyzer analyzer = new QueryAnalyzer( request.getQueries(), master, service, gmlVersion, checkAreaOfUse );
         String lockId = acquireLock( request, analyzer );
 
-        if ( analyzer.getRequestedFeatureId() != null ) {
-            doSingleObjectResponse( request.getVersion(), request.getPresentationParams().getOutputFormat(),
-                                    request.getResolveParams().getDepth(), analyzer.getRequestedFeatureId(), response );
-            return;
-        }
-
         String schemaLocation = getSchemaLocation( request.getVersion(), analyzer.getFeatureTypes() );
 
         int traverseXLinkDepth = 0;
@@ -513,7 +514,7 @@ public class GMLFormat implements Format {
         // quick check if local references in the output can be ruled out
         boolean localReferencesPossible = localReferencesPossible( analyzer, traverseXLinkDepth );
 
-        String contentType = getContentType( request.getPresentationParams().getOutputFormat(), request.getVersion() );
+        String contentType = mimeType;
         XMLStreamWriter xmlStream = WebFeatureService.getXMLResponseWriter( response, contentType, schemaLocation );
         xmlStream = new BufferableXMLStreamWriter( xmlStream, xLinkTemplate );
 
@@ -749,7 +750,7 @@ public class GMLFormat implements Format {
         }
 
         if ( outputFormat == GML_2 || allFeatures.getEnvelope() != null ) {
-            writeBoundedBy( gmlStream, outputFormat, allFeatures.getEnvelope() );
+            writeBoundedBy( wfsVersion, gmlStream, outputFormat, allFeatures.getEnvelope() );
         }
 
         // retrieve and write result features
@@ -796,7 +797,7 @@ public class GMLFormat implements Format {
         }
     }
 
-    private void writeBoundedBy( GMLStreamWriter gmlStream, GMLVersion outputFormat, Envelope env )
+    private void writeBoundedBy( Version wfsVersion, GMLStreamWriter gmlStream, GMLVersion outputFormat, Envelope env )
                             throws XMLStreamException, UnknownCRSException, TransformationException {
 
         XMLStreamWriter xmlStream = gmlStream.getXMLStream();
@@ -827,15 +828,27 @@ public class GMLFormat implements Format {
             break;
         }
         case GML_32: {
-            xmlStream.writeStartElement( "gml", "boundedBy", GML3_2_NS );
-            if ( env == null ) {
-                xmlStream.writeStartElement( "gml", "Null", GML3_2_NS );
-                xmlStream.writeCharacters( "inapplicable" );
+            if ( wfsVersion.equals( VERSION_200 ) ) {
+                xmlStream.writeStartElement( "wfs", "boundedBy", GML3_2_NS );
+                if ( env == null ) {
+                    xmlStream.writeStartElement( "gml", "Null", GML3_2_NS );
+                    xmlStream.writeCharacters( "inapplicable" );
+                    xmlStream.writeEndElement();
+                } else {
+                    gmlStream.write( env );
+                }
                 xmlStream.writeEndElement();
             } else {
-                gmlStream.write( env );
+                xmlStream.writeStartElement( "gml", "boundedBy", GML3_2_NS );
+                if ( env == null ) {
+                    xmlStream.writeStartElement( "gml", "Null", GML3_2_NS );
+                    xmlStream.writeCharacters( "inapplicable" );
+                    xmlStream.writeEndElement();
+                } else {
+                    gmlStream.write( env );
+                }
+                xmlStream.writeEndElement();
             }
-            xmlStream.writeEndElement();
             break;
         }
         }
@@ -876,7 +889,7 @@ public class GMLFormat implements Format {
             schemaLocation = WFS_200_NS + " " + WFS_200_SCHEMA_URL;
         }
 
-        String contentType = getContentType( request.getPresentationParams().getOutputFormat(), request.getVersion() );
+        String contentType = mimeType;
         XMLStreamWriter xmlStream = WebFeatureService.getXMLResponseWriter( response, contentType, schemaLocation );
 
         Map<org.deegree.protocol.wfs.query.Query, Integer> wfsQueryToIndex = new HashMap<org.deegree.protocol.wfs.query.Query, Integer>();
@@ -972,7 +985,7 @@ public class GMLFormat implements Format {
         if ( !VERSION_200.equals( requestVersion ) ) {
             schemaLocation = this.schemaLocation;
         } else {
-            schemaLocation = WFS_200_NS + " " + WFS_200_SCHEMA_URL;
+            schemaLocation = WFS_200_NS + " " + WFS_200_SCHEMA_URL + " " + GML32_NS + " " + GML32_SCHEMA_URL;
         }
         if ( responseContainerEl == null ) {
             // use "wfs:FeatureCollection" then
@@ -1013,30 +1026,6 @@ public class GMLFormat implements Format {
         }
 
         return schemaLocation;
-    }
-
-    /**
-     * Returns the content type header for the HTTP response.
-     * 
-     * @param outputFormat
-     *            requested output format, may be <code>null</code>
-     * @param version
-     *            request version, must not be <code>null</code>
-     * @return content type for the http header, never <code>null</code>
-     */
-    static String getContentType( String outputFormat, Version version ) {
-
-        String contentType = outputFormat;
-        if ( outputFormat == null ) {
-            if ( VERSION_100.equals( version ) ) {
-                contentType = "text/xml; subtype=gml/2.1.2";
-            } else if ( VERSION_110.equals( version ) ) {
-                contentType = "text/xml; subtype=gml/3.1.1";
-            } else if ( VERSION_200.equals( version ) ) {
-                contentType = "text/xml; subtype=gml/3.2.1";
-            }
-        }
-        return contentType;
     }
 
     private String acquireLock( GetFeature request, QueryAnalyzer analyzer )
@@ -1171,4 +1160,20 @@ public class GMLFormat implements Format {
         }
         return template;
     }
+
+    /**
+     * @return the GML version this format handler was instantiated for, never <code>null</code>.
+     */
+    public GMLVersion getGmlVersion() {
+        return gmlVersion;
+    }
+
+    /**
+     * @return the first configured mime type, or the default mime type for the GML version (new style), never
+     *         <code>null</code>.
+     */
+    public String getMimeType() {
+        return mimeType;
+    }
+
 }

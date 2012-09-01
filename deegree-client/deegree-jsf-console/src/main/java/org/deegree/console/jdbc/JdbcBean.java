@@ -183,13 +183,13 @@ public class JdbcBean {
     }
 
     public void cancel() {
-        ExternalContext ctx = FacesContext.getCurrentInstance().getExternalContext();
-        DeegreeWorkspace ws = ( (WorkspaceBean) ctx.getApplicationMap().get( "workspace" ) ).getActiveWorkspace();
-        JDBCParamsManager mgr = ws.getSubsystemManager( JDBCParamsManager.class );
-        Map<String, Object> sMap = ctx.getSessionMap();
-        String newId = (String) sMap.get( "newConfigId" );
-        mgr.deleteResource( newId );
-        clearFields();
+//        ExternalContext ctx = FacesContext.getCurrentInstance().getExternalContext();
+//        DeegreeWorkspace ws = ( (WorkspaceBean) ctx.getApplicationMap().get( "workspace" ) ).getActiveWorkspace();
+//        JDBCParamsManager mgr = ws.getSubsystemManager( JDBCParamsManager.class );
+//        Map<String, Object> sMap = ctx.getSessionMap();
+//        String newId = (String) sMap.get( "newConfigId" );
+//        mgr.deleteResource( newId );
+//        clearFields();
     }
 
     private void clearFields() {
@@ -209,34 +209,34 @@ public class JdbcBean {
     }
 
     private void create() {
-        ExternalContext ctx = FacesContext.getCurrentInstance().getExternalContext();
-        DeegreeWorkspace ws = ( (WorkspaceBean) ctx.getApplicationMap().get( "workspace" ) ).getActiveWorkspace();
-        JDBCParamsManager mgr = ws.getSubsystemManager( JDBCParamsManager.class );
-        StringBuffer sb = new StringBuffer();
-        sb.append( "<?xml version='1.0' encoding='UTF-8'?>\n" );
-        sb.append( "<JDBCConnection configVersion='3.0.0'  xmlns='http://www.deegree.org/jdbc' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xsi:schemaLocation='http://www.deegree.org/jdbc http://schemas.deegree.org/jdbc/3.0.0/jdbc.xsd'>\n" );
-        sb.append( "  <Url>" + dbConn + "</Url>\n" );
-        sb.append( "  <User>" + dbUser + "</User>\n" );
-        sb.append( "  <Password>" + dbPwd + "</Password>\n" );
-        sb.append( "  <ReadOnly>false</ReadOnly>\n" );
-        sb.append( "</JDBCConnection>\n" );
-        ResourceState rs = null;
-        InputStream is = null;
-        try {
-            is = new ByteArrayInputStream( sb.toString().getBytes( "UTF-8" ) );
-            Map<String, Object> sMap = ctx.getSessionMap();
-            String newId = (String) sMap.get( "newConfigId" );
-            rs = mgr.createResource( newId, is );
-            rs = mgr.activate( rs.getId() );
-            ResourceManagerMetadata2 rsMetadata = (ResourceManagerMetadata2) sMap.get( "resourceManagerMetadata" );
-            this.config = new Config( rs, (ConfigManager) sMap.get( "configManager" ), mgr, rsMetadata.getStartView(),
-                                      true );
-            ConnectionManager poolMgr = ws.getSubsystemManager( ConnectionManager.class );
-            poolMgr.shutdown();
-            poolMgr.startup( ws );
-        } catch ( Throwable t ) {
-            FacesMessage fm = new FacesMessage( SEVERITY_ERROR, "Unable to create config: " + t.getMessage(), null );
-            FacesContext.getCurrentInstance().addMessage( null, fm );
-        }
+//        ExternalContext ctx = FacesContext.getCurrentInstance().getExternalContext();
+//        DeegreeWorkspace ws = ( (WorkspaceBean) ctx.getApplicationMap().get( "workspace" ) ).getActiveWorkspace();
+//        JDBCParamsManager mgr = ws.getSubsystemManager( JDBCParamsManager.class );
+//        StringBuffer sb = new StringBuffer();
+//        sb.append( "<?xml version='1.0' encoding='UTF-8'?>\n" );
+//        sb.append( "<JDBCConnection configVersion='3.0.0'  xmlns='http://www.deegree.org/jdbc' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xsi:schemaLocation='http://www.deegree.org/jdbc http://schemas.deegree.org/jdbc/3.0.0/jdbc.xsd'>\n" );
+//        sb.append( "  <Url>" + dbConn + "</Url>\n" );
+//        sb.append( "  <User>" + dbUser + "</User>\n" );
+//        sb.append( "  <Password>" + dbPwd + "</Password>\n" );
+//        sb.append( "  <ReadOnly>false</ReadOnly>\n" );
+//        sb.append( "</JDBCConnection>\n" );
+//        ResourceState rs = null;
+//        InputStream is = null;
+//        try {
+//            is = new ByteArrayInputStream( sb.toString().getBytes( "UTF-8" ) );
+//            Map<String, Object> sMap = ctx.getSessionMap();
+//            String newId = (String) sMap.get( "newConfigId" );
+//            rs = mgr.createResource( newId, is );
+//            rs = mgr.activate( rs.getId() );
+//            ResourceManagerMetadata2 rsMetadata = (ResourceManagerMetadata2) sMap.get( "resourceManagerMetadata" );
+//            this.config = new Config( rs, (ConfigManager) sMap.get( "configManager" ), mgr, rsMetadata.getStartView(),
+//                                      true );
+//            ConnectionManager poolMgr = ws.getSubsystemManager( ConnectionManager.class );
+//            poolMgr.shutdown();
+//            poolMgr.startup( ws );
+//        } catch ( Throwable t ) {
+//            FacesMessage fm = new FacesMessage( SEVERITY_ERROR, "Unable to create config: " + t.getMessage(), null );
+//            FacesContext.getCurrentInstance().addMessage( null, fm );
+//        }
     }
 }

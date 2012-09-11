@@ -41,6 +41,7 @@ import static org.deegree.commons.xml.CommonNamespaces.XLNNS;
 import static org.deegree.commons.xml.CommonNamespaces.XSINS;
 import static org.slf4j.LoggerFactory.getLogger;
 
+import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -64,6 +65,7 @@ import org.deegree.commons.jdbc.ConnectionManager;
 import org.deegree.commons.jdbc.ResultSetIterator;
 import org.deegree.commons.jdbc.SQLIdentifier;
 import org.deegree.commons.jdbc.TableName;
+import org.deegree.commons.tom.CombinedReferenceResolver;
 import org.deegree.commons.tom.TypedObjectNode;
 import org.deegree.commons.tom.gml.GMLObject;
 import org.deegree.commons.tom.gml.GMLReferenceResolver;
@@ -100,6 +102,7 @@ import org.deegree.feature.persistence.sql.id.IdAnalysis;
 import org.deegree.feature.persistence.sql.jaxb.CustomConverterJAXB;
 import org.deegree.feature.persistence.sql.jaxb.CustomInspector;
 import org.deegree.feature.persistence.sql.jaxb.SQLFeatureStoreJAXB;
+import org.deegree.feature.persistence.sql.jaxb.VoidEscalationPolicyType;
 import org.deegree.feature.persistence.sql.rules.CompoundMapping;
 import org.deegree.feature.persistence.sql.rules.FeatureBuilderRelational;
 import org.deegree.feature.persistence.sql.rules.FeatureMapping;
@@ -175,7 +178,7 @@ public class SQLFeatureStore implements FeatureStore {
 
     private BBoxCache bboxCache;
 
-    private final FeatureStoreGMLIdResolver resolver = new FeatureStoreGMLIdResolver( this );
+    private GMLReferenceResolver resolver = new FeatureStoreGMLIdResolver( this );
 
     private Map<String, String> nsContext;
 
@@ -188,6 +191,8 @@ public class SQLFeatureStore implements FeatureStore {
     private Boolean readAutoCommit;
 
     private final List<FeatureInspector> inspectors = new ArrayList<FeatureInspector>();
+
+    private VoidEscalationPolicyType escalationPolicy;
 
     /**
      * Creates a new {@link SQLFeatureStore} for the given configuration.
@@ -222,6 +227,34 @@ public class SQLFeatureStore implements FeatureStore {
                             throws ResourceInitException {
 
         LOG.debug( "init" );
+
+        List<String> resolverClasses = config.getCustomReferenceResolver();
+        List<GMLReferenceResolver> resolvers = new ArrayList<GMLReferenceResolver>();
+        for ( String resolver : resolverClasses ) {
+            try {
+                Class<GMLReferenceResolver> clzz = (Class<GMLReferenceResolver>) Class.forName( resolver );
+                Constructor<GMLReferenceResolver> cons = clzz.getConstructor( FeatureStore.class );
+                GMLReferenceResolver res = cons.newInstance( this );
+                resolvers.add( res );
+                LOG.info( "Added custom reference resolver {}.", clzz.getSimpleName() );
+            } catch ( ClassNotFoundException e ) {
+                LOG.warn( "Custom resolver class {} could not be found on the classpath.", resolver );
+                LOG.trace( "Stack trace:", e );
+            } catch ( NoSuchMethodException e ) {
+                LOG.warn( "Custom resolver class {} needs a constructor with a FeatureStore parameter.", resolver );
+                LOG.trace( "Stack trace:", e );
+            } catch ( SecurityException e ) {
+                LOG.warn( "Insufficient rights to instantiate custom resolver class {}.", resolver );
+                LOG.trace( "Stack trace:", e );
+            } catch ( Throwable e ) {
+                LOG.warn( "Could not instantiate custom resolver class {}.", resolver );
+                LOG.trace( "Stack trace:", e );
+            }
+        }
+        if ( !resolvers.isEmpty() ) {
+            resolvers.add( resolver );
+            this.resolver = new CombinedReferenceResolver( resolvers );
+        }
 
         MappedAppSchema schema;
         try {
@@ -267,6 +300,12 @@ public class SQLFeatureStore implements FeatureStore {
                     throw new ResourceInitException( msg );
                 }
             }
+        }
+
+        escalationPolicy = config.getVoidEscalationPolicy();
+        if ( escalationPolicy == null ) {
+            // defaults don't work in jaxb for element values
+            escalationPolicy = VoidEscalationPolicyType.NONE;
         }
     }
 
@@ -1072,7 +1111,8 @@ public class SQLFeatureStore implements FeatureStore {
             conn = getConnection();
 
             String tableAlias = "X1";
-            FeatureBuilder builder = new FeatureBuilderRelational( this, ft, ftMapping, conn, tableAlias );
+            FeatureBuilder builder = new FeatureBuilderRelational( this, ft, ftMapping, conn, tableAlias,
+                                                                   escalationPolicy );
             List<String> columns = builder.getInitialSelectColumns();
             StringBuilder sql = new StringBuilder( "SELECT " );
             sql.append( columns.get( 0 ) );
@@ -1312,7 +1352,8 @@ public class SQLFeatureStore implements FeatureStore {
             LOG.debug( "WHERE clause: " + wb.getWhere() );
             LOG.debug( "ORDER BY clause: " + wb.getOrderBy() );
 
-            FeatureBuilder builder = new FeatureBuilderRelational( this, ft, ftMapping, conn, ftTableAlias );
+            FeatureBuilder builder = new FeatureBuilderRelational( this, ft, ftMapping, conn, ftTableAlias,
+                                                                   escalationPolicy );
             List<String> columns = builder.getInitialSelectColumns();
 
             BlobMapping blobMapping = getSchema().getBlobMapping();

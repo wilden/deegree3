@@ -1,11 +1,11 @@
 <deegreeWFS xmlns="http://www.deegree.org/services/wfs" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  configVersion="3.1.0"
-  xsi:schemaLocation="http://www.deegree.org/services/wfs http://schemas.deegree.org/services/wfs/3.1.0/wfs_configuration.xsd">
+  configVersion="3.2.0"
+  xsi:schemaLocation="http://www.deegree.org/services/wfs http://schemas.deegree.org/services/wfs/3.2.0/wfs_configuration.xsd">
 
   <!-- SupportedVersions [0...1]: Activated OGC protocol versions, default: activate all implemented versions -->
   <SupportedVersions>
-    <Version>1.0.0</Version>
     <Version>1.1.0</Version>
+    <Version>2.0.0</Version>    
   </SupportedVersions>
 
   <!-- EnableTransactions [0...1]: Enable transactions (WFS-T operations), default: disabled -->
@@ -40,8 +40,7 @@
       <FeatureMemberElement>gml:featureMember</FeatureMemberElement>
 
       <!-- [0...1] Value to add to xsi:schemaLocation attribute (to declare non-standard container elements) -->
-      <AdditionalSchemaLocation>>http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/deprecatedTypes.xsd
-      </AdditionalSchemaLocation>
+      <AdditionalSchemaLocation>>http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/deprecatedTypes.xsd</AdditionalSchemaLocation>
 
       <!-- [0...1] Disable output streaming, include numberOfFeature information / gml:boundedBy -->
       <DisableStreaming>false</DisableStreaming>

@@ -1,7 +1,7 @@
 //$HeadURL: svn+ssh://mschneider@svn.wald.intevation.org/deegree/deegree3/services/trunk/src/org/deegree/services/controller/wps/WPSController.java $
 /*----------------------------------------------------------------------------
  This file is part of deegree, http://deegree.org/
- Copyright (C) 2001-2009 by:
+ Copyright (C) 2001-2012 by:
  Department of Geography, University of Bonn
  and
  lat/lon GmbH
@@ -33,7 +33,6 @@
 
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
-
 package org.deegree.services.wfs;
 
 import static org.deegree.commons.utils.StringUtils.REMOVE_DOUBLE_FIELDS;
@@ -52,6 +51,7 @@ import static org.deegree.services.wfs.WFSProvider.IMPLEMENTATION_METADATA;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -137,8 +137,10 @@ import org.deegree.protocol.wfs.storedquery.ListStoredQueries;
 import org.deegree.protocol.wfs.storedquery.ListStoredQueriesKVPAdapter;
 import org.deegree.protocol.wfs.storedquery.ListStoredQueriesXMLAdapter;
 import org.deegree.protocol.wfs.transaction.Transaction;
+import org.deegree.protocol.wfs.transaction.action.IDGenMode;
 import org.deegree.protocol.wfs.transaction.kvp.TransactionKVPAdapter;
-import org.deegree.protocol.wfs.transaction.xml.TransactionXMLAdapter;
+import org.deegree.protocol.wfs.transaction.xml.TransactionXmlReader;
+import org.deegree.protocol.wfs.transaction.xml.TransactionXmlReaderFactory;
 import org.deegree.services.OWS;
 import org.deegree.services.controller.AbstractOWS;
 import org.deegree.services.controller.ImplementationMetadata;
@@ -152,10 +154,12 @@ import org.deegree.services.jaxb.metadata.DeegreeServicesMetadataType;
 import org.deegree.services.jaxb.wfs.AbstractFormatType;
 import org.deegree.services.jaxb.wfs.CustomFormat;
 import org.deegree.services.jaxb.wfs.DeegreeWFS;
+import org.deegree.services.jaxb.wfs.DeegreeWFS.EnableTransactions;
 import org.deegree.services.jaxb.wfs.DeegreeWFS.ExtendedCapabilities;
 import org.deegree.services.jaxb.wfs.DeegreeWFS.SupportedVersions;
 import org.deegree.services.jaxb.wfs.FeatureTypeMetadata;
 import org.deegree.services.jaxb.wfs.GMLFormat;
+import org.deegree.services.jaxb.wfs.IdentifierGenerationOptionType;
 import org.deegree.services.metadata.MetadataUtils;
 import org.deegree.services.metadata.OWSMetadataProvider;
 import org.deegree.services.metadata.OWSMetadataProviderManager;
@@ -194,7 +198,7 @@ public class WebFeatureService extends AbstractOWS {
 
     private static final String CONFIG_JAXB_PACKAGE = "org.deegree.services.jaxb.wfs";
 
-    private static final String CONFIG_SCHEMA = "/META-INF/schemas/wfs/3.1.0/wfs_configuration.xsd";
+    private static final String CONFIG_SCHEMA = "/META-INF/schemas/wfs/3.2.0/wfs_configuration.xsd";
 
     private static final int DEFAULT_MAX_FEATURES = 15000;
 
@@ -206,6 +210,8 @@ public class WebFeatureService extends AbstractOWS {
 
     private boolean enableTransactions;
 
+    private IDGenMode idGenMode;
+
     private boolean disableBuffering;
 
     private ICRS defaultQueryCRS = CRSUtils.EPSG_4326;
@@ -216,7 +222,7 @@ public class WebFeatureService extends AbstractOWS {
 
     private final Map<GMLVersion, Format> gmlVersionToFormat = new HashMap<GMLVersion, Format>();
 
-    private int maxFeatures;
+    private int queryMaxFeatures;
 
     private boolean checkAreaOfUse;
 
@@ -237,10 +243,14 @@ public class WebFeatureService extends AbstractOWS {
         DeegreeWFS jaxbConfig = (DeegreeWFS) unmarshallConfig( CONFIG_JAXB_PACKAGE, CONFIG_SCHEMA, controllerConf );
         initOfferedVersions( jaxbConfig.getSupportedVersions() );
 
-        enableTransactions = jaxbConfig.isEnableTransactions() == null ? false : jaxbConfig.isEnableTransactions();
+        EnableTransactions enableTransactions = jaxbConfig.getEnableTransactions();
+        if ( enableTransactions != null ) {
+            this.enableTransactions = enableTransactions.isValue();
+            this.idGenMode = parseIdGenMode( enableTransactions.getIdGen() );
+        }
         disableBuffering = ( jaxbConfig.isDisableResponseBuffering() != null ) ? jaxbConfig.isDisableResponseBuffering()
                                                                               : true;
-        maxFeatures = jaxbConfig.getQueryMaxFeatures() == null ? DEFAULT_MAX_FEATURES
+        queryMaxFeatures = jaxbConfig.getQueryMaxFeatures() == null ? DEFAULT_MAX_FEATURES
                                                               : jaxbConfig.getQueryMaxFeatures().intValue();
         checkAreaOfUse = jaxbConfig.isQueryCheckAreaOfUse() == null ? false : jaxbConfig.isQueryCheckAreaOfUse();
 
@@ -252,11 +262,38 @@ public class WebFeatureService extends AbstractOWS {
         }
 
         lockFeatureHandler = new LockFeatureHandler( this );
-        storedQueryHandler = new StoredQueryHandler( this );
+        List<URL> list = new ArrayList<URL>();
+        for ( String file : jaxbConfig.getStoredQuery() ) {
+            try {
+                list.add( controllerConf.resolve( file ) );
+            } catch ( MalformedURLException e ) {
+                LOG.warn( "Could not resolve {}: {}", file, e.getLocalizedMessage() );
+                LOG.trace( "Stack trace:", e );
+            }
+        }
+        storedQueryHandler = new StoredQueryHandler( this, list );
 
         initQueryCRS( jaxbConfig.getQueryCRS() );
         initFormats( jaxbConfig.getAbstractFormat() );
         mdProvider = initMetadataProvider( serviceMetadata, jaxbConfig );
+    }
+
+    private IDGenMode parseIdGenMode( IdentifierGenerationOptionType idGen ) {
+        if ( idGen == null ) {
+            return IDGenMode.GENERATE_NEW;
+        }
+        switch ( idGen ) {
+        case GENERATE_NEW: {
+            return IDGenMode.GENERATE_NEW;
+        }
+        case USE_EXISTING: {
+            return IDGenMode.USE_EXISTING;
+        }
+        case REPLACE_DUPLICATE: {
+            return IDGenMode.REPLACE_DUPLICATE;
+        }
+        }
+        return null;
     }
 
     private String getMetadataURL( String metadataUrlTemplate, FeatureTypeMetadata ftMd ) {
@@ -451,12 +488,11 @@ public class WebFeatureService extends AbstractOWS {
                     }
                     OMElement omEl = new XMLAdapter( xmlStream ).getRootElement();
                     for ( String wfsVersion : extendedCapConfig.getWfsVersions() ) {
-                        Version version = Version.parseVersion( wfsVersion );
-                        if ( wfsVersionToExtendedCaps.containsKey( version ) ) {
-                            String msg = "Multiple ExtendedCapabilities sections for WFS version: " + version + ".";
+                        if ( wfsVersionToExtendedCaps.containsKey( wfsVersion ) ) {
+                            String msg = "Multiple ExtendedCapabilities sections for WFS version: " + wfsVersion + ".";
                             throw new ResourceInitException( msg );
                         }
-                        wfsVersionToExtendedCaps.put( version.toString(), Collections.singletonList( omEl ) );
+                        wfsVersionToExtendedCaps.put( wfsVersion, Collections.singletonList( omEl ) );
                     }
                 }
             }
@@ -477,6 +513,13 @@ public class WebFeatureService extends AbstractOWS {
      */
     public WFSFeatureStoreManager getStoreManager() {
         return service;
+    }
+
+    /**
+     * @return the stored query handler for this service, never <code>null</code>.
+     */
+    public StoredQueryHandler getStoredQueryHandler() {
+        return storedQueryHandler;
     }
 
     @Override
@@ -579,7 +622,7 @@ public class WebFeatureService extends AbstractOWS {
                 }
                 checkTransactionsEnabled( requestName );
                 Transaction transaction = TransactionKVPAdapter.parse( kvpParamsUC );
-                new TransactionHandler( this, service, transaction ).doTransaction( response );
+                new TransactionHandler( this, service, transaction, idGenMode ).doTransaction( response );
                 break;
             default:
                 throw new RuntimeException( "Internal error: Unhandled request '" + requestName + "'." );
@@ -718,8 +761,9 @@ public class WebFeatureService extends AbstractOWS {
                 break;
             case Transaction:
                 checkTransactionsEnabled( requestName );
-                Transaction transaction = TransactionXMLAdapter.parse( xmlStream );
-                new TransactionHandler( this, service, transaction ).doTransaction( response );
+                TransactionXmlReader transactionReader = new TransactionXmlReaderFactory().createReader( xmlStream );
+                Transaction transaction = transactionReader.read( xmlStream );
+                new TransactionHandler( this, service, transaction, idGenMode ).doTransaction( response );
                 break;
             default:
                 throw new RuntimeException( "Internal error: Unhandled request '" + requestName + "'." );
@@ -756,43 +800,50 @@ public class WebFeatureService extends AbstractOWS {
      */
     public static String getSchemaLocation( Version version, GMLVersion gmlVersion, QName... fts ) {
 
-        String baseUrl = OGCFrontController.getHttpGetURL() + "SERVICE=WFS&VERSION=" + version
-                         + "&REQUEST=DescribeFeatureType&OUTPUTFORMAT=";
+        StringBuilder baseUrl = new StringBuilder();
+
+        baseUrl.append( OGCFrontController.getHttpGetURL() );
+        baseUrl.append( "SERVICE=WFS&VERSION=" );
+        baseUrl.append( version );
+        baseUrl.append( "&REQUEST=DescribeFeatureType&OUTPUTFORMAT=" );
 
         try {
             if ( VERSION_100.equals( version ) && gmlVersion == GMLVersion.GML_2 ) {
-                baseUrl += "XMLSCHEMA";
+                baseUrl.append( "XMLSCHEMA" );
             } else if ( VERSION_200.equals( version ) && gmlVersion == GMLVersion.GML_32 ) {
-                baseUrl += URLEncoder.encode( gmlVersion.getMimeType(), "UTF-8" );
+                baseUrl.append( URLEncoder.encode( gmlVersion.getMimeType(), "UTF-8" ) );
             } else {
-                baseUrl += URLEncoder.encode( gmlVersion.getMimeTypeOldStyle(), "UTF-8" );
+                baseUrl.append( URLEncoder.encode( gmlVersion.getMimeTypeOldStyle(), "UTF-8" ) );
             }
 
             if ( fts.length > 0 ) {
-                baseUrl += "&TYPENAME=";
+
+                baseUrl.append( "&TYPENAME=" );
 
                 Map<String, String> bindings = new HashMap<String, String>();
                 for ( int i = 0; i < fts.length; i++ ) {
                     QName ftName = fts[i];
                     bindings.put( ftName.getPrefix(), ftName.getNamespaceURI() );
-                    baseUrl += URLEncoder.encode( ftName.getPrefix(), "UTF-8" ) + ":"
-                               + URLEncoder.encode( ftName.getLocalPart(), "UTF-8" );
+                    baseUrl.append( URLEncoder.encode( ftName.getPrefix(), "UTF-8" ) );
+                    baseUrl.append( ':' );
+                    baseUrl.append( URLEncoder.encode( ftName.getLocalPart(), "UTF-8" ) );
                     if ( i != fts.length - 1 ) {
-                        baseUrl += ",";
+                        baseUrl.append( ',' );
                     }
                 }
 
                 if ( !VERSION_100.equals( version ) ) {
-                    baseUrl += "&NAMESPACE=xmlns(";
+                    baseUrl.append( "&NAMESPACE=xmlns(" );
                     int i = 0;
                     for ( Entry<String, String> entry : bindings.entrySet() ) {
-                        baseUrl += URLEncoder.encode( entry.getKey(), "UTF-8" ) + "="
-                                   + URLEncoder.encode( entry.getValue(), "UTF-8" );
+                        baseUrl.append( URLEncoder.encode( entry.getKey(), "UTF-8" ) );
+                        baseUrl.append( '=' );
+                        baseUrl.append( URLEncoder.encode( entry.getValue(), "UTF-8" ) );
                         if ( i != bindings.size() - 1 ) {
-                            baseUrl += ",";
+                            baseUrl.append( ',' );
                         }
                     }
-                    baseUrl += ")";
+                    baseUrl.append( ')' );
                 }
             }
         } catch ( UnsupportedEncodingException e ) {
@@ -802,7 +853,7 @@ public class WebFeatureService extends AbstractOWS {
         if ( fts.length > 0 ) {
             return fts[0].getNamespaceURI() + " " + baseUrl;
         }
-        return baseUrl;
+        return baseUrl.toString();
     }
 
     private Version getVersion( String versionString )
@@ -980,9 +1031,9 @@ public class WebFeatureService extends AbstractOWS {
         return mimeTypeToFormat.keySet();
     }
 
-    public int getMaxFeatures() {
+    public int getQueryMaxFeatures() {
         // TODO Auto-generated method stub
-        return maxFeatures;
+        return queryMaxFeatures;
     }
 
     public boolean getCheckAreaOfUse() {

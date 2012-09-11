@@ -68,7 +68,8 @@ public class WFSProvider implements OWSProvider {
             supportedVersions = new Version[] { VERSION_100, VERSION_110, VERSION_200 };
             handledNamespaces = new String[] { WFS_NS, WFS_200_NS };
             handledRequests = WFSRequestType.class;
-            supportedConfigVersions = new Version[] { Version.parseVersion( "3.0.0" ), Version.parseVersion( "3.1.0" ) };
+            supportedConfigVersions = new Version[] { Version.parseVersion( "3.0.0" ), Version.parseVersion( "3.1.0" ),
+                                                     Version.parseVersion( "3.2.0" ) };
             serviceName = new String[] { "WFS" };
         }
     };
@@ -80,7 +81,7 @@ public class WFSProvider implements OWSProvider {
 
     @Override
     public URL getConfigSchema() {
-        return WFSProvider.class.getResource( "/META-INF/schemas/services/wfs/3.1.0/wfs_configuration.xsd" );
+        return WFSProvider.class.getResource( "/META-INF/schemas/services/wfs/3.2.0/wfs_configuration.xsd" );
     }
 
     @Override

@@ -35,6 +35,8 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.services.wfs;
 
+import static java.util.Collections.singletonList;
+import static javax.xml.XMLConstants.NULL_NS_URI;
 import static org.deegree.commons.xml.CommonNamespaces.FES_20_NS;
 import static org.deegree.commons.xml.CommonNamespaces.FES_PREFIX;
 import static org.deegree.commons.xml.CommonNamespaces.GMLNS;
@@ -59,6 +61,7 @@ import static org.deegree.protocol.wfs.WFSRequestType.GetCapabilities;
 import static org.deegree.protocol.wfs.WFSRequestType.GetFeature;
 import static org.deegree.protocol.wfs.WFSRequestType.GetPropertyValue;
 import static org.deegree.protocol.wfs.WFSRequestType.ListStoredQueries;
+import static org.deegree.protocol.wfs.WFSRequestType.Transaction;
 import static org.deegree.services.controller.OGCFrontController.getHttpGetURL;
 import static org.deegree.services.controller.OGCFrontController.getHttpPostURL;
 
@@ -105,7 +108,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Handles a single {@link GetCapabilities} requests for the {@link WebFeatureService}.
+ * Handles a single {@link GetCapabilities} request for the {@link WebFeatureService}.
  * 
  * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider </a>
  * @author last edited by: $Author:$
@@ -593,7 +596,7 @@ class GetCapabilitiesHandler extends OWSCapabilitiesXMLAdapter {
                     LOG.warn( "Feature type '" + ftName + "' has no prefix!? This should not happen." );
                     prefix = "app";
                 }
-                if ( ftName.getNamespaceURI() != XMLConstants.NULL_NS_URI ) {
+                if ( !NULL_NS_URI.equals( ftName.getNamespaceURI() ) ) {
                     // TODO what about the namespace prefix?
                     writer.writeNamespace( prefix, ftName.getNamespaceURI() );
                     writer.writeCharacters( prefix + ":" + ftName.getLocalPart() );
@@ -761,9 +764,11 @@ class GetCapabilitiesHandler extends OWSCapabilitiesXMLAdapter {
         // ows:OperationsMetadata
         if ( sections == null || sections.contains( "OPERATIONSMETADATA" ) ) {
             List<Operation> operations = new ArrayList<Operation>();
-            List<DCP> dcps = null;
+            List<DCP> getAndPost = null;
+            List<DCP> post = null;
             try {
-                dcps = Collections.singletonList( new DCP( new URL( getHttpGetURL() ), new URL( getHttpPostURL() ) ) );
+                getAndPost = singletonList( new DCP( new URL( getHttpGetURL() ), new URL( getHttpPostURL() ) ) );
+                post = singletonList( new DCP( null, new URL( getHttpPostURL() ) ) );
             } catch ( MalformedURLException e ) {
                 // should never happen
             }
@@ -779,22 +784,30 @@ class GetCapabilitiesHandler extends OWSCapabilitiesXMLAdapter {
             sections.add( "FeatureTypeList" );
             sections.add( "Filter_Capabilities" );
             params.add( new Domain( "Sections", sections ) );
-            operations.add( new Operation( GetCapabilities.name(), dcps, params, null, null ) );
+            operations.add( new Operation( GetCapabilities.name(), getAndPost, params, null, null ) );
 
             // DescribeFeatureType
-            operations.add( new Operation( DescribeFeatureType.name(), dcps, null, null, null ) );
+            operations.add( new Operation( DescribeFeatureType.name(), getAndPost, null, null, null ) );
 
             // ListStoredQueries
-            operations.add( new Operation( ListStoredQueries.name(), dcps, null, null, null ) );
+            operations.add( new Operation( ListStoredQueries.name(), getAndPost, null, null, null ) );
 
             // DescribeStoredQueries
-            operations.add( new Operation( DescribeStoredQueries.name(), dcps, null, null, null ) );
+            operations.add( new Operation( DescribeStoredQueries.name(), getAndPost, null, null, null ) );
 
             // GetFeature
-            operations.add( new Operation( GetFeature.name(), dcps, null, null, null ) );
+            operations.add( new Operation( GetFeature.name(), getAndPost, null, null, null ) );
 
             // GetPropertyValue
-            operations.add( new Operation( GetPropertyValue.name(), dcps, null, null, null ) );
+            operations.add( new Operation( GetPropertyValue.name(), getAndPost, null, null, null ) );
+
+            // Transaction
+            if ( enableTransactions ) {
+                List<Domain> constraints = new ArrayList<Domain>();
+                constraints.add( new Domain( "AutomaticDataLocking", "TRUE" ) );
+                constraints.add( new Domain( "PreservesSiblingOrder", "TRUE" ) );
+                operations.add( new Operation( Transaction.name(), post, null, constraints, null ) );
+            }
 
             // global parameter domains
             List<Domain> globalParams = new ArrayList<Domain>();
@@ -825,12 +838,16 @@ class GetCapabilitiesHandler extends OWSCapabilitiesXMLAdapter {
             // Service constraints
             constraints.add( new Domain( "ImplementsSimpleWFS", "TRUE" ) );
             constraints.add( new Domain( "ImplementsBasicWFS", "TRUE" ) );
-            constraints.add( new Domain( "ImplementsTransactionalWFS", "FALSE" ) );
+            if ( enableTransactions ) {
+                constraints.add( new Domain( "ImplementsTransactionalWFS", "TRUE" ) );
+            } else {
+                constraints.add( new Domain( "ImplementsTransactionalWFS", "FALSE" ) );
+            }
             constraints.add( new Domain( "ImplementsLockingWFS", "FALSE" ) );
             constraints.add( new Domain( "KVPEncoding", "TRUE" ) );
             constraints.add( new Domain( "XMLEncoding", "TRUE" ) );
             constraints.add( new Domain( "SOAPEncoding", "FALSE" ) );
-            constraints.add( new Domain( "ImplementsInheritance", "TRUE" ) );
+            constraints.add( new Domain( "ImplementsInheritance", "FALSE" ) );
             constraints.add( new Domain( "ImplementsRemoteResolve", "FALSE" ) );
             constraints.add( new Domain( "ImplementsResultPaging", "FALSE" ) );
             constraints.add( new Domain( "ImplementsStandardJoins", "FALSE" ) );
@@ -840,8 +857,8 @@ class GetCapabilitiesHandler extends OWSCapabilitiesXMLAdapter {
             constraints.add( new Domain( "ManageStoredQueries", "FALSE" ) );
 
             // capacity constraints
-            if ( master.getMaxFeatures() != -1 ) {
-                constraints.add( new Domain( "CountDefault", "" + master.getMaxFeatures() ) );
+            if ( master.getQueryMaxFeatures() != -1 ) {
+                constraints.add( new Domain( "CountDefault", "" + master.getQueryMaxFeatures() ) );
             }
 
             constraints.add( new Domain( "ResolveLocalScope", "*" ) );
@@ -878,7 +895,7 @@ class GetCapabilitiesHandler extends OWSCapabilitiesXMLAdapter {
                     LOG.warn( "Feature type '" + ftName + "' has no prefix!? This should not happen." );
                     prefix = "app";
                 }
-                if ( ftName.getNamespaceURI() != XMLConstants.NULL_NS_URI ) {
+                if ( !NULL_NS_URI.equals( ftName.getNamespaceURI() ) ) {
                     // TODO what about the namespace prefix?
                     writer.writeNamespace( prefix, ftName.getNamespaceURI() );
                     writer.writeCharacters( prefix + ":" + ftName.getLocalPart() );

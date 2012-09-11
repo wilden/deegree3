@@ -116,7 +116,6 @@ import org.deegree.gml.GMLStreamWriter;
 import org.deegree.gml.GMLVersion;
 import org.deegree.gml.feature.GMLFeatureWriter;
 import org.deegree.protocol.ows.exception.OWSException;
-import org.deegree.protocol.wfs.WFSConstants;
 import org.deegree.protocol.wfs.describefeaturetype.DescribeFeatureType;
 import org.deegree.protocol.wfs.getfeature.GetFeature;
 import org.deegree.protocol.wfs.getfeature.ResultType;
@@ -179,15 +178,13 @@ public class GMLFormat implements Format {
 
     private final WFSFeatureStoreManager service;
 
-    private final int featureLimit;
+    private final int queryMaxFeatures;
 
     private final boolean checkAreaOfUse;
 
     private CoordinateFormatter formatter;
 
     private final DescribeFeatureTypeHandler dftHandler;
-
-    private boolean exportOriginalSchema;
 
     private String appSchemaBaseURL;
 
@@ -196,8 +193,8 @@ public class GMLFormat implements Format {
     public GMLFormat( WebFeatureService master, GMLVersion gmlVersion ) {
         this.master = master;
         this.service = master.getStoreManager();
-        this.dftHandler = new DescribeFeatureTypeHandler( service, exportOriginalSchema, null );
-        this.featureLimit = master.getMaxFeatures();
+        this.dftHandler = new DescribeFeatureTypeHandler( service, false, null );
+        this.queryMaxFeatures = master.getQueryMaxFeatures();
         this.checkAreaOfUse = master.getCheckAreaOfUse();
         this.gmlVersion = gmlVersion;
         this.mimeType = gmlVersion.getMimeType();
@@ -213,6 +210,7 @@ public class GMLFormat implements Format {
         }
 
         GetFeatureResponse responseConfig = formatDef.getGetFeatureResponse();
+        boolean exportOriginalSchema = false;
         if ( responseConfig != null ) {
             if ( responseConfig.isDisableStreaming() != null ) {
                 disableStreaming = responseConfig.isDisableStreaming();
@@ -239,7 +237,7 @@ public class GMLFormat implements Format {
         }
 
         this.dftHandler = new DescribeFeatureTypeHandler( service, exportOriginalSchema, appSchemaBaseURL );
-        this.featureLimit = master.getMaxFeatures();
+        this.queryMaxFeatures = master.getQueryMaxFeatures();
         this.checkAreaOfUse = master.getCheckAreaOfUse();
 
         this.formatter = null;
@@ -419,33 +417,43 @@ public class GMLFormat implements Format {
         gmlStream.setAdditionalObjectHandler( additionalObjects );
 
         // retrieve and write result features
-        int numberReturned = 0;
+        int startIndex = 0;
         int maxResults = -1;
+        // TODO evaluate if maxResults should have a default / configurable value
         if ( request.getPresentationParams().getCount() != null ) {
             maxResults = request.getPresentationParams().getCount().intValue();
+        }
+        if ( request.getPresentationParams().getStartIndex() != null ) {
+            startIndex = request.getPresentationParams().getStartIndex().intValue();
         }
 
         GMLObjectXPathEvaluator evaluator = new GMLObjectXPathEvaluator();
         GMLFeatureWriter featureWriter = gmlStream.getFeatureWriter();
 
+        int numberReturned = 0;
+        int valuesSkipped = 0;
         for ( Map.Entry<FeatureStore, List<Query>> fsToQueries : analyzer.getQueries().entrySet() ) {
             FeatureStore fs = fsToQueries.getKey();
             Query[] queries = fsToQueries.getValue().toArray( new Query[fsToQueries.getValue().size()] );
             FeatureInputStream rs = fs.query( queries );
             try {
                 for ( Feature member : rs ) {
-                    TypedObjectNode[] values = evaluator.eval( member, request.getValueReference() );
-                    for ( TypedObjectNode value : values ) {
-                        xmlStream.writeStartElement( WFS_200_NS, "member" );
-                        featureWriter.export( value, 0, traverseXLinkDepth );
-                        xmlStream.writeEndElement();
-                        numberReturned++;
-                        if ( numberReturned == maxResults ) {
-                            break;
-                        }
-                    }
                     if ( numberReturned == maxResults ) {
                         break;
+                    }
+                    TypedObjectNode[] values = evaluator.eval( member, request.getValueReference() );
+                    for ( TypedObjectNode value : values ) {
+                        if ( valuesSkipped < startIndex ) {
+                            valuesSkipped++;
+                        } else {
+                            xmlStream.writeStartElement( WFS_200_NS, "member" );
+                            featureWriter.export( value, 0, traverseXLinkDepth );
+                            xmlStream.writeEndElement();
+                            numberReturned++;
+                            if ( numberReturned == maxResults ) {
+                                break;
+                            }
+                        }
                     }
                 }
             } finally {
@@ -565,10 +573,15 @@ public class GMLFormat implements Format {
             xmlStream.writeAttribute( "gml", GML3_2_NS, "id", "WFS_RESPONSE" );
         }
 
-        int maxFeatures = featureLimit;
+        int returnMaxFeatures = queryMaxFeatures;
         if ( request.getPresentationParams().getCount() != null
-             && ( featureLimit < 1 || request.getPresentationParams().getCount().intValue() < featureLimit ) ) {
-            maxFeatures = request.getPresentationParams().getCount().intValue();
+             && ( queryMaxFeatures < 1 || request.getPresentationParams().getCount().intValue() < queryMaxFeatures ) ) {
+            returnMaxFeatures = request.getPresentationParams().getCount().intValue();
+        }
+
+        int startIndex = 0;
+        if ( request.getPresentationParams().getStartIndex() != null ) {
+            startIndex = request.getPresentationParams().getStartIndex().intValue();
         }
 
         GMLStreamWriter gmlStream = GMLOutputFactory.createGMLStreamWriter( gmlVersion, xmlStream );
@@ -588,10 +601,10 @@ public class GMLFormat implements Format {
 
         if ( disableStreaming ) {
             writeFeatureMembersCached( request.getVersion(), gmlStream, analyzer, gmlVersion, xLinkTemplate,
-                                       traverseXLinkDepth, maxFeatures, memberElementName );
+                                       traverseXLinkDepth, returnMaxFeatures, startIndex, memberElementName );
         } else {
             writeFeatureMembersStream( request.getVersion(), gmlStream, analyzer, gmlVersion, xLinkTemplate,
-                                       traverseXLinkDepth, maxFeatures, memberElementName );
+                                       traverseXLinkDepth, returnMaxFeatures, startIndex, memberElementName );
         }
 
         if ( !additionalObjects.getAdditionalRefs().isEmpty() ) {
@@ -666,7 +679,7 @@ public class GMLFormat implements Format {
 
     private void writeFeatureMembersStream( Version wfsVersion, GMLStreamWriter gmlStream, QueryAnalyzer analyzer,
                                             GMLVersion outputFormat, String xLinkTemplate, int traverseXLinkDepth,
-                                            int maxFeatures, QName featureMemberEl )
+                                            int maxFeatures, int startIndex, QName featureMemberEl )
                             throws XMLStreamException, UnknownCRSException, TransformationException,
                             FeatureStoreException, FilterEvaluationException, FactoryConfigurationError, IOException {
 
@@ -689,6 +702,7 @@ public class GMLFormat implements Format {
 
         // retrieve and write result features
         int featuresAdded = 0;
+        int featuresSkipped = 0;
         for ( Map.Entry<FeatureStore, List<Query>> fsToQueries : analyzer.getQueries().entrySet() ) {
             FeatureStore fs = fsToQueries.getKey();
             Query[] queries = fsToQueries.getValue().toArray( new Query[fsToQueries.getValue().size()] );
@@ -699,8 +713,12 @@ public class GMLFormat implements Format {
                         // limit the number of features written to maxfeatures
                         break;
                     }
-                    writeMemberFeature( member, gmlStream, xmlStream, wfsVersion, xLinkTemplate, 0, featureMemberEl );
-                    featuresAdded++;
+                    if ( featuresSkipped < startIndex ) {
+                        featuresSkipped++;
+                    } else {
+                        writeMemberFeature( member, gmlStream, xmlStream, wfsVersion, xLinkTemplate, 0, featureMemberEl );
+                        featuresAdded++;
+                    }
                 }
             } finally {
                 LOG.debug( "Closing FeatureResultSet (stream)" );
@@ -711,7 +729,7 @@ public class GMLFormat implements Format {
 
     private void writeFeatureMembersCached( Version wfsVersion, GMLStreamWriter gmlStream, QueryAnalyzer analyzer,
                                             GMLVersion outputFormat, String xLinkTemplate, int traverseXLinkDepth,
-                                            int maxFeatures, QName featureMemberEl )
+                                            int maxFeatures, int startIndex, QName featureMemberEl )
                             throws XMLStreamException, UnknownCRSException, TransformationException,
                             FeatureStoreException, FilterEvaluationException, FactoryConfigurationError, IOException {
 
@@ -720,6 +738,7 @@ public class GMLFormat implements Format {
 
         // retrieve maxfeatures features
         int featuresAdded = 0;
+        int featuresSkipped = 0;
         for ( Map.Entry<FeatureStore, List<Query>> fsToQueries : analyzer.getQueries().entrySet() ) {
             FeatureStore fs = fsToQueries.getKey();
             Query[] queries = fsToQueries.getValue().toArray( new Query[fsToQueries.getValue().size()] );
@@ -729,7 +748,9 @@ public class GMLFormat implements Format {
                     if ( featuresAdded == maxFeatures ) {
                         break;
                     }
-                    if ( !fids.contains( feature.getId() ) ) {
+                    if ( featuresSkipped < startIndex ) {
+                        featuresSkipped++;
+                    } else if ( !fids.contains( feature.getId() ) ) {
                         allFeatures.add( feature );
                         fids.add( feature.getId() );
                         featuresAdded++;
@@ -990,7 +1011,7 @@ public class GMLFormat implements Format {
         if ( responseContainerEl == null ) {
             // use "wfs:FeatureCollection" then
             QName wfsFeatureCollection = new QName( WFS_NS, "FeatureCollection", WFS_PREFIX );
-            if ( responseContainerEl == null || wfsFeatureCollection.equals( responseContainerEl ) ) {
+            if ( wfsFeatureCollection.equals( responseContainerEl ) ) {
                 if ( VERSION_100.equals( requestVersion ) ) {
                     if ( GML_2 == gmlVersion ) {
                         schemaLocation = WFS_NS + " " + WFS_100_BASIC_SCHEMA_URL;
@@ -1175,5 +1196,4 @@ public class GMLFormat implements Format {
     public String getMimeType() {
         return mimeType;
     }
-
 }

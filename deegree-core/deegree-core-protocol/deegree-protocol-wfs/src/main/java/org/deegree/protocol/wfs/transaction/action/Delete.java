@@ -39,7 +39,7 @@ import javax.xml.namespace.QName;
 
 import org.deegree.filter.Filter;
 import org.deegree.protocol.wfs.transaction.Transaction;
-import org.deegree.protocol.wfs.transaction.TransactionOperation;
+import org.deegree.protocol.wfs.transaction.TransactionActionType;
 
 /**
  * Represents a WFS <code>Delete</code> operation (part of a {@link Transaction} request).
@@ -51,7 +51,7 @@ import org.deegree.protocol.wfs.transaction.TransactionOperation;
  * 
  * @version $Revision$, $Date$
  */
-public class Delete extends TransactionOperation {
+public class Delete extends AbstractTransactionAction {
 
     private final QName ftName;
 
@@ -74,13 +74,13 @@ public class Delete extends TransactionOperation {
     }
 
     /**
-     * Always returns {@link TransactionOperation.Type#DELETE}.
+     * Always returns {@link TransactionActionType#DELETE}.
      * 
-     * @return {@link TransactionOperation.Type#DELETE}
+     * @return {@link TransactionActionType#DELETE}
      */
     @Override
-    public Type getType() {
-        return Type.DELETE;
+    public TransactionActionType getType() {
+        return TransactionActionType.DELETE;
     }
 
     /**

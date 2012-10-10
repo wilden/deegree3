@@ -100,6 +100,7 @@ import org.deegree.geometry.Envelope;
 import org.deegree.geometry.Geometries;
 import org.deegree.geometry.Geometry;
 import org.deegree.protocol.wfs.transaction.action.IDGenMode;
+import org.deegree.protocol.wfs.transaction.action.ParsedPropertyReplacement;
 import org.deegree.sqldialect.filter.DBField;
 import org.deegree.sqldialect.filter.MappingExpression;
 import org.slf4j.Logger;
@@ -744,7 +745,8 @@ public class SQLFeatureStoreTransaction implements FeatureStoreTransaction {
     }
 
     @Override
-    public int performUpdate( QName ftName, List<Property> replacementProps, Filter filter, Lock lock )
+    public List<String> performUpdate( QName ftName, List<ParsedPropertyReplacement> replacementProps, Filter filter,
+                                       Lock lock )
                             throws FeatureStoreException {
         LOG.debug( "Updating feature type '" + ftName + "', filter: " + filter + ", replacement properties: "
                    + replacementProps.size() );
@@ -763,9 +765,9 @@ public class SQLFeatureStoreTransaction implements FeatureStoreTransaction {
         return performUpdate( ftName, replacementProps, idFilter );
     }
 
-    private int performUpdate( QName ftName, List<Property> replacementProps, IdFilter filter )
+    private List<String> performUpdate( QName ftName, List<ParsedPropertyReplacement> replacementProps, IdFilter filter )
                             throws FeatureStoreException {
-        int updated = 0;
+        List<String> updated = null;
         if ( blobMapping != null ) {
             throw new FeatureStoreException( "Updates in SQLFeatureStore (BLOB mode) are currently not implemented." );
         } else {
@@ -784,7 +786,8 @@ public class SQLFeatureStoreTransaction implements FeatureStoreTransaction {
         return updated;
     }
 
-    private int performUpdateRelational( QName ftName, List<Property> replacementProps, IdFilter filter )
+    private List<String> performUpdateRelational( QName ftName, List<ParsedPropertyReplacement> replacementProps,
+                                                  IdFilter filter )
                             throws FeatureStoreException {
 
         FeatureTypeMapping ftMapping = schema.getFtMapping( ftName );
@@ -794,7 +797,8 @@ public class SQLFeatureStoreTransaction implements FeatureStoreTransaction {
         sql.append( ftMapping.getFtTable() );
         sql.append( " SET " );
         boolean first = true;
-        for ( Property replacementProp : replacementProps ) {
+        for ( ParsedPropertyReplacement replacement : replacementProps ) {
+            Property replacementProp = replacement.getNewValue();
             QName propName = replacementProp.getType().getName();
             Mapping mapping = ftMapping.getMapping( propName );
             if ( mapping != null ) {
@@ -856,7 +860,8 @@ public class SQLFeatureStoreTransaction implements FeatureStoreTransaction {
             stmt = conn.prepareStatement( sql.toString() );
             int i = 1;
 
-            for ( Property replacementProp : replacementProps ) {
+            for ( ParsedPropertyReplacement replacement : replacementProps ) {
+                Property replacementProp = replacement.getNewValue();
                 QName propName = replacementProp.getType().getName();
                 Mapping mapping = ftMapping.getMapping( propName );
                 if ( mapping != null ) {
@@ -901,7 +906,7 @@ public class SQLFeatureStoreTransaction implements FeatureStoreTransaction {
             JDBCUtils.close( stmt );
         }
         LOG.debug( "Updated {} features.", updated );
-        return updated;
+        return new ArrayList<String>( filter.getMatchingIds() );
     }
 
     private IdFilter getIdFilter( QName ftName, OperatorFilter filter )
@@ -925,7 +930,7 @@ public class SQLFeatureStoreTransaction implements FeatureStoreTransaction {
     }
 
     @Override
-    public String performReplace( Feature replacement, Filter filter, Lock lock )
+    public String performReplace( Feature replacement, Filter filter, Lock lock, IDGenMode idGenMode )
                             throws FeatureStoreException {
         throw new FeatureStoreException( "Replace is not supported yet." );
     }

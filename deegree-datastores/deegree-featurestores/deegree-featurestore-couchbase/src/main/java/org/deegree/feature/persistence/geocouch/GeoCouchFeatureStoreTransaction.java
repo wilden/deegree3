@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.xml.namespace.QName;
 
-import org.deegree.commons.tom.gml.property.Property;
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.feature.Feature;
 import org.deegree.feature.FeatureCollection;
@@ -24,6 +23,7 @@ import org.deegree.filter.Filter;
 import org.deegree.filter.IdFilter;
 import org.deegree.filter.OperatorFilter;
 import org.deegree.protocol.wfs.transaction.action.IDGenMode;
+import org.deegree.protocol.wfs.transaction.action.ParsedPropertyReplacement;
 import org.slf4j.Logger;
 
 import com.couchbase.client.CouchbaseClient;
@@ -90,26 +90,27 @@ public class GeoCouchFeatureStoreTransaction implements FeatureStoreTransaction 
     }
 
     @Override
-    public int performUpdate( QName ftName, List<Property> replacementProps, Filter filter, Lock lock )
+    public List<String> performUpdate( QName ftName, List<ParsedPropertyReplacement> replacementProps, Filter filter,
+                                       Lock lock )
                             throws FeatureStoreException {
-        throw new FeatureStoreException( "Update is not supported yet." );
+        throw new FeatureStoreException( "Update is not supported by GeoCouchFeatureStore." );
     }
 
     @Override
     public int performDelete( QName ftName, OperatorFilter filter, Lock lock )
                             throws FeatureStoreException {
-        throw new FeatureStoreException( "Delete is not supported yet." );
+        throw new FeatureStoreException( "Delete is not supported by GeoCouchFeatureStore." );
     }
 
     @Override
     public int performDelete( IdFilter filter, Lock lock )
                             throws FeatureStoreException {
-        throw new FeatureStoreException( "Delete is not supported yet." );
+        throw new FeatureStoreException( "Delete is not supported by GeoCouchFeatureStore." );
     }
 
     @Override
-    public String performReplace( Feature replacement, Filter filter, Lock lock )
+    public String performReplace( Feature replacement, Filter filter, Lock lock, IDGenMode idGenMode )
                             throws FeatureStoreException {
-        throw new FeatureStoreException( "Replace is not supported yet." );
+        throw new FeatureStoreException( "Replace is not supported by GeoCouchFeatureStore." );
     }
 }

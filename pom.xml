@@ -1,10 +1,9 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.deegree</groupId>
   <artifactId>deegree</artifactId>
   <packaging>pom</packaging>
-  <version>3.2-pre11-SNAPSHOT</version>
+  <version>3.2-pre12-SNAPSHOT</version>
   <name>deegree</name>
   <description>Framework for OGC Web Service implementations and geospatial applications</description>
   <url>http://www.deegree.org/</url>
@@ -132,10 +131,18 @@
           <artifactId>maven-failsafe-plugin</artifactId>
           <version>2.12</version>
         </plugin>
+        <!-- reporting and site -->
         <plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>findbugs-maven-plugin</artifactId>
-          <version>2.5.2</version>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>3.1</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.maven.wagon</groupId>
+              <artifactId>wagon-ssh</artifactId>
+              <version>1.0</version>
+            </dependency>
+          </dependencies>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -185,6 +192,7 @@
         </executions>
         <configuration>
           <revisionOnScmFailure>${buildTimestamp}</revisionOnScmFailure>
+          <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
         </configuration>
       </plugin>
       <plugin>
@@ -214,14 +222,6 @@
           <goals>install</goals>
         </configuration>
       </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>findbugs-maven-plugin</artifactId>
-      </plugin>
     </plugins>
   </build>
 
@@ -233,12 +233,56 @@
         <version>2.5.2</version>
         <configuration>
           <xmlOutput>true</xmlOutput>
+          <findbugsXmlWithMessages>true</findbugsXmlWithMessages>
           <findbugsXmlOutput>true</findbugsXmlOutput>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <version>2.7.1</version>
+        <configuration>
+          <linkXref>true</linkXref>
+          <sourceEncoding>utf-8</sourceEncoding>
+          <minimumTokens>100</minimumTokens>
+          <targetJdk>1.6</targetJdk>
+          <excludes>
+            <exclude>**/generated/*.java</exclude>
+          </excludes>
+          <excludeRoots>
+            <excludeRoot>target/generated-sources</excludeRoot>
+          </excludeRoots>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>2.9.1</version>
+        <configuration>
+          <configLocation>checkstyle.xml</configLocation>
+        </configuration>
+      </plugin>
+      <!--plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.8.1</version>
+        <configuration>
+          <detectLinks>false</detectLinks>
+          <detectOfflineLinks>false</detectOfflineLinks>
+          <aggregate>false</aggregate>
+        </configuration>
+      </plugin-->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <version>2.4</version>
+        <configuration>
+          <dependencyDetailsEnabled>false</dependencyDetailsEnabled>
+          <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
         </configuration>
       </plugin>
     </plugins>
   </reporting>
-
 
   <dependencyManagement>
     <dependencies>
@@ -1007,34 +1051,16 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-site-plugin</artifactId>
-            <version>3.1</version>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>findbugs-maven-plugin</artifactId>
+            <version>2.5.2</version>
             <configuration>
-              <reportPlugins>
-                <plugin>
-                  <groupId>org.apache.maven.plugins</groupId>
-                  <artifactId>maven-javadoc-plugin</artifactId>
-                  <version>2.8</version>
-                  <configuration>
-                    <maxmemory>512m</maxmemory>
-                  </configuration>
-                </plugin>
-                <plugin>
-                  <groupId>org.apache.maven.plugins</groupId>
-                  <artifactId>maven-project-info-reports-plugin</artifactId>
-                  <version>2.4</version>
-                  <configuration>
-                    <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
-                  </configuration>
-                </plugin>
-              </reportPlugins>
+              <xmlOutput>true</xmlOutput>
+              <findbugsXmlWithMessages>true</findbugsXmlWithMessages>
+              <findbugsXmlOutput>true</findbugsXmlOutput>
             </configuration>
-            <dependencies>
-              <dependency>
-                <groupId>org.apache.maven.wagon</groupId>
-                <artifactId>wagon-ssh</artifactId>
-                <version>1.0</version>
-              </dependency>
-            </dependencies>
           </plugin>
         </plugins>
       </build>
@@ -1080,7 +1106,7 @@
     </developer>
     <developer>
       <name>Lyn Goltz</name>
-      <email>buesching@lat-lon.de</email>
+      <email>goltz@lat-lon.de</email>
     </developer>
   </developers>
 

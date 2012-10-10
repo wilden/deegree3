@@ -51,12 +51,12 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.deegree.commons.annotations.LoggingNotes;
+import org.deegree.commons.ows.exception.OWSException;
 import org.deegree.commons.utils.Pair;
 import org.deegree.filter.Filter;
 import org.deegree.filter.OperatorFilter;
 import org.deegree.filter.xml.Filter110XMLDecoder;
 import org.deegree.layer.LayerRef;
-import org.deegree.protocol.ows.exception.OWSException;
 import org.deegree.style.StyleRef;
 import org.deegree.style.se.parser.SymbologyParser;
 import org.deegree.style.se.unevaluated.Style;
@@ -111,6 +111,7 @@ public class SLDParser {
                     skipElement( in );
                 }
 
+                boolean foundFilter = false;
                 if ( in.getLocalName().equals( "LayerFeatureConstraints" ) ) {
 
                     while ( !( in.isEndElement() && in.getLocalName().equals( "LayerFeatureConstraints" ) ) ) {
@@ -127,7 +128,8 @@ public class SLDParser {
 
                             if ( in.getLocalName().equals( "Filter" ) ) {
                                 OperatorFilter filter = (OperatorFilter) Filter110XMLDecoder.parse( in );
-                                gm.addFilter( layerName, filter );
+                                gm.addSldFilter( layerName, filter );
+                                foundFilter = true;
                             }
 
                             if ( in.getLocalName().equals( "Extent" ) ) {
@@ -155,6 +157,11 @@ public class SLDParser {
                     }
 
                     in.nextTag();
+                }
+
+                if ( !foundFilter ) {
+                    // else having the same layer multiple times with and without filter won't work properly
+                    gm.addSldFilter( layerName, null );
                 }
 
                 if ( in.getLocalName().equals( "NamedStyle" ) ) {

@@ -37,8 +37,8 @@ package org.deegree.services.controller;
 
 import static java.io.File.createTempFile;
 import static java.util.Collections.emptyList;
+import static org.deegree.commons.ows.exception.OWSException.NO_APPLICABLE_CODE;
 import static org.deegree.commons.tom.ows.Version.parseVersion;
-import static org.deegree.protocol.ows.exception.OWSException.NO_APPLICABLE_CODE;
 import static org.reflections.util.ClasspathHelper.forClassLoader;
 import static org.reflections.util.ClasspathHelper.forWebInfLib;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -101,6 +101,7 @@ import org.deegree.commons.concurrent.Executor;
 import org.deegree.commons.config.DeegreeWorkspace;
 import org.deegree.commons.config.ResourceInitException;
 import org.deegree.commons.modules.ModuleInfo;
+import org.deegree.commons.ows.exception.OWSException;
 import org.deegree.commons.tom.ows.Version;
 import org.deegree.commons.utils.DeegreeAALogoUtils;
 import org.deegree.commons.utils.io.LoggingInputStream;
@@ -110,13 +111,13 @@ import org.deegree.commons.xml.XMLProcessingException;
 import org.deegree.commons.xml.jaxb.JAXBUtils;
 import org.deegree.commons.xml.stax.XMLStreamUtils;
 import org.deegree.feature.stream.ThreadedFeatureInputStream;
-import org.deegree.protocol.ows.exception.OWSException;
 import org.deegree.services.OWS;
 import org.deegree.services.authentication.SecurityException;
 import org.deegree.services.controller.exception.serializer.XMLExceptionSerializer;
 import org.deegree.services.controller.security.SecurityConfiguration;
 import org.deegree.services.controller.utils.HttpResponseBuffer;
 import org.deegree.services.controller.utils.LoggingHttpResponseWrapper;
+import org.deegree.services.jaxb.controller.DCPType;
 import org.deegree.services.jaxb.controller.DeegreeServiceControllerType;
 import org.deegree.services.ows.OWS110ExceptionReportSerializer;
 import org.slf4j.Logger;
@@ -245,11 +246,9 @@ public class OGCFrontController extends HttpServlet {
      * @return the HTTP URL (for POST requests)
      */
     public static String getHttpPostURL() {
-        String url = null;
-        if ( getInstance().mainConfig.getDCP() != null && getInstance().mainConfig.getDCP().getHTTPPost() != null ) {
-            url = getInstance().mainConfig.getDCP().getHTTPPost();
-        } else {
-            url = getContext().getRequestedBaseURL();
+        String url = getConfiguredHttpPostUrl();
+        if ( url == null ) {
+            url = getContext().getRequestedEndpointUrl();
         }
         return url;
     }
@@ -266,13 +265,48 @@ public class OGCFrontController extends HttpServlet {
      * @return the HTTP URL (for GET requests)
      */
     public static String getHttpGetURL() {
-        String url = null;
-        if ( getInstance().mainConfig.getDCP() != null && getInstance().mainConfig.getDCP().getHTTPGet() != null ) {
-            url = getInstance().mainConfig.getDCP().getHTTPGet();
-        } else {
-            url = getContext().getRequestedBaseURL() + "?";
+        String url = getConfiguredHttpGetUrl();
+        if ( url == null ) {
+            url = getContext().getRequestedEndpointUrl() + "?";
         }
         return url;
+    }
+
+    /**
+     * Returns the HTTP URL for accessing the webapp.
+     * <p>
+     * NOTE: This method will only return a correct result if the calling thread originated in the
+     * {@link #doGet(HttpServletRequest, HttpServletResponse)} or
+     * {@link #doPost(HttpServletRequest, HttpServletResponse)} of this class (or has been spawned as a child thread by
+     * such a thread).
+     * </p>
+     * 
+     * @return the HTTP URL (for GET requests)
+     */
+    public static String getWebappBaseURL() {
+        String url = getConfiguredHttpGetUrl();
+        if ( url == null ) {
+            url = getContext().getRequestedWebappBaseUrl();
+        } else {
+            url = url.substring( 0, url.lastIndexOf( '/' ) );
+        }
+        return url;
+    }
+
+    private static String getConfiguredHttpGetUrl() {
+        DCPType configuredDcp = getInstance().mainConfig.getDCP();
+        if ( configuredDcp != null && configuredDcp.getHTTPGet() != null ) {
+            return configuredDcp.getHTTPGet();
+        }
+        return null;
+    }
+
+    private static String getConfiguredHttpPostUrl() {
+        DCPType configuredDcp = getInstance().mainConfig.getDCP();
+        if ( configuredDcp != null && configuredDcp.getHTTPPost() != null ) {
+            return configuredDcp.getHTTPPost();
+        }
+        return null;
     }
 
     /**

@@ -39,7 +39,6 @@ import java.util.List;
 
 import javax.xml.namespace.QName;
 
-import org.deegree.commons.tom.gml.property.Property;
 import org.deegree.feature.Feature;
 import org.deegree.feature.FeatureCollection;
 import org.deegree.feature.persistence.lock.Lock;
@@ -47,6 +46,7 @@ import org.deegree.filter.Filter;
 import org.deegree.filter.IdFilter;
 import org.deegree.filter.OperatorFilter;
 import org.deegree.protocol.wfs.transaction.action.IDGenMode;
+import org.deegree.protocol.wfs.transaction.action.ParsedPropertyReplacement;
 
 /**
  * Provides transactional access to a {@link FeatureStore}.
@@ -104,33 +104,23 @@ public interface FeatureStoreTransaction {
     public List<String> performInsert( FeatureCollection fc, IDGenMode mode )
                             throws FeatureStoreException;
 
-    // /**
-    // * Inserts the given {@link Feature} into the {@link FeatureStore}.
-    // *
-    // * @param f
-    // * @param mode
-    // * @return
-    // * @throws FeatureStoreException
-    // */
-    // public S performInsert( Feature f, IDGenMode mode )
-    // throws FeatureStoreException;
-
     /**
      * Performs an update operation against the {@link FeatureStore}.
      * 
      * @param ftName
      *            feature type of the features to be updated, must not be <code>null</code>
      * @param replacementProps
-     *            properties and their replacement values, must not be <code>null</code>
+     *            properties and their replacement values plus the action to take, must not be <code>null</code>
      * @param filter
      *            selects the feature instances that are to be updated, must not be <code>null</code>
      * @param lock
      *            optional lock object, may be <code>null</code>
-     * @return number of updated feature instances
+     * @return ids of updated feature instances, never <code>null</code>
      * @throws FeatureStoreException
      *             if the update fails
      */
-    public int performUpdate( QName ftName, List<Property> replacementProps, Filter filter, Lock lock )
+    public List<String> performUpdate( QName ftName, List<ParsedPropertyReplacement> replacementProps, Filter filter,
+                                       Lock lock )
                             throws FeatureStoreException;
 
     /**
@@ -142,11 +132,13 @@ public interface FeatureStoreTransaction {
      *            selects the feature instance to be replaced, must not be <code>null</code>
      * @param lock
      *            optional lock object, may be <code>null</code>
+     * @param idGenMode
+     *            never <code>null</code>
      * @return identifier of the replaced feature, can be <code>null</code> (filter didn't match)
      * @throws FeatureStoreException
      *             if the replace fails
      */
-    public String performReplace( Feature replacement, Filter filter, Lock lock )
+    public String performReplace( Feature replacement, Filter filter, Lock lock, IDGenMode idGenMode )
                             throws FeatureStoreException;
 
     /**

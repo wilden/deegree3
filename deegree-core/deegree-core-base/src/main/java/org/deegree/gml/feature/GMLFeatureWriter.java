@@ -37,10 +37,9 @@
 package org.deegree.gml.feature;
 
 import static javax.xml.XMLConstants.NULL_NS_URI;
-import static org.deegree.commons.xml.CommonNamespaces.GML_PREFIX;
 import static org.deegree.commons.xml.CommonNamespaces.XLNNS;
 import static org.deegree.commons.xml.CommonNamespaces.XSINS;
-import static org.deegree.commons.xml.CommonNamespaces.XSI_PREFIX;
+import static org.deegree.commons.xml.stax.StAXExportingHelper.writeAttribute;
 import static org.deegree.feature.types.property.ValueRepresentation.REMOTE;
 import static org.deegree.gml.GMLVersion.GML_2;
 
@@ -58,7 +57,6 @@ import org.deegree.commons.tom.ElementNode;
 import org.deegree.commons.tom.TypedObjectNode;
 import org.deegree.commons.tom.array.TypedObjectNodeArray;
 import org.deegree.commons.tom.gml.GMLObject;
-import org.deegree.commons.tom.gml.GMLReference;
 import org.deegree.commons.tom.gml.property.Property;
 import org.deegree.commons.tom.gml.property.PropertyType;
 import org.deegree.commons.tom.ows.CodeType;
@@ -67,7 +65,6 @@ import org.deegree.commons.tom.primitive.BaseType;
 import org.deegree.commons.tom.primitive.PrimitiveValue;
 import org.deegree.commons.uom.Length;
 import org.deegree.commons.uom.Measure;
-import org.deegree.commons.xml.stax.StAXExportingHelper;
 import org.deegree.cs.exceptions.TransformationException;
 import org.deegree.cs.exceptions.UnknownCRSException;
 import org.deegree.feature.Feature;
@@ -92,12 +89,14 @@ import org.deegree.geometry.Envelope;
 import org.deegree.geometry.Geometry;
 import org.deegree.gml.GMLStreamWriter;
 import org.deegree.gml.commons.AbstractGMLObjectWriter;
+import org.deegree.gml.reference.FeatureReference;
+import org.deegree.gml.reference.GmlXlinkOptions;
 import org.deegree.gml.schema.GMLSchemaInfoSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Stream-based GML writer for {@link Feature} and {@link FeatureCollection} instances.
+ * Stream-based GML writer for {@link Feature} (and {@link FeatureCollection}) instances.
  * 
  * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author <a href="mailto:ionita@lat-lon.de">Andrei Ionita</a>
@@ -109,23 +108,15 @@ public class GMLFeatureWriter extends AbstractGMLObjectWriter {
 
     private static final Logger LOG = LoggerFactory.getLogger( GMLFeatureWriter.class );
 
-    private static final String WFS_NS = "http://www.opengis.net/wfs";
-
     private final QName fidAttr;
 
     private final String gmlNull;
 
-    // TODO handle properties that are more complex XPath-expressions
-    private final Map<QName, ProjectionClause> projections = new HashMap<QName, ProjectionClause>();
-
-    // export all levels by default
-    private final int traverseXlinkDepth;
+    private final Map<QName, ProjectionClause> requestedPropertyNames = new HashMap<QName, ProjectionClause>();
 
     private final boolean exportSf;
 
     private final boolean outputGeometries;
-
-    private final GMLForwardReferenceHandler additionalObjectHandler;
 
     private final boolean exportExtraProps;
 
@@ -148,15 +139,14 @@ public class GMLFeatureWriter extends AbstractGMLObjectWriter {
     public GMLFeatureWriter( GMLStreamWriter gmlStreamWriter ) {
         super( gmlStreamWriter );
 
-        traverseXlinkDepth = gmlStreamWriter.getXlinkDepth();
-
         if ( gmlStreamWriter.getProjections() != null ) {
             for ( ProjectionClause projection : gmlStreamWriter.getProjections() ) {
                 QName qName = projection.getPropertyName().getAsQName();
                 if ( qName != null ) {
-                    projections.put( qName, projection );
+                    requestedPropertyNames.put( qName, projection );
                 } else {
-                    LOG.warn( "Currently, only simple qualified names are supported for projection." );
+                    LOG.debug( "Only simple qualified element names are supported for projection. Ignoring '"
+                               + projection.getPropertyName() + "'" );
                 }
             }
         }
@@ -171,7 +161,6 @@ public class GMLFeatureWriter extends AbstractGMLObjectWriter {
 
         this.outputGeometries = gmlStreamWriter.getOutputGeometries();
         this.exportSf = false;
-        this.additionalObjectHandler = gmlStreamWriter.getAdditionalObjectHandler();
         this.exportExtraProps = gmlStreamWriter.getExportExtraProps();
         this.boundedByPt = new EnvelopePropertyType( new QName( gmlNs, "boundedBy" ), 0, 1, null, null );
         this.exportBoundedBy = gmlStreamWriter.getGenerateBoundedByForFeatures();
@@ -188,73 +177,242 @@ public class GMLFeatureWriter extends AbstractGMLObjectWriter {
      */
     public void export( Feature feature )
                             throws XMLStreamException, UnknownCRSException, TransformationException {
-        export( feature, 0, traverseXlinkDepth );
-    }
-
-    public void export( Feature feature, int level )
-                            throws XMLStreamException, UnknownCRSException, TransformationException {
-        export( feature, level, traverseXlinkDepth );
+        export( feature, referenceExportStrategy.getResolveOptions() );
     }
 
     /**
-     * TODO merge with other schema location possibilities
+     * Exports the given {@link Property}.
      * 
-     * @param fc
-     * @param noNamespaceSchemaLocation
-     *            may be null
-     * @param bindings
-     *            optional additional schema locations
+     * @param prop
+     *            property to be exported, must not be <code>null</code>
      * @throws XMLStreamException
-     * @throws TransformationException
      * @throws UnknownCRSException
+     * @throws TransformationException
      */
-    public void export( FeatureCollection fc, String noNamespaceSchemaLocation, Map<String, String> bindings )
+    public void export( Property prop )
+                            throws XMLStreamException, UnknownCRSException, TransformationException {
+        export( prop, referenceExportStrategy.getResolveOptions() );
+    }
+
+    public void export( TypedObjectNode node, GmlXlinkOptions resolveState )
                             throws XMLStreamException, UnknownCRSException, TransformationException {
 
-        LOG.debug( "Exporting generic feature collection." );
-        if ( fc.getId() != null ) {
-            exportedIds.add( fc.getId() );
-        }
-
-        writer.setDefaultNamespace( WFS_NS );
-        writer.writeStartElement( WFS_NS, "FeatureCollection" );
-        writer.writeDefaultNamespace( WFS_NS );
-        writer.writeNamespace( XSI_PREFIX, XSINS );
-        writer.writeNamespace( GML_PREFIX, gmlNs );
-
-        if ( fc.getId() != null ) {
-            if ( fidAttr.getNamespaceURI() == NULL_NS_URI ) {
-                writer.writeAttribute( fidAttr.getLocalPart(), fc.getId() );
+        if ( node instanceof GMLObject ) {
+            if ( node instanceof Feature ) {
+                export( (Feature) node, resolveState );
+            } else if ( node instanceof Geometry ) {
+                gmlStreamWriter.getGeometryWriter().export( (Geometry) node );
             } else {
-                writer.writeAttribute( fidAttr.getNamespaceURI(), fidAttr.getLocalPart(), fc.getId() );
+                throw new UnsupportedOperationException();
+            }
+        } else if ( node instanceof PrimitiveValue ) {
+            writer.writeCharacters( ( (PrimitiveValue) node ).getAsText() );
+        } else if ( node instanceof Property ) {
+            export( (Property) node, resolveState );
+        } else if ( node instanceof ElementNode ) {
+            ElementNode xmlContent = (ElementNode) node;
+            exportGenericXmlElement( xmlContent, resolveState );
+        } else if ( node instanceof TypedObjectNodeArray<?> ) {
+            for ( TypedObjectNode elem : ( (TypedObjectNodeArray<?>) node ).getElements() ) {
+                export( elem, resolveState );
+            }
+        } else if ( node == null ) {
+            LOG.warn( "Null node encountered!?" );
+        } else {
+            throw new RuntimeException( "Unhandled node type '" + node.getClass() + "'" );
+        }
+    }
+
+    private void export( Property property, GmlXlinkOptions resolveState )
+                            throws XMLStreamException, UnknownCRSException, TransformationException {
+
+        QName propName = property.getName();
+        PropertyType pt = property.getType();
+        if ( pt.getMinOccurs() == 0 ) {
+            LOG.debug( "Optional property '" + propName + "', checking if it is requested." );
+            if ( !isPropertyRequested( propName ) ) {
+                LOG.debug( "Skipping it." );
+                return;
+            }
+            // required for WMS:
+            if ( !outputGeometries && pt instanceof GeometryPropertyType ) {
+                LOG.debug( "Skipping it since geometries should not be output." );
+                return;
             }
         }
 
-        if ( noNamespaceSchemaLocation != null ) {
-            writer.writeAttribute( XSINS, "noNamespaceSchemaLocation", noNamespaceSchemaLocation );
+        if ( resolveState.getCurrentLevel() == 0 ) {
+            resolveState = getResolveParams( property, resolveState );
         }
-        if ( bindings != null && !bindings.isEmpty() ) {
 
-            String locs = null;
-            for ( Entry<String, String> e : bindings.entrySet() ) {
-                if ( locs == null ) {
-                    locs = "";
-                } else {
-                    locs += " ";
+        TypedObjectNode value = property.getValue();
+
+        // if ( value instanceof GenericXMLElement ) {
+        // writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+        // export( value, currentLevel, maxInlineLevels );
+        // writer.writeEndElement();
+        // return;
+        // }
+
+        // TODO check for GML 2 properties (gml:pointProperty, ...) and export
+        // as "app:gml2PointProperty" for GML 3
+        boolean nilled = false;
+        TypedObjectNode nil = property.getAttributes().get( XSI_NIL );
+        if ( nil instanceof PrimitiveValue ) {
+            nilled = Boolean.TRUE.equals( ( (PrimitiveValue) nil ).getValue() );
+        }
+        if ( pt instanceof FeaturePropertyType ) {
+            if ( nilled ) {
+                writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+                writeAttributeWithNS( XSINS, "nil", "true" );
+                endEmptyElement();
+            } else {
+                exportFeatureProperty( (FeaturePropertyType) pt, (Feature) value, resolveState );
+            }
+        } else if ( pt instanceof SimplePropertyType ) {
+            if ( nilled ) {
+                writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+                writeAttributeWithNS( XSINS, "nil", "true" );
+                endEmptyElement();
+            } else {
+                // must be a primitive value
+                PrimitiveValue pValue = (PrimitiveValue) value;
+                writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+                if ( pValue != null ) {
+                    // TODO
+                    if ( pValue.getType().getBaseType() == BaseType.DECIMAL ) {
+                        writer.writeCharacters( pValue.getValue().toString() );
+                    } else {
+                        writer.writeCharacters( pValue.getAsText() );
+                    }
                 }
-                locs += e.getKey() + " " + e.getValue();
+                writer.writeEndElement();
             }
-            writer.writeAttribute( XSINS, "schemaLocation", locs );
-        }
+        } else if ( pt instanceof GeometryPropertyType ) {
+            if ( nilled ) {
+                writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+                writeAttributeWithNS( XSINS, "nil", "true" );
+                endEmptyElement();
+            } else {
+                Geometry gValue = (Geometry) value;
+                if ( !exportSf && gValue.getId() != null && referenceExportStrategy.isObjectExported( gValue.getId() ) ) {
+                    writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+                    writeAttributeWithNS( XLNNS, "href", "#" + gValue.getId() );
+                    endEmptyElement();
+                } else {
+                    writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+                    if ( gValue.getId() != null ) {
+                        // WFS CITE 1.1.0 test requirement (wfs:GetFeature.XLink-POST-XML-10)
+                        writer.writeComment( "Inlined geometry '" + gValue.getId() + "'" );
+                    }
+                    gmlStreamWriter.getGeometryWriter().export( (Geometry) value );
+                    writer.writeEndElement();
+                }
+            }
+        } else if ( pt instanceof CodePropertyType ) {
+            writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+            if ( nilled ) {
+                writeAttributeWithNS( XSINS, "nil", "true" );
+            }
+            CodeType codeType = (CodeType) value;
 
-        exportBoundedBy( fc.getEnvelope(), true );
-
-        for ( Feature f : fc ) {
-            writer.writeStartElement( gmlNs, "featureMember" );
-            export( f );
+            if ( codeType != null ) {
+                if ( codeType.getCodeSpace() != null && codeType.getCodeSpace().length() > 0 ) {
+                    if ( GML_2 != version ) {
+                        writer.writeAttribute( "codeSpace", codeType.getCodeSpace() );
+                    }
+                }
+                writer.writeCharacters( codeType.getCode() );
+            }
             writer.writeEndElement();
+        } else if ( pt instanceof EnvelopePropertyType ) {
+            if ( nilled ) {
+                writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+                writeAttributeWithNS( XSINS, "nil", "true" );
+                endEmptyElement();
+            } else {
+                writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+                if ( value != null ) {
+                    gmlStreamWriter.getGeometryWriter().exportEnvelope( (Envelope) value );
+                } else {
+                    writeStartElementWithNS( gmlNs, gmlNull );
+                    writer.writeCharacters( "missing" );
+                    writer.writeEndElement();
+                }
+                writer.writeEndElement();
+            }
+        } else if ( pt instanceof LengthPropertyType ) {
+            Length length = (Length) value;
+            writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+            if ( GML_2 != version ) {
+                if ( nilled ) {
+                    writeAttributeWithNS( XSINS, "nil", "true" );
+                }
+                writer.writeAttribute( "uom", length.getUomUri() );
+            }
+            if ( !nilled ) {
+                writer.writeCharacters( String.valueOf( length.getValue() ) );
+            }
+            writer.writeEndElement();
+        } else if ( pt instanceof MeasurePropertyType ) {
+            Measure measure = (Measure) value;
+            writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+            if ( GML_2 != version ) {
+                writer.writeAttribute( "uom", measure.getUomUri() );
+            }
+            writer.writeCharacters( String.valueOf( measure.getValue() ) );
+            writer.writeEndElement();
+        } else if ( pt instanceof StringOrRefPropertyType ) {
+            StringOrRef stringOrRef = (StringOrRef) value;
+            if ( stringOrRef.getString() == null || stringOrRef.getString().length() == 0 ) {
+                writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+                if ( stringOrRef.getRef() != null ) {
+                    writeAttributeWithNS( XLNNS, "href", stringOrRef.getRef() );
+                }
+                if ( nilled ) {
+                    writeAttributeWithNS( XSINS, "nil", "true" );
+                }
+                endEmptyElement();
+            } else {
+                writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+                if ( nilled ) {
+                    writeAttributeWithNS( XSINS, "nil", "true" );
+                }
+
+                if ( stringOrRef.getRef() != null ) {
+                    writeAttributeWithNS( XLNNS, "href", stringOrRef.getRef() );
+                }
+                if ( !nilled && stringOrRef.getString() != null ) {
+                    writer.writeCharacters( stringOrRef.getString() );
+                }
+                writer.writeEndElement();
+            }
+        } else if ( pt instanceof CustomPropertyType ) {
+            writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+            if ( property.getAttributes() != null ) {
+                for ( Entry<QName, PrimitiveValue> attr : property.getAttributes().entrySet() ) {
+                    writeAttribute( writer, attr.getKey(), attr.getValue().getAsText() );
+                }
+            }
+            if ( property.getChildren() != null ) {
+                for ( TypedObjectNode childNode : property.getChildren() ) {
+                    export( childNode, resolveState );
+                }
+            }
+            writer.writeEndElement();
+        } else if ( pt instanceof ArrayPropertyType ) {
+            if ( nilled ) {
+                writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+                writeAttributeWithNS( XSINS, "nil", "true" );
+                endEmptyElement();
+            } else {
+                writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+                export( (TypedObjectNode) property.getValue(), resolveState );
+                writer.writeEndElement();
+            }
+        } else {
+            throw new RuntimeException( "Internal error. Unhandled property type '" + pt.getClass() + "'" );
         }
-        writer.writeEndElement();
     }
 
     private void exportBoundedBy( Envelope env, boolean indicateMissing )
@@ -273,13 +431,13 @@ public class GMLFeatureWriter extends AbstractGMLObjectWriter {
         }
     }
 
-    private void export( Feature feature, int currentLevel, int maxInlineLevels )
+    private void export( Feature feature, GmlXlinkOptions resolveState )
                             throws XMLStreamException, UnknownCRSException, TransformationException {
 
         setSchema( feature );
 
         if ( feature.getId() != null ) {
-            exportedIds.add( feature.getId() );
+            referenceExportStrategy.addExportedId( feature.getId() );
         }
         if ( feature instanceof GenericFeatureCollection ) {
             LOG.debug( "Exporting generic feature collection." );
@@ -295,10 +453,10 @@ public class GMLFeatureWriter extends AbstractGMLObjectWriter {
             for ( Feature member : ( (FeatureCollection) feature ) ) {
                 String memberFid = member.getId();
                 writeStartElementWithNS( gmlNs, "featureMember" );
-                if ( memberFid != null && exportedIds.contains( memberFid ) ) {
+                if ( memberFid != null && referenceExportStrategy.isObjectExported( memberFid ) ) {
                     writeAttributeWithNS( XLNNS, "href", "#" + memberFid );
                 } else {
-                    export( member, currentLevel + 1, maxInlineLevels );
+                    export( member, getResolveStateForNextLevel( resolveState ) );
                 }
                 writer.writeEndElement();
             }
@@ -324,18 +482,14 @@ public class GMLFeatureWriter extends AbstractGMLObjectWriter {
             }
 
             for ( Property prop : props ) {
-                if ( currentLevel == 0 ) {
-                    maxInlineLevels = getInlineLevels( prop );
-                }
-                export( prop, currentLevel, maxInlineLevels );
+                export( prop, resolveState );
             }
 
             if ( exportExtraProps ) {
                 ExtraProps extraProps = feature.getExtraProperties();
                 if ( extraProps != null ) {
                     for ( Property prop : extraProps.getProperties() ) {
-                        // really export all levels in any case?
-                        export( prop, 0, -1 );
+                        export( prop, resolveState );
                     }
                 }
             }
@@ -382,275 +536,23 @@ public class GMLFeatureWriter extends AbstractGMLObjectWriter {
         return new GenericProperty( boundedByPt, env );
     }
 
-    private int getInlineLevels( Property prop ) {
-        ProjectionClause projection = projections.get( prop.getName() );
-        if ( projection != null && projection.getResolveParams() != null
-             && projection.getResolveParams().getDepth() != null ) {
-            if ( projection.getResolveParams().getDepth().equals( "*" ) ) {
-                return -1;
-            }
-            return Integer.parseInt( projection.getResolveParams().getDepth() );
+    private GmlXlinkOptions getResolveParams( Property prop, GmlXlinkOptions resolveState ) {
+        ProjectionClause projection = requestedPropertyNames.get( prop.getName() );
+        if ( projection != null && projection.getResolveParams() != null ) {
+            return new GmlXlinkOptions( projection.getResolveParams() );
         }
-        return traverseXlinkDepth;
+        return resolveState;
     }
 
-    public void export( Property property, int currentLevel, int maxInlineLevels )
-                            throws XMLStreamException, UnknownCRSException, TransformationException {
-
-        QName propName = property.getName();
-        PropertyType propertyType = property.getType();
-        if ( propertyType.getMinOccurs() == 0 ) {
-            LOG.debug( "Optional property '" + propName + "', checking if it is requested." );
-            if ( !isPropertyRequested( propName ) ) {
-                LOG.debug( "Skipping it." );
-                return;
-            }
-            // required for WMS:
-            if ( !outputGeometries && propertyType instanceof GeometryPropertyType ) {
-                LOG.debug( "Skipping it since geometries should not be output." );
-                return;
-            }
-        }
-
-        TypedObjectNode value = property.getValue();
-
-        // if ( value instanceof GenericXMLElement ) {
-        // writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-        // export( value, currentLevel, maxInlineLevels );
-        // writer.writeEndElement();
-        // return;
-        // }
-
-        // TODO check for GML 2 properties (gml:pointProperty, ...) and export
-        // as "app:gml2PointProperty" for GML 3
-        boolean nilled = false;
-        TypedObjectNode nil = property.getAttributes().get( XSI_NIL );
-        if ( nil instanceof PrimitiveValue ) {
-            nilled = Boolean.TRUE.equals( ( (PrimitiveValue) nil ).getValue() );
-        }
-        if ( propertyType instanceof FeaturePropertyType ) {
-            if ( nilled ) {
-                writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-                writeAttributeWithNS( XSINS, "nil", "true" );
-                endEmptyElement();
-            } else {
-                exportFeatureProperty( (FeaturePropertyType) propertyType, (Feature) value, currentLevel,
-                                       maxInlineLevels );
-            }
-        } else if ( propertyType instanceof SimplePropertyType ) {
-            if ( nilled ) {
-                writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-                writeAttributeWithNS( XSINS, "nil", "true" );
-                endEmptyElement();
-            } else {
-                // must be a primitive value
-                PrimitiveValue pValue = (PrimitiveValue) value;
-                writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-                if ( pValue != null ) {
-                    // TODO
-                    if ( pValue.getType().getBaseType() == BaseType.DECIMAL ) {
-                        writer.writeCharacters( pValue.getValue().toString() );
-                    } else {
-                        writer.writeCharacters( pValue.getAsText() );
-                    }
-                }
-                writer.writeEndElement();
-            }
-        } else if ( propertyType instanceof GeometryPropertyType ) {
-            if ( nilled ) {
-                writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-                writeAttributeWithNS( XSINS, "nil", "true" );
-                endEmptyElement();
-            } else {
-                Geometry gValue = (Geometry) value;
-                if ( !exportSf && gValue.getId() != null && exportedIds.contains( gValue.getId() ) ) {
-                    writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-                    writeAttributeWithNS( XLNNS, "href", "#" + gValue.getId() );
-                    endEmptyElement();
-                } else {
-                    writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-                    if ( gValue.getId() != null ) {
-                        // WFS CITE 1.1.0 test requirement (wfs:GetFeature.XLink-POST-XML-10)
-                        writer.writeComment( "Inlined geometry '" + gValue.getId() + "'" );
-                    }
-                    gmlStreamWriter.getGeometryWriter().export( (Geometry) value );
-                    writer.writeEndElement();
-                }
-            }
-        } else if ( propertyType instanceof CodePropertyType ) {
-            writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-            if ( nilled ) {
-                writeAttributeWithNS( XSINS, "nil", "true" );
-            }
-            CodeType codeType = (CodeType) value;
-
-            if ( codeType != null ) {
-                if ( codeType.getCodeSpace() != null && codeType.getCodeSpace().length() > 0 ) {
-                    if ( GML_2 != version ) {
-                        writer.writeAttribute( "codeSpace", codeType.getCodeSpace() );
-                    }
-                }
-                writer.writeCharacters( codeType.getCode() );
-            }
-            writer.writeEndElement();
-        } else if ( propertyType instanceof EnvelopePropertyType ) {
-            if ( nilled ) {
-                writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-                writeAttributeWithNS( XSINS, "nil", "true" );
-                endEmptyElement();
-            } else {
-                writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-                if ( value != null ) {
-                    gmlStreamWriter.getGeometryWriter().exportEnvelope( (Envelope) value );
-                } else {
-                    writeStartElementWithNS( gmlNs, gmlNull );
-                    writer.writeCharacters( "missing" );
-                    writer.writeEndElement();
-                }
-                writer.writeEndElement();
-            }
-        } else if ( propertyType instanceof LengthPropertyType ) {
-            Length length = (Length) value;
-            writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-            if ( GML_2 != version ) {
-                if ( nilled ) {
-                    writeAttributeWithNS( XSINS, "nil", "true" );
-                }
-                writer.writeAttribute( "uom", length.getUomUri() );
-            }
-            if ( !nilled ) {
-                writer.writeCharacters( String.valueOf( length.getValue() ) );
-            }
-            writer.writeEndElement();
-        } else if ( propertyType instanceof MeasurePropertyType ) {
-            Measure measure = (Measure) value;
-            writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-            if ( GML_2 != version ) {
-                writer.writeAttribute( "uom", measure.getUomUri() );
-            }
-            writer.writeCharacters( String.valueOf( measure.getValue() ) );
-            writer.writeEndElement();
-        } else if ( propertyType instanceof StringOrRefPropertyType ) {
-            StringOrRef stringOrRef = (StringOrRef) value;
-            if ( stringOrRef.getString() == null || stringOrRef.getString().length() == 0 ) {
-                writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-                if ( stringOrRef.getRef() != null ) {
-                    writeAttributeWithNS( XLNNS, "href", stringOrRef.getRef() );
-                }
-                if ( nilled ) {
-                    writeAttributeWithNS( XSINS, "nil", "true" );
-                }
-                endEmptyElement();
-            } else {
-                writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-                if ( nilled ) {
-                    writeAttributeWithNS( XSINS, "nil", "true" );
-                }
-
-                if ( stringOrRef.getRef() != null ) {
-                    writeAttributeWithNS( XLNNS, "href", stringOrRef.getRef() );
-                }
-                if ( !nilled && stringOrRef.getString() != null ) {
-                    writer.writeCharacters( stringOrRef.getString() );
-                }
-                writer.writeEndElement();
-            }
-        } else if ( propertyType instanceof CustomPropertyType ) {
-            writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-            if ( property.getAttributes() != null ) {
-                for ( Entry<QName, PrimitiveValue> attr : property.getAttributes().entrySet() ) {
-                    StAXExportingHelper.writeAttribute( writer, attr.getKey(), attr.getValue().getAsText() );
-                }
-            }
-            if ( property.getChildren() != null ) {
-                for ( TypedObjectNode childNode : property.getChildren() ) {
-                    export( childNode, currentLevel, maxInlineLevels );
-                }
-            }
-            writer.writeEndElement();
-        } else if ( propertyType instanceof ArrayPropertyType ) {
-            if ( nilled ) {
-                writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-                writeAttributeWithNS( XSINS, "nil", "true" );
-                endEmptyElement();
-            } else {
-                writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-                export( (TypedObjectNode) property.getValue(), currentLevel, maxInlineLevels );
-                writer.writeEndElement();
-            }
-        } else {
-            throw new RuntimeException( "Internal error. Unhandled property type '" + propertyType.getClass() + "'" );
-        }
-    }
-
-    private void exportFeatureProperty( FeaturePropertyType pt, Feature subFeature, int currentLevel,
-                                        int maxInlineLevels )
+    private void exportFeatureProperty( FeaturePropertyType pt, Feature subFeature, GmlXlinkOptions resolveState )
                             throws XMLStreamException, UnknownCRSException, TransformationException {
 
         QName propName = pt.getName();
         LOG.debug( "Exporting feature property '" + propName + "'" );
         if ( subFeature == null ) {
-            writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-            endEmptyElement();
+            exportEmptyFeatureProperty( propName );
         } else if ( subFeature instanceof FeatureReference ) {
-            FeatureReference ref = (FeatureReference) subFeature;
-            String uri = ref.getURI();
-            if ( uri.startsWith( "http://vancouver1.demo.galdosinc.com" ) ) {
-                writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-                writeAttributeWithNS( XLNNS, "href", uri );
-                endEmptyElement();
-            } else if ( maxInlineLevels == -1 || ( maxInlineLevels > 0 && currentLevel < maxInlineLevels ) ) {
-                // force export (maximum number of inline levels not reached)
-                if ( pt.getAllowedRepresentation() == REMOTE ) {
-                    // only export by reference possible
-                    writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-                    if ( additionalObjectHandler != null ) {
-                        String idUri = additionalObjectHandler.requireObject( (GMLReference<?>) subFeature );
-                        if ( uri.startsWith( "urn:uuid:" ) ) {
-                            writeAttributeWithNS( XLNNS, "href", uri );
-                        } else {
-                            writeAttributeWithNS( XLNNS, "href", idUri );
-                        }
-                    } else {
-                        if ( ref.isLocal() ) {
-                            String idUri = remoteXlinkTemplate.replace( "{}", subFeature.getId() );
-                            writeAttributeWithNS( XLNNS, "href", idUri );
-                        } else {
-                            writeAttributeWithNS( XLNNS, "href", uri );
-                        }
-                    }
-                    endEmptyElement();
-                } else {
-                    // export inline
-                    exportedIds.add( subFeature.getId() );
-                    writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-                    writer.writeComment( "Inlined feature '" + subFeature.getId() + "'" );
-                    export( subFeature, currentLevel + 1, maxInlineLevels );
-                    writer.writeEndElement();
-                }
-            } else {
-                // don't force export (maximum number of inline levels reached)
-                if ( !( subFeature instanceof GMLReference<?> ) ) {
-                    LOG.warn( "References not expected at this point. Needs investigation." );
-                }
-                writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-                if ( additionalObjectHandler != null && subFeature instanceof GMLReference<?> ) {
-                    String idUri = additionalObjectHandler.requireObject( (GMLReference<?>) subFeature );
-                    if ( uri.startsWith( "urn:uuid:" ) ) {
-                        writeAttributeWithNS( XLNNS, "href", uri );
-                    } else {
-                        writeAttributeWithNS( XLNNS, "href", idUri );
-                    }
-                } else {
-                    if ( ref.isLocal() ) {
-                        String idUri = remoteXlinkTemplate.replace( "{}", subFeature.getId() );
-                        writeAttributeWithNS( XLNNS, "href", idUri );
-                    } else {
-                        writeAttributeWithNS( XLNNS, "href", uri );
-                    }
-                }
-                endEmptyElement();
-            }
+            exportFeatureProperty( pt, (FeatureReference) subFeature, resolveState, propName );
         } else {
             // normal feature
             String subFid = subFeature.getId();
@@ -658,57 +560,84 @@ public class GMLFeatureWriter extends AbstractGMLObjectWriter {
                 // no feature id -> no other chance, but inlining it
                 writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
                 writer.writeComment( "Inlined feature '" + subFid + "'" );
-                export( subFeature, currentLevel + 1, maxInlineLevels );
+                export( subFeature, getResolveStateForNextLevel( resolveState ) );
                 writer.writeEndElement();
             } else {
                 // has feature id
-                if ( exportedIds.contains( subFid ) ) {
-                    // already exported -> put a local xlink to the feature instance
-                    writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-                    writeAttributeWithNS( XLNNS, "href", "#" + subFid );
-                    endEmptyElement();
+                if ( referenceExportStrategy.isObjectExported( subFid ) ) {
+                    exportAlreadyExportedFeaturePropertyByReference( subFeature, propName );
                 } else {
-                    // not exported yet, export inline
-                    exportedIds.add( subFeature.getId() );
-                    writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
-                    writer.writeComment( "Inlined feature '" + subFeature.getId() + "'" );
-                    export( subFeature, currentLevel + 1, maxInlineLevels );
-                    writer.writeEndElement();
+                    exportFeaturePropertyByValue( propName, subFeature, resolveState );
                 }
             }
         }
     }
 
-    public void export( TypedObjectNode node, int currentLevel, int maxInlineLevels )
+    private void exportEmptyFeatureProperty( QName propName )
+                            throws XMLStreamException {
+        writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+        endEmptyElement();
+    }
+
+    private void exportFeatureProperty( FeaturePropertyType pt, FeatureReference ref, GmlXlinkOptions resolveState,
+                                        QName propName )
                             throws XMLStreamException, UnknownCRSException, TransformationException {
 
-        if ( node instanceof GMLObject ) {
-            if ( node instanceof Feature ) {
-                export( (Feature) node, currentLevel, maxInlineLevels );
-            } else if ( node instanceof Geometry ) {
-                gmlStreamWriter.getGeometryWriter().export( (Geometry) node );
+        boolean includeNextLevelInOutput = includeNextLevelInOutput( resolveState );
+        if ( includeNextLevelInOutput ) {
+            if ( pt.getAllowedRepresentation() == REMOTE ) {
+                exportFeaturePropertyByReference( propName, ref, true, resolveState );
             } else {
-                throw new UnsupportedOperationException();
+                if ( referenceExportStrategy.isObjectExported( ref.getId() ) ) {
+                    exportAlreadyExportedFeaturePropertyByReference( ref, propName );
+                } else {
+                    exportFeaturePropertyByValue( propName, ref, resolveState );
+                }
             }
-        } else if ( node instanceof PrimitiveValue ) {
-            writer.writeCharacters( ( (PrimitiveValue) node ).getAsText() );
-        } else if ( node instanceof Property ) {
-            export( (Property) node, currentLevel, maxInlineLevels );
-        } else if ( node instanceof ElementNode ) {
-            ElementNode xmlContent = (ElementNode) node;
-            exportGenericXmlElement( xmlContent, currentLevel, maxInlineLevels );
-        } else if ( node instanceof TypedObjectNodeArray<?> ) {
-            for ( TypedObjectNode elem : ( (TypedObjectNodeArray<?>) node ).getElements() ) {
-                export( elem, currentLevel, maxInlineLevels );
-            }
-        } else if ( node == null ) {
-            LOG.warn( "Null node encountered!?" );
         } else {
-            throw new RuntimeException( "Unhandled node type '" + node.getClass() + "'" );
+            exportFeaturePropertyByReference( propName, ref, false, resolveState );
         }
     }
 
-    private void exportGenericXmlElement( ElementNode xmlContent, int currentLevel, int maxInlineLevels )
+    private void exportAlreadyExportedFeaturePropertyByReference( Feature ref, QName propName )
+                            throws XMLStreamException {
+        writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+        writeAttributeWithNS( XLNNS, "href", "#" + ref.getId() );
+        endEmptyElement();
+    }
+
+    private boolean includeNextLevelInOutput( GmlXlinkOptions resolveState ) {
+        int maxInlineLevels = resolveState.getDepth();
+        int currentLevel = resolveState.getCurrentLevel();
+        return maxInlineLevels == -1 || ( maxInlineLevels > 0 && currentLevel < maxInlineLevels );
+    }
+
+    private void exportFeaturePropertyByReference( QName propName, FeatureReference ref,
+                                                   boolean forceInclusionInDocument, GmlXlinkOptions resolveState )
+                            throws XMLStreamException {
+
+        writeEmptyElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+        String uri = null;
+        if ( forceInclusionInDocument ) {
+            resolveState = getResolveStateForNextLevel( resolveState );
+            uri = referenceExportStrategy.requireObject( ref, resolveState );
+        } else {
+            uri = referenceExportStrategy.handleReference( ref );
+        }
+        writeAttributeWithNS( XLNNS, "href", uri );
+        endEmptyElement();
+    }
+
+    private void exportFeaturePropertyByValue( QName propName, Feature subFeature, GmlXlinkOptions resolveState )
+                            throws XMLStreamException, UnknownCRSException, TransformationException {
+        referenceExportStrategy.addExportedId( subFeature.getId() );
+        writeStartElementWithNS( propName.getNamespaceURI(), propName.getLocalPart() );
+        writer.writeComment( "Inlined feature '" + subFeature.getId() + "'" );
+        export( subFeature, getResolveStateForNextLevel( resolveState ) );
+        writer.writeEndElement();
+    }
+
+    private void exportGenericXmlElement( ElementNode xmlContent, GmlXlinkOptions resolveState )
                             throws XMLStreamException, UnknownCRSException, TransformationException {
 
         QName elName = xmlContent.getName();
@@ -721,7 +650,7 @@ public class GMLFeatureWriter extends AbstractGMLObjectWriter {
                 if ( children.size() == 1 && children.get( 0 ) instanceof Feature ) {
                     LOG.debug( "Exporting as nested feature property." );
                     exportFeatureProperty( (FeaturePropertyType) gmlPropertyDecl, (Feature) children.get( 0 ),
-                                           currentLevel, maxInlineLevels );
+                                           resolveState );
                     return;
                 }
             }
@@ -737,13 +666,14 @@ public class GMLFeatureWriter extends AbstractGMLObjectWriter {
         }
         if ( xmlContent.getChildren() != null ) {
             for ( TypedObjectNode childNode : xmlContent.getChildren() ) {
-                export( childNode, currentLevel, maxInlineLevels );
+                export( childNode, resolveState );
             }
         }
         writer.writeEndElement();
     }
 
     private boolean isPropertyRequested( QName propName ) {
-        return projections.isEmpty() || projections.containsKey( propName );
+        return requestedPropertyNames.isEmpty() || requestedPropertyNames.containsKey( propName );
     }
+
 }

@@ -11,7 +11,7 @@
   <parent>
     <groupId>org.deegree</groupId>
     <artifactId>deegree-misc</artifactId>
-    <version>3.2-pre11-SNAPSHOT</version>
+    <version>3.2-pre12-SNAPSHOT</version>
   </parent>
 
   <repositories>
@@ -61,7 +61,7 @@
     </plugins>
   </build>
 
-  <!-- Workaround for dependency plugin issue (http://jira.codehaus.org/browse/MDEP-259) -->
+  <!-- Workaround for dependency plugin issue (http://jira.codehaus.org/browse/MDEP-187) -->
   <profiles>
     <profile>
       <id>activate-dependency-plugin</id>

@@ -35,25 +35,23 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.services.wfs;
 
+import static org.deegree.commons.ows.exception.OWSException.INVALID_PARAMETER_VALUE;
+import static org.deegree.commons.ows.exception.OWSException.NO_APPLICABLE_CODE;
+import static org.deegree.commons.ows.exception.OWSException.OPERATION_NOT_SUPPORTED;
 import static org.deegree.commons.utils.StringUtils.REMOVE_DOUBLE_FIELDS;
 import static org.deegree.commons.utils.StringUtils.REMOVE_EMPTY_FIELDS;
 import static org.deegree.gml.GMLVersion.GML_2;
 import static org.deegree.gml.GMLVersion.GML_30;
 import static org.deegree.gml.GMLVersion.GML_31;
 import static org.deegree.gml.GMLVersion.GML_32;
-import static org.deegree.protocol.ows.exception.OWSException.INVALID_PARAMETER_VALUE;
-import static org.deegree.protocol.ows.exception.OWSException.NO_APPLICABLE_CODE;
-import static org.deegree.protocol.ows.exception.OWSException.OPERATION_NOT_SUPPORTED;
 import static org.deegree.protocol.wfs.WFSConstants.VERSION_100;
 import static org.deegree.protocol.wfs.WFSConstants.VERSION_110;
 import static org.deegree.protocol.wfs.WFSConstants.VERSION_200;
 import static org.deegree.services.wfs.WFSProvider.IMPLEMENTATION_METADATA;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -63,7 +61,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -81,6 +78,10 @@ import org.apache.axiom.om.OMElement;
 import org.apache.commons.fileupload.FileItem;
 import org.deegree.commons.config.ResourceInitException;
 import org.deegree.commons.config.ResourceState;
+import org.deegree.commons.ows.exception.OWSException;
+import org.deegree.commons.ows.metadata.DatasetMetadata;
+import org.deegree.commons.ows.metadata.ServiceIdentification;
+import org.deegree.commons.ows.metadata.ServiceProvider;
 import org.deegree.commons.tom.ows.CodeType;
 import org.deegree.commons.tom.ows.LanguageString;
 import org.deegree.commons.tom.ows.Version;
@@ -99,43 +100,39 @@ import org.deegree.cs.persistence.CRSManager;
 import org.deegree.feature.persistence.FeatureStore;
 import org.deegree.feature.types.FeatureType;
 import org.deegree.gml.GMLVersion;
-import org.deegree.protocol.ows.exception.OWSException;
 import org.deegree.protocol.ows.getcapabilities.GetCapabilities;
 import org.deegree.protocol.ows.getcapabilities.GetCapabilitiesKVPParser;
-import org.deegree.protocol.ows.metadata.DatasetMetadata;
-import org.deegree.protocol.ows.metadata.ServiceIdentification;
-import org.deegree.protocol.ows.metadata.ServiceProvider;
 import org.deegree.protocol.wfs.WFSRequestType;
 import org.deegree.protocol.wfs.capabilities.GetCapabilitiesXMLAdapter;
 import org.deegree.protocol.wfs.describefeaturetype.DescribeFeatureType;
-import org.deegree.protocol.wfs.describefeaturetype.DescribeFeatureTypeKVPAdapter;
-import org.deegree.protocol.wfs.describefeaturetype.DescribeFeatureTypeXMLAdapter;
+import org.deegree.protocol.wfs.describefeaturetype.kvp.DescribeFeatureTypeKVPAdapter;
+import org.deegree.protocol.wfs.describefeaturetype.xml.DescribeFeatureTypeXMLAdapter;
 import org.deegree.protocol.wfs.getfeature.GetFeature;
-import org.deegree.protocol.wfs.getfeature.GetFeatureKVPAdapter;
-import org.deegree.protocol.wfs.getfeature.GetFeatureXMLAdapter;
+import org.deegree.protocol.wfs.getfeature.kvp.GetFeatureKVPAdapter;
+import org.deegree.protocol.wfs.getfeature.xml.GetFeatureXMLAdapter;
 import org.deegree.protocol.wfs.getfeaturewithlock.GetFeatureWithLock;
-import org.deegree.protocol.wfs.getfeaturewithlock.GetFeatureWithLockKVPAdapter;
-import org.deegree.protocol.wfs.getfeaturewithlock.GetFeatureWithLockXMLAdapter;
+import org.deegree.protocol.wfs.getfeaturewithlock.kvp.GetFeatureWithLockKVPAdapter;
+import org.deegree.protocol.wfs.getfeaturewithlock.xml.GetFeatureWithLockXMLAdapter;
 import org.deegree.protocol.wfs.getgmlobject.GetGmlObject;
-import org.deegree.protocol.wfs.getgmlobject.GetGmlObjectKVPAdapter;
-import org.deegree.protocol.wfs.getgmlobject.GetGmlObjectXMLAdapter;
+import org.deegree.protocol.wfs.getgmlobject.kvp.GetGmlObjectKVPAdapter;
+import org.deegree.protocol.wfs.getgmlobject.xml.GetGmlObjectXMLAdapter;
 import org.deegree.protocol.wfs.getpropertyvalue.GetPropertyValue;
-import org.deegree.protocol.wfs.getpropertyvalue.GetPropertyValueKVPAdapter;
-import org.deegree.protocol.wfs.getpropertyvalue.GetPropertyValueXMLAdapter;
+import org.deegree.protocol.wfs.getpropertyvalue.kvp.GetPropertyValueKVPAdapter;
+import org.deegree.protocol.wfs.getpropertyvalue.xml.GetPropertyValueXMLAdapter;
 import org.deegree.protocol.wfs.lockfeature.LockFeature;
-import org.deegree.protocol.wfs.lockfeature.LockFeatureKVPAdapter;
-import org.deegree.protocol.wfs.lockfeature.LockFeatureXMLAdapter;
+import org.deegree.protocol.wfs.lockfeature.kvp.LockFeatureKVPAdapter;
+import org.deegree.protocol.wfs.lockfeature.xml.LockFeatureXMLAdapter;
 import org.deegree.protocol.wfs.storedquery.CreateStoredQuery;
-import org.deegree.protocol.wfs.storedquery.CreateStoredQueryXMLAdapter;
 import org.deegree.protocol.wfs.storedquery.DescribeStoredQueries;
-import org.deegree.protocol.wfs.storedquery.DescribeStoredQueriesKVPAdapter;
-import org.deegree.protocol.wfs.storedquery.DescribeStoredQueriesXMLAdapter;
 import org.deegree.protocol.wfs.storedquery.DropStoredQuery;
-import org.deegree.protocol.wfs.storedquery.DropStoredQueryKVPAdapter;
-import org.deegree.protocol.wfs.storedquery.DropStoredQueryXMLAdapter;
 import org.deegree.protocol.wfs.storedquery.ListStoredQueries;
-import org.deegree.protocol.wfs.storedquery.ListStoredQueriesKVPAdapter;
-import org.deegree.protocol.wfs.storedquery.ListStoredQueriesXMLAdapter;
+import org.deegree.protocol.wfs.storedquery.kvp.DescribeStoredQueriesKVPAdapter;
+import org.deegree.protocol.wfs.storedquery.kvp.DropStoredQueryKVPAdapter;
+import org.deegree.protocol.wfs.storedquery.kvp.ListStoredQueriesKVPAdapter;
+import org.deegree.protocol.wfs.storedquery.xml.CreateStoredQueryXMLAdapter;
+import org.deegree.protocol.wfs.storedquery.xml.DescribeStoredQueriesXMLAdapter;
+import org.deegree.protocol.wfs.storedquery.xml.DropStoredQueryXMLAdapter;
+import org.deegree.protocol.wfs.storedquery.xml.ListStoredQueriesXMLAdapter;
 import org.deegree.protocol.wfs.transaction.Transaction;
 import org.deegree.protocol.wfs.transaction.action.IDGenMode;
 import org.deegree.protocol.wfs.transaction.kvp.TransactionKVPAdapter;
@@ -168,6 +165,7 @@ import org.deegree.services.ows.OWS100ExceptionReportSerializer;
 import org.deegree.services.ows.OWS110ExceptionReportSerializer;
 import org.deegree.services.ows.PreOWSExceptionReportSerializer;
 import org.deegree.services.wfs.format.Format;
+import org.deegree.services.wfs.query.StoredQueryHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
@@ -202,7 +200,7 @@ public class WebFeatureService extends AbstractOWS {
 
     private static final int DEFAULT_MAX_FEATURES = 15000;
 
-    private WFSFeatureStoreManager service;
+    private WfsFeatureStoreManager service;
 
     private LockFeatureHandler lockFeatureHandler;
 
@@ -251,10 +249,10 @@ public class WebFeatureService extends AbstractOWS {
         disableBuffering = ( jaxbConfig.isDisableResponseBuffering() != null ) ? jaxbConfig.isDisableResponseBuffering()
                                                                               : true;
         queryMaxFeatures = jaxbConfig.getQueryMaxFeatures() == null ? DEFAULT_MAX_FEATURES
-                                                              : jaxbConfig.getQueryMaxFeatures().intValue();
+                                                                   : jaxbConfig.getQueryMaxFeatures().intValue();
         checkAreaOfUse = jaxbConfig.isQueryCheckAreaOfUse() == null ? false : jaxbConfig.isQueryCheckAreaOfUse();
 
-        service = new WFSFeatureStoreManager();
+        service = new WfsFeatureStoreManager();
         try {
             service.init( jaxbConfig, controllerConf.getSystemId(), workspace );
         } catch ( Exception e ) {
@@ -320,8 +318,7 @@ public class WebFeatureService extends AbstractOWS {
         validateAndSetOfferedVersions( versions );
     }
 
-    private void initQueryCRS( List<String> queryCRSLists )
-                            throws ResourceInitException {
+    private void initQueryCRS( List<String> queryCRSLists ) {
         // try {
         for ( String queryCRS : queryCRSLists ) {
             String[] querySrs = StringUtils.split( queryCRS, " ", REMOVE_EMPTY_FIELDS | REMOVE_DOUBLE_FIELDS );
@@ -347,16 +344,16 @@ public class WebFeatureService extends AbstractOWS {
 
         if ( formatList == null || formatList.isEmpty() ) {
             LOG.debug( "Using default format configuration." );
-            org.deegree.services.wfs.format.gml.GMLFormat gml21 = new org.deegree.services.wfs.format.gml.GMLFormat(
+            org.deegree.services.wfs.format.gml.GmlFormat gml21 = new org.deegree.services.wfs.format.gml.GmlFormat(
                                                                                                                      this,
                                                                                                                      GML_2 );
-            org.deegree.services.wfs.format.gml.GMLFormat gml30 = new org.deegree.services.wfs.format.gml.GMLFormat(
+            org.deegree.services.wfs.format.gml.GmlFormat gml30 = new org.deegree.services.wfs.format.gml.GmlFormat(
                                                                                                                      this,
                                                                                                                      GML_30 );
-            org.deegree.services.wfs.format.gml.GMLFormat gml31 = new org.deegree.services.wfs.format.gml.GMLFormat(
+            org.deegree.services.wfs.format.gml.GmlFormat gml31 = new org.deegree.services.wfs.format.gml.GmlFormat(
                                                                                                                      this,
                                                                                                                      GML_31 );
-            org.deegree.services.wfs.format.gml.GMLFormat gml32 = new org.deegree.services.wfs.format.gml.GMLFormat(
+            org.deegree.services.wfs.format.gml.GmlFormat gml32 = new org.deegree.services.wfs.format.gml.GmlFormat(
                                                                                                                      this,
 
                                                                                                                      GML_32 );
@@ -379,7 +376,7 @@ public class WebFeatureService extends AbstractOWS {
                 List<String> mimeTypes = formatDef.getMimeType();
                 Format format = null;
                 if ( formatDef instanceof GMLFormat ) {
-                    format = new org.deegree.services.wfs.format.gml.GMLFormat( this, (GMLFormat) formatDef );
+                    format = new org.deegree.services.wfs.format.gml.GmlFormat( this, (GMLFormat) formatDef );
                 } else if ( formatDef instanceof CustomFormat ) {
                     CustomFormat cf = (CustomFormat) formatDef;
                     String className = cf.getJavaClass();
@@ -401,8 +398,9 @@ public class WebFeatureService extends AbstractOWS {
         }
 
         for ( Format f : mimeTypeToFormat.values() ) {
-            if ( f instanceof org.deegree.services.wfs.format.gml.GMLFormat ) {
-                gmlVersionToFormat.put( ( (org.deegree.services.wfs.format.gml.GMLFormat) f ).getGmlVersion(), f );
+            if ( f instanceof org.deegree.services.wfs.format.gml.GmlFormat ) {
+                gmlVersionToFormat.put( ( (org.deegree.services.wfs.format.gml.GmlFormat) f ).getGmlFormatOptions().getGmlVersion(),
+                                        f );
             }
         }
     }
@@ -507,11 +505,11 @@ public class WebFeatureService extends AbstractOWS {
     }
 
     /**
-     * Returns the underlying {@link WFSFeatureStoreManager} instance.
+     * Returns the underlying {@link WfsFeatureStoreManager} instance.
      * 
-     * @return the underlying {@link WFSFeatureStoreManager}
+     * @return the underlying {@link WfsFeatureStoreManager}
      */
-    public WFSFeatureStoreManager getStoreManager() {
+    public WfsFeatureStoreManager getStoreManager() {
         return service;
     }
 
@@ -786,76 +784,6 @@ public class WebFeatureService extends AbstractOWS {
         }
     }
 
-    /**
-     * Returns the value for the 'xsi:schemaLocation' attribute to be included in a <code>GetGmlObject</code> or
-     * <code>GetFeature</code> response.
-     * 
-     * @param version
-     *            WFS protocol version, must not be <code>null</code>
-     * @param gmlVersion
-     *            requested GML version, must not be <code>null</code>
-     * @param fts
-     *            types of features included in the response, must not be <code>null</code>
-     * @return schemaLocation value
-     */
-    public static String getSchemaLocation( Version version, GMLVersion gmlVersion, QName... fts ) {
-
-        StringBuilder baseUrl = new StringBuilder();
-
-        baseUrl.append( OGCFrontController.getHttpGetURL() );
-        baseUrl.append( "SERVICE=WFS&VERSION=" );
-        baseUrl.append( version );
-        baseUrl.append( "&REQUEST=DescribeFeatureType&OUTPUTFORMAT=" );
-
-        try {
-            if ( VERSION_100.equals( version ) && gmlVersion == GMLVersion.GML_2 ) {
-                baseUrl.append( "XMLSCHEMA" );
-            } else if ( VERSION_200.equals( version ) && gmlVersion == GMLVersion.GML_32 ) {
-                baseUrl.append( URLEncoder.encode( gmlVersion.getMimeType(), "UTF-8" ) );
-            } else {
-                baseUrl.append( URLEncoder.encode( gmlVersion.getMimeTypeOldStyle(), "UTF-8" ) );
-            }
-
-            if ( fts.length > 0 ) {
-
-                baseUrl.append( "&TYPENAME=" );
-
-                Map<String, String> bindings = new HashMap<String, String>();
-                for ( int i = 0; i < fts.length; i++ ) {
-                    QName ftName = fts[i];
-                    bindings.put( ftName.getPrefix(), ftName.getNamespaceURI() );
-                    baseUrl.append( URLEncoder.encode( ftName.getPrefix(), "UTF-8" ) );
-                    baseUrl.append( ':' );
-                    baseUrl.append( URLEncoder.encode( ftName.getLocalPart(), "UTF-8" ) );
-                    if ( i != fts.length - 1 ) {
-                        baseUrl.append( ',' );
-                    }
-                }
-
-                if ( !VERSION_100.equals( version ) ) {
-                    baseUrl.append( "&NAMESPACE=xmlns(" );
-                    int i = 0;
-                    for ( Entry<String, String> entry : bindings.entrySet() ) {
-                        baseUrl.append( URLEncoder.encode( entry.getKey(), "UTF-8" ) );
-                        baseUrl.append( '=' );
-                        baseUrl.append( URLEncoder.encode( entry.getValue(), "UTF-8" ) );
-                        if ( i != bindings.size() - 1 ) {
-                            baseUrl.append( ',' );
-                        }
-                    }
-                    baseUrl.append( ')' );
-                }
-            }
-        } catch ( UnsupportedEncodingException e ) {
-            // should never happen (UTF-8 *is* known to Java)
-        }
-
-        if ( fts.length > 0 ) {
-            return fts[0].getNamespaceURI() + " " + baseUrl;
-        }
-        return baseUrl.toString();
-    }
-
     private Version getVersion( String versionString )
                             throws OWSException {
         Version version = null;
@@ -871,6 +799,7 @@ public class WebFeatureService extends AbstractOWS {
 
     private WFSRequestType getRequestTypeByName( String requestName )
                             throws OWSException {
+        @SuppressWarnings("rawtypes")
         WFSRequestType requestType = (WFSRequestType) ( (ImplementationMetadata) serviceInfo ).getRequestTypeByName( requestName );
         if ( requestType == null ) {
             String msg = "Request type '" + requestName + "' is not supported.";
@@ -1060,6 +989,7 @@ public class WebFeatureService extends AbstractOWS {
      * @throws OWSException
      *             if the requested version is not available
      */
+    @Override
     protected Version checkVersion( Version requestedVersion )
                             throws OWSException {
 

@@ -35,16 +35,40 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.metadata.iso;
 
-import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.net.URL;
+import java.util.List;
 
 import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
+import org.apache.axiom.om.OMElement;
+import org.apache.commons.io.IOUtils;
+import org.deegree.commons.tom.primitive.PrimitiveValue;
+import org.deegree.commons.xml.CommonNamespaces;
+import org.deegree.commons.xml.NamespaceBindings;
+import org.deegree.commons.xml.XMLAdapter;
+import org.deegree.commons.xml.XPath;
+import org.deegree.commons.xml.stax.FilteringXMLStreamWriter;
+import org.deegree.cs.CRSUtils;
+import org.deegree.filter.Filter;
+import org.deegree.filter.FilterEvaluationException;
+import org.deegree.filter.Operator;
+import org.deegree.filter.OperatorFilter;
+import org.deegree.filter.comparison.PropertyIsEqualTo;
+import org.deegree.filter.expression.Literal;
+import org.deegree.filter.expression.ValueReference;
+import org.deegree.filter.spatial.BBOX;
+import org.deegree.geometry.GeometryFactory;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -56,6 +80,52 @@ import org.junit.Test;
  * @version $Revision: $, $Date: $
  */
 public class ISORecordTest {
+
+    private final static NamespaceBindings nsContext = CommonNamespaces.getNamespaceContext();
+
+    private static final URL DATASET = ISORecordTest.class.getResource( "full.xml" );
+
+    @Test
+    public void testFull()
+                            throws Exception {
+        XMLAdapter xml = new XMLAdapter( DATASET );
+        OMElement filterEl = xml.getRootElement();
+        byte[] actual = writeOut( filterEl, null );
+        byte[] expected = IOUtils.toByteArray( ISORecordTest.class.getResourceAsStream( "full_expected.xml" ) );
+        Assert.assertArrayEquals( expected, actual );
+    }
+
+    @Test
+    public void testBrief()
+                            throws Exception {
+        XMLAdapter xml = new XMLAdapter( DATASET );
+        OMElement filterEl = xml.getRootElement();
+        byte[] actual = writeOut( filterEl, ISORecord.briefFilterElementsXPath );
+        byte[] expected = IOUtils.toByteArray( ISORecordTest.class.getResourceAsStream( "brief.xml" ) );
+        Assert.assertArrayEquals( expected, actual );
+    }
+
+    @Test
+    public void testSummary()
+                            throws Exception {
+        XMLAdapter xml = new XMLAdapter( DATASET );
+        OMElement filterEl = xml.getRootElement();
+        byte[] actual = writeOut( filterEl, ISORecord.summaryFilterElementsXPath );
+        byte[] expected = IOUtils.toByteArray( ISORecordTest.class.getResourceAsStream( "summary.xml" ) );
+        Assert.assertArrayEquals( expected, actual );
+    }
+
+    private byte[] writeOut( OMElement filterEl, List<XPath> paths )
+                            throws Exception {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter( bos );
+        if ( paths != null ) {
+            writer = new FilteringXMLStreamWriter( writer, paths );
+        }
+        filterEl.serialize( writer );
+        writer.close();
+        return bos.toByteArray();
+    }
 
     @Test
     public void testInstantiationFromXMLStream()
@@ -74,10 +144,71 @@ public class ISORecordTest {
         ISORecord record = new ISORecord( xmlStream );
         boolean exception = false;
         try {
-            String fileIdentifier = record.getIdentifier();
+            record.getIdentifier();
         } catch ( Exception e ) {
             exception = true;
         }
         assertTrue( exception );
+    }
+
+    @Test
+    public void testEvalFilterSubject()
+                            throws Exception {
+        InputStream is = ISORecordTest.class.getResourceAsStream( "datasetRecord.xml" );
+        XMLStreamReader xmlStream = XMLInputFactory.newInstance().createXMLStreamReader( is );
+        ISORecord record = new ISORecord( xmlStream );
+
+        Literal<PrimitiveValue> literal = new Literal<PrimitiveValue>( "Hydrography" );
+        Operator operator = new PropertyIsEqualTo( new ValueReference( "Subject", nsContext ), literal, true, null );
+
+        Filter filter = new OperatorFilter( operator );
+        boolean isMatching = record.eval( filter );
+        assertTrue( isMatching );
+    }
+
+    @Test
+    public void testEvalFilterSubjectUnmatching()
+                            throws Exception {
+        InputStream is = ISORecordTest.class.getResourceAsStream( "datasetRecord.xml" );
+        XMLStreamReader xmlStream = XMLInputFactory.newInstance().createXMLStreamReader( is );
+        ISORecord record = new ISORecord( xmlStream );
+
+        Literal<PrimitiveValue> literal = new Literal<PrimitiveValue>( "NotAKeywordInRecord" );
+        Operator operator = new PropertyIsEqualTo( new ValueReference( "Subject", nsContext ), literal, true, null );
+
+        Filter filter = new OperatorFilter( operator );
+        boolean isMatching = record.eval( filter );
+        Assert.assertFalse( isMatching );
+    }
+
+    @Test
+    public void testEvalFilterBbox()
+                            throws Exception {
+        InputStream is = ISORecordTest.class.getResourceAsStream( "datasetRecord.xml" );
+        XMLStreamReader xmlStream = XMLInputFactory.newInstance().createXMLStreamReader( is );
+        ISORecord record = new ISORecord( xmlStream );
+
+        GeometryFactory geomFactory = new GeometryFactory();
+        ValueReference reference = new ValueReference( "apiso:BoundingBox", nsContext );
+        Operator operator = new BBOX( reference, geomFactory.createEnvelope( 7.2, 49.30, 10.70, 53.70,
+                                                                             CRSUtils.EPSG_4326 ) );
+        Filter filter = new OperatorFilter( operator );
+        boolean isMatching = record.eval( filter );
+        assertTrue( isMatching );
+    }
+
+    @Test(expected = FilterEvaluationException.class)
+    public void testEvalFilterUnknownPropertyName()
+                            throws Exception {
+        InputStream is = ISORecordTest.class.getResourceAsStream( "datasetRecord.xml" );
+        XMLStreamReader xmlStream = XMLInputFactory.newInstance().createXMLStreamReader( is );
+        ISORecord record = new ISORecord( xmlStream );
+
+        Literal<PrimitiveValue> literal = new Literal<PrimitiveValue>( "Hydrography" );
+        Operator operator = new PropertyIsEqualTo( new ValueReference( "Unknown", nsContext ), literal, true, null );
+
+        Filter filter = new OperatorFilter( operator );
+        boolean isMatching = record.eval( filter );
+        assertTrue( isMatching );
     }
 }

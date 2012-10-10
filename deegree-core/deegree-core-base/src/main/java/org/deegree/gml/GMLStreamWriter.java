@@ -46,16 +46,13 @@ import static org.deegree.feature.property.ExtraProps.EXTRA_PROP_NS_STRING;
 import static org.deegree.gml.GMLVersion.GML_32;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.deegree.commons.tom.gml.GMLObject;
-import org.deegree.commons.tom.gml.GMLReference;
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.exceptions.TransformationException;
 import org.deegree.cs.exceptions.UnknownCRSException;
@@ -67,13 +64,15 @@ import org.deegree.geometry.io.CoordinateFormatter;
 import org.deegree.gml.dictionary.Definition;
 import org.deegree.gml.dictionary.GMLDictionaryWriter;
 import org.deegree.gml.feature.GMLFeatureWriter;
-import org.deegree.gml.feature.GMLForwardReferenceHandler;
 import org.deegree.gml.geometry.GML2GeometryWriter;
 import org.deegree.gml.geometry.GML3GeometryWriter;
 import org.deegree.gml.geometry.GMLGeometryWriter;
+import org.deegree.gml.reference.DefaultGmlXlinkStrategy;
+import org.deegree.gml.reference.GmlXlinkOptions;
+import org.deegree.gml.reference.GmlXlinkStrategy;
 
 /**
- * Stream-based writer for GML instance documents or GML document fragments. Currently supports GML 2/3.0/3.1/3.2.
+ * Stream-based writer for GML instance documents or GML document fragments.
  * <p>
  * Instances of this class are not thread-safe.
  * </p>
@@ -93,11 +92,9 @@ public class GMLStreamWriter {
 
     private final GMLVersion version;
 
-    private XMLStreamWriter xmlStream;
+    private final XMLStreamWriter xmlStream;
 
-    private String remoteXlinkTemplate;
-
-    private int inlineXLinklevels;
+    private GmlXlinkStrategy referenceExportStrategy;
 
     private ICRS crs;
 
@@ -111,19 +108,13 @@ public class GMLStreamWriter {
 
     private List<ProjectionClause> projection;
 
-    private int traverseXLinkExpiry;
-
     private final Map<String, String> prefixToNs = new HashMap<String, String>();
-
-    private GMLForwardReferenceHandler additionalObjectHandler;
 
     private boolean exportExtraProps;
 
     private boolean outputGeometries = true;
 
     private boolean exportBoundedByForFeatures;
-
-    private final Set<String> exportedIds = new HashSet<String>();
 
     /**
      * Creates a new {@link GMLStreamWriter} instance.
@@ -137,7 +128,7 @@ public class GMLStreamWriter {
     GMLStreamWriter( GMLVersion version, XMLStreamWriter xmlStream ) throws XMLStreamException {
         this.version = version;
         this.xmlStream = xmlStream;
-        this.remoteXlinkTemplate = "#{}";
+        referenceExportStrategy = new DefaultGmlXlinkStrategy( "#{}", new GmlXlinkOptions() );
         prefixToNs.put( "ogc", OGCNS );
         prefixToNs.put( "gml", version != GML_32 ? GMLNS : GML3_2_NS );
         prefixToNs.put( "xlink", XLNNS );
@@ -216,58 +207,6 @@ public class GMLStreamWriter {
     }
 
     /**
-     * Returns the number of xlink levels that will be expanded inside property elements.
-     * 
-     * @return the number of xlink levels that will be expanded inside property elements, -1 means to expand all levels
-     */
-    public int getXlinkDepth() {
-        return inlineXLinklevels;
-    }
-
-    /**
-     * Controls the number of xlink levels that will be expanded inside property elements.
-     * 
-     * @param inlineXLinklevels
-     *            number of xlink levels to be expanded, -1 expands to any depth
-     */
-    public void setXLinkDepth( int inlineXLinklevels ) {
-        this.inlineXLinklevels = inlineXLinklevels;
-    }
-
-    /**
-     * Controls the number number of seconds to wait when remote xlinks are expanded inside property elements.
-     * 
-     * @param traverseXLinkExpiry
-     *            number of seconds to wait for the resolving of remote xlinks, -1 sets no timeout
-     */
-    public void setXLinkExpiry( int traverseXLinkExpiry ) {
-        this.traverseXLinkExpiry = traverseXLinkExpiry;
-    }
-
-    /**
-     * Returns the template for representing xlinks that point to objects that are not included in the written GML
-     * document (but are local to the system).
-     * 
-     * @return template for representing xlinks that point to objects that are not included in the written GML, never
-     *         <code>null</code>
-     */
-    public String getRemoteXlinkTemplate() {
-        return remoteXlinkTemplate;
-    }
-
-    /**
-     * Controls the representation of xlinks that point to objects that are not included in the written GML document.
-     * 
-     * @param remoteXlinkTemplate
-     *            template used to create references to document-remote objects, e.g.
-     *            <code>http://localhost:8080/d3_wfs_lab/services?SERVICE=WFS&REQUEST=GetGmlObject&VERSION=1.1.0&TRAVERSEXLINKDEPTH=1&GMLOBJECTID={}</code>
-     *            , the substring <code>{}</code> is replaced by the object id, must not be <code>null</code>
-     */
-    public void setRemoteXLinkTemplate( String remoteXlinkTemplate ) {
-        this.remoteXlinkTemplate = remoteXlinkTemplate;
-    }
-
-    /**
      * Returns the feature properties to be included for exported {@link Feature} instances.
      * 
      * @return feature properties to be included, or <code>null</code> (include all feature props)
@@ -287,24 +226,22 @@ public class GMLStreamWriter {
     }
 
     /**
-     * Returns the {@link GMLForwardReferenceHandler} that copes with {@link GMLReference}s that are processed during
-     * export.
+     * Returns the {@link GmlXlinkStrategy} that copes with creating xlinks.
      * 
-     * @return handler, may be <code>null</code>
+     * @return strategy, never <code>null</code>
      */
-    public GMLForwardReferenceHandler getAdditionalObjectHandler() {
-        return additionalObjectHandler;
+    public GmlXlinkStrategy getReferenceResolveStrategy() {
+        return referenceExportStrategy;
     }
 
     /**
-     * Sets an {@link GMLForwardReferenceHandler} that copes with {@link GMLReference}s that are processed during
-     * export.
+     * Sets an {@link GmlXlinkStrategy} that copes with creating xlinks.
      * 
-     * @param handler
-     *            handler, may be <code>null</code>
+     * @param strategy
+     *            handler, must not be <code>null</code>
      */
-    public void setAdditionalObjectHandler( GMLForwardReferenceHandler handler ) {
-        this.additionalObjectHandler = handler;
+    public void setReferenceResolveStrategy( GmlXlinkStrategy strategy ) {
+        this.referenceExportStrategy = strategy;
     }
 
     public boolean getOutputGeometries() {
@@ -346,21 +283,6 @@ public class GMLStreamWriter {
      */
     public void setGenerateBoundedByForFeatures( boolean exportBoundedBy ) {
         this.exportBoundedByForFeatures = exportBoundedBy;
-    }
-
-    /**
-     * Returns whether the {@link GMLObject} with the specified id has already been exported.
-     * 
-     * @param gmlId
-     *            id of the object, must not be <code>null</code>
-     * @return <code>true</code>, if the object has been exported, <code>false</code> otherwise
-     */
-    public boolean isObjectExported( String gmlId ) {
-        return exportedIds.contains( gmlId );
-    }
-
-    public Set<String> getExportedIds() {
-        return exportedIds;
     }
 
     /**
@@ -475,4 +397,5 @@ public class GMLStreamWriter {
         }
         return dictionaryWriter;
     }
+
 }

@@ -61,6 +61,7 @@ import java.util.Set;
 
 import javax.xml.namespace.QName;
 
+import org.deegree.commons.ows.exception.OWSException;
 import org.deegree.commons.tom.datetime.TimeInstant;
 import org.deegree.commons.tom.gml.property.PropertyType;
 import org.deegree.commons.tom.primitive.PrimitiveValue;
@@ -90,7 +91,6 @@ import org.deegree.layer.LayerQuery;
 import org.deegree.layer.dims.Dimension;
 import org.deegree.layer.dims.DimensionInterval;
 import org.deegree.layer.metadata.LayerMetadata;
-import org.deegree.protocol.ows.exception.OWSException;
 import org.deegree.protocol.wfs.getfeature.TypeName;
 import org.deegree.style.StyleRef;
 import org.deegree.style.se.unevaluated.Style;
@@ -133,7 +133,7 @@ public class FeatureLayer extends AbstractLayer {
     @Override
     public FeatureLayerData mapQuery( final LayerQuery query, List<String> headers )
                             throws OWSException {
-        StyleRef ref = query.getStyle( getMetadata().getName() );
+        StyleRef ref = query.getStyle();
         if ( !ref.isResolved() ) {
             ref.resolve( getMetadata().getStyles().get( ref.getName() ) );
         }
@@ -147,7 +147,7 @@ public class FeatureLayer extends AbstractLayer {
         OperatorFilter filter = this.filter;
         style = style.filter( query.getScale() );
         filter = Filters.and( filter, Styles.getStyleFilters( style, query.getScale() ) );
-        filter = Filters.and( filter, query.getFilter( getMetadata().getName() ) );
+        filter = Filters.and( filter, query.getFilter() );
         filter = Filters.and( filter, getDimensionFilter( query.getDimensions(), headers ) );
 
         final Envelope bbox = query.getQueryBox();
@@ -209,14 +209,14 @@ public class FeatureLayer extends AbstractLayer {
                             throws OWSException {
         OperatorFilter filter = this.filter;
         filter = Filters.and( filter, getDimensionFilter( query.getDimensions(), headers ) );
-        StyleRef ref = query.getStyle( getMetadata().getName() );
+        StyleRef ref = query.getStyle();
         if ( !ref.isResolved() ) {
             ref.resolve( getMetadata().getStyles().get( ref.getName() ) );
         }
         Style style = ref.getStyle();
         style = style.filter( query.getScale() );
         filter = Filters.and( filter, getStyleFilters( style, query.getScale() ) );
-        filter = Filters.and( filter, query.getFilter( getMetadata().getName() ) );
+        filter = Filters.and( filter, query.getFilter() );
 
         final Envelope clickBox = query.calcClickBox( query.getRenderingOptions().getFeatureInfoRadius( getMetadata().getName() ) );
 

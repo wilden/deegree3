@@ -54,7 +54,7 @@ public class UnitRef extends CRSResourceRef<IUnit> implements Serializable, IUni
     private static final long serialVersionUID = -8013673655718092689L;
 
     /**
-     * Creates a reference to a {@link IUNit}
+     * Creates a reference to a {@link IUnit}
      * 
      * @param resolver
      *            used for resolving the reference, must not be <code>null</code>
@@ -67,26 +67,32 @@ public class UnitRef extends CRSResourceRef<IUnit> implements Serializable, IUni
         super( resolver, uri, baseURL );
     }
 
+    @Override
     public boolean canConvert( IUnit other ) {
         return getReferencedObject().canConvert( other );
     }
 
+    @Override
     public double convert( double value, IUnit targetUnit ) {
         return getReferencedObject().convert( value, targetUnit );
     }
 
+    @Override
     public double toBaseUnits( double value ) {
         return getReferencedObject().toBaseUnits( value );
     }
 
+    @Override
     public double getScale() {
         return getReferencedObject().getScale();
     }
 
+    @Override
     public boolean isBaseType() {
         return getReferencedObject().isBaseType();
     }
 
+    @Override
     public IUnit getBaseType() {
         return getReferencedObject().getBaseType();
     }

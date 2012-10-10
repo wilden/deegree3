@@ -8,7 +8,7 @@
   <parent>
     <groupId>org.deegree</groupId>
     <artifactId>deegree</artifactId>
-    <version>3.2-pre11-SNAPSHOT</version>
+    <version>3.2-pre12-SNAPSHOT</version>
   </parent>
 
   <repositories>
@@ -40,6 +40,7 @@
     <module>deegree-workspace-base</module>
     <module>deegree-workspace-compliance-tests</module>    
     <module>deegree-workspace-csw</module>
+    <module>deegree-workspace-csw-memory-tests</module>    
     <module>deegree-workspace-csw-tests</module>    
     <module>deegree-workspace-geosciml</module>
     <module>deegree-workspace-inspire</module>

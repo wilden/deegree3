@@ -39,13 +39,14 @@ package org.deegree.gml.commons;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.deegree.gml.GMLStreamWriter;
 import org.deegree.gml.GMLVersion;
+import org.deegree.gml.reference.GmlXlinkOptions;
+import org.deegree.gml.reference.GmlXlinkStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +58,7 @@ import org.slf4j.LoggerFactory;
  * 
  * @version $Revision:$, $Date:$
  */
-public class AbstractGMLObjectWriter {
+public abstract class AbstractGMLObjectWriter {
 
     private static final Logger LOG = LoggerFactory.getLogger( AbstractGMLObjectWriter.class );
 
@@ -73,9 +74,7 @@ public class AbstractGMLObjectWriter {
 
     protected final Map<String, String> nsToPrefix = new HashMap<String, String>();
 
-    protected final String remoteXlinkTemplate;
-
-    protected final Set<String> exportedIds;
+    protected final GmlXlinkStrategy referenceExportStrategy;
 
     /**
      * Creates a new {@link AbstractGMLObjectWriter} instance.
@@ -88,9 +87,8 @@ public class AbstractGMLObjectWriter {
         this.writer = gmlStreamWriter.getXMLStream();
         this.version = gmlStreamWriter.getVersion();
         this.gmlNs = version.getNamespace();
-        this.exportedIds = gmlStreamWriter.getExportedIds();
         this.prefixToNs = gmlStreamWriter.getNamespaceBindings();
-        remoteXlinkTemplate = gmlStreamWriter.getRemoteXlinkTemplate();
+        referenceExportStrategy = gmlStreamWriter.getReferenceResolveStrategy();
 
         if ( prefixToNs != null ) {
             for ( Entry<String, String> prefixAndNs : prefixToNs.entrySet() ) {
@@ -162,8 +160,14 @@ public class AbstractGMLObjectWriter {
         }
     }
 
-    protected void endEmptyElement() throws XMLStreamException {
+    protected void endEmptyElement()
+                            throws XMLStreamException {
         // signal "end" of empty element to get rid of locally bound namespace prefixes
         writer.writeCharacters( "" );
+    }
+
+    protected GmlXlinkOptions getResolveStateForNextLevel( GmlXlinkOptions state ) {
+        return new GmlXlinkOptions( null, state.getDepth(), state.getCurrentLevel() + 1, state.getMode(),
+                                    state.getRemoteTimeoutInMilliseconds() );
     }
 }

@@ -38,6 +38,10 @@ package org.deegree.services.wfs;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+import static org.deegree.commons.ows.exception.OWSException.INVALID_PARAMETER_VALUE;
+import static org.deegree.commons.ows.exception.OWSException.MISSING_PARAMETER_VALUE;
+import static org.deegree.commons.ows.exception.OWSException.NO_APPLICABLE_CODE;
+import static org.deegree.commons.ows.exception.OWSException.OPERATION_NOT_SUPPORTED;
 import static org.deegree.commons.xml.CommonNamespaces.FES_20_NS;
 import static org.deegree.commons.xml.CommonNamespaces.OGCNS;
 import static org.deegree.commons.xml.CommonNamespaces.XLNNS;
@@ -45,10 +49,6 @@ import static org.deegree.commons.xml.XMLAdapter.writeElement;
 import static org.deegree.commons.xml.stax.XMLStreamUtils.skipElement;
 import static org.deegree.gml.GMLInputFactory.createGMLStreamReader;
 import static org.deegree.gml.GMLVersion.GML_32;
-import static org.deegree.protocol.ows.exception.OWSException.INVALID_PARAMETER_VALUE;
-import static org.deegree.protocol.ows.exception.OWSException.MISSING_PARAMETER_VALUE;
-import static org.deegree.protocol.ows.exception.OWSException.NO_APPLICABLE_CODE;
-import static org.deegree.protocol.ows.exception.OWSException.OPERATION_NOT_SUPPORTED;
 import static org.deegree.protocol.wfs.WFSConstants.VERSION_100;
 import static org.deegree.protocol.wfs.WFSConstants.VERSION_110;
 import static org.deegree.protocol.wfs.WFSConstants.VERSION_200;
@@ -75,12 +75,14 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.deegree.commons.ows.exception.OWSException;
 import org.deegree.commons.tom.ReferenceResolvingException;
 import org.deegree.commons.tom.TypedObjectNode;
 import org.deegree.commons.tom.genericxml.GenericXMLElement;
 import org.deegree.commons.tom.gml.property.Property;
 import org.deegree.commons.tom.gml.property.PropertyType;
 import org.deegree.commons.tom.ows.Version;
+import org.deegree.commons.utils.Pair;
 import org.deegree.commons.utils.kvp.InvalidParameterValueException;
 import org.deegree.commons.utils.kvp.MissingParameterException;
 import org.deegree.commons.xml.CommonNamespaces;
@@ -111,9 +113,8 @@ import org.deegree.geometry.validation.CoordinateValidityInspector;
 import org.deegree.gml.GMLInputFactory;
 import org.deegree.gml.GMLStreamReader;
 import org.deegree.gml.GMLVersion;
-import org.deegree.gml.feature.FeatureReference;
 import org.deegree.gml.feature.GMLFeatureReader;
-import org.deegree.protocol.ows.exception.OWSException;
+import org.deegree.gml.reference.FeatureReference;
 import org.deegree.protocol.wfs.transaction.ReleaseAction;
 import org.deegree.protocol.wfs.transaction.Transaction;
 import org.deegree.protocol.wfs.transaction.TransactionAction;
@@ -121,11 +122,18 @@ import org.deegree.protocol.wfs.transaction.action.Delete;
 import org.deegree.protocol.wfs.transaction.action.IDGenMode;
 import org.deegree.protocol.wfs.transaction.action.Insert;
 import org.deegree.protocol.wfs.transaction.action.Native;
+import org.deegree.protocol.wfs.transaction.action.ParsedPropertyReplacement;
 import org.deegree.protocol.wfs.transaction.action.PropertyReplacement;
 import org.deegree.protocol.wfs.transaction.action.Replace;
 import org.deegree.protocol.wfs.transaction.action.Update;
+import org.deegree.protocol.wfs.transaction.action.UpdateAction;
 import org.deegree.services.controller.utils.HttpResponseBuffer;
 import org.deegree.services.i18n.Messages;
+import org.jaxen.expr.Expr;
+import org.jaxen.expr.LocationPath;
+import org.jaxen.expr.NameStep;
+import org.jaxen.expr.NumberExpr;
+import org.jaxen.expr.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -145,7 +153,7 @@ class TransactionHandler {
 
     private final WebFeatureService master;
 
-    private final WFSFeatureStoreManager service;
+    private final WfsFeatureStoreManager service;
 
     private final Transaction request;
 
@@ -173,7 +181,7 @@ class TransactionHandler {
      *            request to be handled
      * @param idGenMode
      */
-    TransactionHandler( WebFeatureService master, WFSFeatureStoreManager service, Transaction request,
+    TransactionHandler( WebFeatureService master, WfsFeatureStoreManager service, Transaction request,
                         IDGenMode idGenMode ) {
         this.master = master;
         this.service = service;
@@ -218,11 +226,11 @@ class TransactionHandler {
                     break;
                 }
                 case INSERT: {
-                    doInsert( (Insert) operation, lock );
+                    doInsert( (Insert) operation );
                     break;
                 }
                 case NATIVE: {
-                    doNative( (Native) operation, lock );
+                    doNative( (Native) operation );
                     break;
                 }
                 case UPDATE: {
@@ -295,6 +303,7 @@ class TransactionHandler {
             throw e;
         } catch ( Exception e ) {
             LOG.debug( "Error occured during transaction, performing rollback." );
+            LOG.trace( "Stack trace:", e );
             for ( FeatureStoreTransaction ta : acquiredTransactions.values() ) {
                 try {
                     LOG.debug( "Rolling back feature store transaction:" + ta );
@@ -309,9 +318,9 @@ class TransactionHandler {
         if ( VERSION_100.equals( request.getVersion() ) ) {
             sendResponse100( request, response, false );
         } else if ( VERSION_110.equals( request.getVersion() ) ) {
-            sendResponse110( request, response );
+            sendResponse110( response );
         } else if ( VERSION_200.equals( request.getVersion() ) ) {
-            sendResponse200( request, response );
+            sendResponse200( response );
         } else {
             throw new UnsupportedOperationException();
         }
@@ -349,7 +358,7 @@ class TransactionHandler {
         }
     }
 
-    private void doInsert( Insert insert, Lock lock )
+    private void doInsert( Insert insert )
                             throws OWSException {
 
         LOG.debug( "doInsert: " + insert );
@@ -383,9 +392,7 @@ class TransactionHandler {
         FeatureStoreTransaction ta = null;
         try {
             XMLStreamReader xmlStream = insert.getFeatures();
-            System.out.println( "Before: " + XMLStreamUtils.getCurrentEventInfo( xmlStream ) );
             FeatureCollection fc = parseFeaturesOrCollection( xmlStream, inputFormat, defaultCRS );
-            System.out.println( "After: " + XMLStreamUtils.getCurrentEventInfo( xmlStream ) );
             FeatureStore fs = service.getStores()[0];
             ta = acquireTransaction( fs );
             IDGenMode mode = insert.getIdGen();
@@ -493,7 +500,7 @@ class TransactionHandler {
         return new GenericFeatureCollection( null, memberFeatures );
     }
 
-    private void doNative( Native nativeOp, Lock lock )
+    private void doNative( Native nativeOp )
                             throws OWSException {
         LOG.debug( "doNative: " + nativeOp );
         if ( nativeOp.isSafeToIgnore() == false ) {
@@ -524,7 +531,7 @@ class TransactionHandler {
         GMLVersion inputFormat = determineFormat( request.getVersion(), update.getInputFormat() );
 
         FeatureStoreTransaction ta = acquireTransaction( fs );
-        List<Property> replacementProps = getReplacementProps( update, ft, inputFormat );
+        List<ParsedPropertyReplacement> replacementProps = getReplacementProps( update, ft, inputFormat );
         Filter filter = null;
         try {
             filter = update.getFilter();
@@ -535,32 +542,70 @@ class TransactionHandler {
         }
 
         try {
-            int updated = ta.performUpdate( ftName, replacementProps, filter, lock );
-            for ( int i = 0; i < updated; i++ ) {
-                this.updated.add( "DUMMYFID", update.getHandle() );
+            List<String> updatedFids = ta.performUpdate( ftName, replacementProps, filter, lock );
+            for ( String updatedFid : updatedFids ) {
+                this.updated.add( updatedFid, update.getHandle() );
             }
         } catch ( FeatureStoreException e ) {
             throw new OWSException( "Error performing update: " + e.getMessage(), e, NO_APPLICABLE_CODE );
         }
     }
 
-    private List<Property> getReplacementProps( Update update, FeatureType ft, GMLVersion inputFormat )
+    private Pair<QName, Integer> trySimpleMultiProp( Expr expr, FeatureType ft )
+                            throws OWSException {
+        if ( !( expr instanceof LocationPath ) ) {
+            throw new OWSException( "Cannot update property on feature type '" + ft.getName()
+                                    + "'. Complex property paths are not supported.", OPERATION_NOT_SUPPORTED );
+        }
+        Object obj = ( (LocationPath) expr ).getSteps().get( 0 );
+        if ( !( obj instanceof NameStep ) ) {
+            throw new OWSException( "Cannot update property on feature type '" + ft.getName()
+                                    + "'. Complex property paths are not supported.", OPERATION_NOT_SUPPORTED );
+        }
+        NameStep namestep = (NameStep) obj;
+        obj = namestep.getPredicates().get( 0 );
+        if ( !( obj instanceof Predicate ) ) {
+            throw new OWSException( "Cannot update property on feature type '" + ft.getName()
+                                    + "'. Complex property paths are not supported.", OPERATION_NOT_SUPPORTED );
+        }
+        Predicate pred = (Predicate) obj;
+        expr = pred.getExpr();
+        if ( !( expr instanceof NumberExpr ) ) {
+            throw new OWSException( "Cannot update property on feature type '" + ft.getName()
+                                    + "'. Complex property paths are not supported.", OPERATION_NOT_SUPPORTED );
+        }
+        NumberExpr ne = (NumberExpr) expr;
+        int index = Math.round( Float.parseFloat( ne.getText() ) );
+        return new Pair<QName, Integer>( new QName( ft.getName().getNamespaceURI(), namestep.getLocalName() ),
+                                         index - 1 );
+    }
+
+    private List<ParsedPropertyReplacement> getReplacementProps( Update update, FeatureType ft, GMLVersion inputFormat )
                             throws OWSException {
 
-        List<Property> newProperties = new ArrayList<Property>();
+        List<ParsedPropertyReplacement> newProperties = new ArrayList<ParsedPropertyReplacement>();
         Iterator<PropertyReplacement> replacementIter = update.getReplacementProps();
         while ( replacementIter.hasNext() ) {
             PropertyReplacement replacement = replacementIter.next();
-            QName propName = replacement.getPropertyName();
+            QName propName = replacement.getPropertyName().getAsQName();
+            Pair<QName, Integer> simpleMultiProp = null;
+            if ( propName == null ) {
+                simpleMultiProp = trySimpleMultiProp( replacement.getPropertyName().getAsXPath(), ft );
+                propName = simpleMultiProp.first;
+            }
+
             PropertyType pt = ft.getPropertyDeclaration( propName );
             if ( pt == null ) {
                 throw new OWSException( "Cannot update property '" + propName + "' of feature type '" + ft.getName()
                                         + "'. The feature type does not define this property.", OPERATION_NOT_SUPPORTED );
             }
             XMLStreamReader xmlStream = replacement.getReplacementValue();
+            int index = simpleMultiProp == null ? 0 : simpleMultiProp.second;
+            UpdateAction updateAction = replacement.getUpdateAction();
+
             if ( xmlStream != null ) {
                 try {
-                    xmlStream.require( START_ELEMENT, WFS_NS, "Value" );
+                    xmlStream.require( START_ELEMENT, null, "Value" );
                     GMLStreamReader gmlReader = createGMLStreamReader( inputFormat, xmlStream );
                     gmlReader.setApplicationSchema( ft.getSchema() );
                     GeometryFactory geomFac = new GeometryFactory();
@@ -577,11 +622,14 @@ class TransactionHandler {
                         prop.setValue( ( (GenericXMLElement) propValue ).getValue() );
                     }
 
-                    newProperties.add( prop );
+                    ParsedPropertyReplacement repl = new ParsedPropertyReplacement( prop, updateAction,
+                                                                                    replacement.getPropertyName(),
+                                                                                    index );
+                    newProperties.add( repl );
 
                     // contract: skip to "wfs:Property" END_ELEMENT
                     xmlStream.nextTag();
-                    xmlStream.require( END_ELEMENT, WFS_NS, "Property" );
+                    xmlStream.require( END_ELEMENT, null, "Property" );
                     // contract: skip to next ELEMENT_EVENT
                     xmlStream.nextTag();
                 } catch ( Exception e ) {
@@ -593,7 +641,10 @@ class TransactionHandler {
             } else {
                 // if the wfs:Value element is omitted, the property shall be removed (CITE 1.1.0 test,
                 // wfs:wfs-1.1.0-Transaction-tc11.1)
-                newProperties.add( new GenericProperty( pt, null ) );
+                GenericProperty newProp = new GenericProperty( pt, null );
+                ParsedPropertyReplacement repl = new ParsedPropertyReplacement( newProp, updateAction,
+                                                                                replacement.getPropertyName(), index );
+                newProperties.add( repl );
             }
         }
         return newProperties;
@@ -625,7 +676,7 @@ class TransactionHandler {
 
         FeatureStoreTransaction ta = acquireTransaction( fs );
         try {
-            String newFid = ta.performReplace( replacementFeature, filter, lock );
+            String newFid = ta.performReplace( replacementFeature, filter, lock, idGenMode );
             replaced.add( newFid, replace.getHandle() );
         } catch ( FeatureStoreException e ) {
             throw new OWSException( "Error performing replace: " + e.getMessage(), e, NO_APPLICABLE_CODE );
@@ -707,7 +758,7 @@ class TransactionHandler {
         }
     }
 
-    private void sendResponse110( Transaction request, HttpResponseBuffer response )
+    private void sendResponse110( HttpResponseBuffer response )
                             throws XMLStreamException, IOException {
 
         String ns = WFS_NS;
@@ -757,7 +808,7 @@ class TransactionHandler {
         xmlWriter.flush();
     }
 
-    private void sendResponse200( Transaction request, HttpResponseBuffer response )
+    private void sendResponse200( HttpResponseBuffer response )
                             throws XMLStreamException, IOException {
 
         String ns = WFS_200_NS;

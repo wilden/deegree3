@@ -59,8 +59,10 @@ import static org.deegree.protocol.wfs.WFSRequestType.DescribeFeatureType;
 import static org.deegree.protocol.wfs.WFSRequestType.DescribeStoredQueries;
 import static org.deegree.protocol.wfs.WFSRequestType.GetCapabilities;
 import static org.deegree.protocol.wfs.WFSRequestType.GetFeature;
+import static org.deegree.protocol.wfs.WFSRequestType.GetFeatureWithLock;
 import static org.deegree.protocol.wfs.WFSRequestType.GetPropertyValue;
 import static org.deegree.protocol.wfs.WFSRequestType.ListStoredQueries;
+import static org.deegree.protocol.wfs.WFSRequestType.LockFeature;
 import static org.deegree.protocol.wfs.WFSRequestType.Transaction;
 import static org.deegree.services.controller.OGCFrontController.getHttpGetURL;
 import static org.deegree.services.controller.OGCFrontController.getHttpPostURL;
@@ -81,6 +83,11 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.axiom.om.OMElement;
+import org.deegree.commons.ows.metadata.DatasetMetadata;
+import org.deegree.commons.ows.metadata.OperationsMetadata;
+import org.deegree.commons.ows.metadata.domain.Domain;
+import org.deegree.commons.ows.metadata.operation.DCP;
+import org.deegree.commons.ows.metadata.operation.Operation;
 import org.deegree.commons.tom.ows.Version;
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.persistence.CRSManager;
@@ -95,11 +102,6 @@ import org.deegree.geometry.io.CoordinateFormatter;
 import org.deegree.geometry.io.DecimalCoordinateFormatter;
 import org.deegree.geometry.primitive.Point;
 import org.deegree.protocol.ows.getcapabilities.GetCapabilities;
-import org.deegree.protocol.ows.metadata.DatasetMetadata;
-import org.deegree.protocol.ows.metadata.OperationsMetadata;
-import org.deegree.protocol.ows.metadata.domain.Domain;
-import org.deegree.protocol.ows.metadata.operation.DCP;
-import org.deegree.protocol.ows.metadata.operation.Operation;
 import org.deegree.protocol.wfs.WFSRequestType;
 import org.deegree.services.controller.OGCFrontController;
 import org.deegree.services.metadata.OWSMetadataProvider;
@@ -149,13 +151,13 @@ class GetCapabilitiesHandler extends OWSCapabilitiesXMLAdapter {
 
     private final List<ICRS> querySRS;
 
-    private final WFSFeatureStoreManager service;
+    private final WfsFeatureStoreManager service;
 
     private final WebFeatureService master;
 
     private final OWSMetadataProvider mdProvider;
 
-    GetCapabilitiesHandler( WebFeatureService master, WFSFeatureStoreManager service, Version version,
+    GetCapabilitiesHandler( WebFeatureService master, WfsFeatureStoreManager service, Version version,
                             XMLStreamWriter xmlWriter, Collection<FeatureType> servedFts, Set<String> sections,
                             boolean enableTransactions, List<ICRS> querySRS, OWSMetadataProvider mdProvider ) {
         this.master = master;
@@ -801,12 +803,18 @@ class GetCapabilitiesHandler extends OWSCapabilitiesXMLAdapter {
             // GetPropertyValue
             operations.add( new Operation( GetPropertyValue.name(), getAndPost, null, null, null ) );
 
-            // Transaction
             if ( enableTransactions ) {
+                // Transaction
                 List<Domain> constraints = new ArrayList<Domain>();
                 constraints.add( new Domain( "AutomaticDataLocking", "TRUE" ) );
                 constraints.add( new Domain( "PreservesSiblingOrder", "TRUE" ) );
                 operations.add( new Operation( Transaction.name(), post, null, constraints, null ) );
+                
+                // GetFeatureWithLock
+                operations.add( new Operation( GetFeatureWithLock.name(), getAndPost, null, null, null ) );
+                
+                // LockFeature
+                operations.add( new Operation( LockFeature.name(), getAndPost, null, null, null ) );
             }
 
             // global parameter domains
@@ -840,10 +848,11 @@ class GetCapabilitiesHandler extends OWSCapabilitiesXMLAdapter {
             constraints.add( new Domain( "ImplementsBasicWFS", "TRUE" ) );
             if ( enableTransactions ) {
                 constraints.add( new Domain( "ImplementsTransactionalWFS", "TRUE" ) );
+                constraints.add( new Domain( "ImplementsLockingWFS", "TRUE" ) );
             } else {
                 constraints.add( new Domain( "ImplementsTransactionalWFS", "FALSE" ) );
-            }
-            constraints.add( new Domain( "ImplementsLockingWFS", "FALSE" ) );
+                constraints.add( new Domain( "ImplementsLockingWFS", "FALSE" ) );
+            }            
             constraints.add( new Domain( "KVPEncoding", "TRUE" ) );
             constraints.add( new Domain( "XMLEncoding", "TRUE" ) );
             constraints.add( new Domain( "SOAPEncoding", "FALSE" ) );

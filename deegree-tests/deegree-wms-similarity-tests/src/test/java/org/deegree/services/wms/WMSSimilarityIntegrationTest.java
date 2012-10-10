@@ -52,11 +52,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.List;
+import java.util.ListIterator;
 
 import javax.imageio.ImageIO;
 
 import org.apache.commons.io.IOUtils;
-import org.deegree.commons.utils.math.MathUtils;
 import org.deegree.commons.utils.test.IntegrationTestUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -80,15 +81,15 @@ public class WMSSimilarityIntegrationTest {
 
     private String request;
 
-    private byte[] response;
+    private List<byte[]> response;
 
-    public WMSSimilarityIntegrationTest( Object wasXml, String request, byte[] response ) {
+    public WMSSimilarityIntegrationTest( Object wasXml, String request, List<byte[]> response ) {
         // we only use .kvp for WMS
-        this.request = (String) request;
+        this.request = request;
         if ( !this.request.startsWith( "?" ) ) {
             this.request = "?" + this.request;
         }
-        this.response = (byte[]) response;
+        this.response = response;
     }
 
     @Parameters
@@ -105,29 +106,40 @@ public class WMSSimilarityIntegrationTest {
 
         byte[] bs = null;
 
-        try {
-            BufferedImage img2 = ImageIO.read( new ByteArrayInputStream( response ) );
-            bs = IOUtils.toByteArray( in );
-            BufferedImage img1 = ImageIO.read( new ByteArrayInputStream( bs ) );
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ImageIO.write( img1, "tif", bos );
-            bos.close();
-            in = new ByteArrayInputStream( bs = bos.toByteArray() );
-            bos = new ByteArrayOutputStream();
-            bos.close();
-            ImageIO.write( img2, "tif", bos );
-            this.response = bos.toByteArray();
-        } catch ( Throwable t ) {
-            t.printStackTrace();
-            // just compare initial byte arrays
+        ListIterator<byte[]> iter = response.listIterator();
+        while ( iter.hasNext() ) {
+            byte[] resp = iter.next();
+            try {
+                BufferedImage img2 = ImageIO.read( new ByteArrayInputStream( resp ) );
+                bs = IOUtils.toByteArray( in );
+                BufferedImage img1 = ImageIO.read( new ByteArrayInputStream( bs ) );
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                ImageIO.write( img1, "tif", bos );
+                bos.close();
+                in = new ByteArrayInputStream( bs = bos.toByteArray() );
+                bos = new ByteArrayOutputStream();
+                bos.close();
+                ImageIO.write( img2, "tif", bos );
+                iter.set( bos.toByteArray() );
+            } catch ( Throwable t ) {
+                t.printStackTrace();
+                // just compare initial byte arrays
+            }
         }
 
-        double sim = determineSimilarity( in, new ByteArrayInputStream( response ) );
+        double sim = 0;
+        for ( byte[] response : this.response ) {
+            sim = Math.max( sim, determineSimilarity( in, new ByteArrayInputStream( response ) ) );
+        }
+
         if ( Math.abs( 1.0 - sim ) > 0.01 ) {
             System.out.println( "Trying to store request/response in tempdir: expected/response" + ++numFailed + ".tif" );
             try {
-                IOUtils.write( response, new FileOutputStream( System.getProperty( "java.io.tmpdir" ) + "/expected"
-                                                               + numFailed + ".tif" ) );
+                int idx = 0;
+                for ( byte[] response : this.response ) {
+                    IOUtils.write( response, new FileOutputStream( System.getProperty( "java.io.tmpdir" ) + "/expected"
+                                                                   + ++idx + "_" + numFailed + ".tif" ) );
+                }
                 IOUtils.write( bs, new FileOutputStream( System.getProperty( "java.io.tmpdir" ) + "/response"
                                                          + numFailed + ".tif" ) );
             } catch ( Throwable t ) {

@@ -39,6 +39,7 @@ package org.deegree.tools.crs.georeferencing.model.points;
  * 
  * The Point that identifies the point of the georeferenced map.
  * 
+ * @author <a href="mailto:wanhoff@lat-lon.de">Jeronimo Wanhoff</a>
  * @author <a href="mailto:thomas@lat-lon.de">Steffen Thomas</a>
  * @author last edited by: $Author$
  * 
@@ -70,4 +71,5 @@ public class GeoReferencedPoint extends AbstractGRPoint {
         return PointType.GeoreferencedPoint;
     }
 
+    
 }

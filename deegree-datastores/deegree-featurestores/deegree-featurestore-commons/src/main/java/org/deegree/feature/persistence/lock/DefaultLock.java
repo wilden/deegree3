@@ -37,12 +37,13 @@
 package org.deegree.feature.persistence.lock;
 
 import static org.deegree.commons.utils.JDBCUtils.close;
+import static org.deegree.commons.utils.JDBCUtils.rollbackQuietly;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.Date;
 
 import javax.xml.namespace.QName;
@@ -82,7 +83,7 @@ class DefaultLock implements Lock {
 
     private final Date acquired;
 
-    private final Date expires;
+    private Date expires;
 
     private final int numFailed;
 
@@ -123,6 +124,41 @@ class DefaultLock implements Lock {
     }
 
     @Override
+    public long getAcquistionDate() {
+        return acquired.getTime();
+    }
+
+    @Override
+    public void setExpiryDate( long expiryDate )
+                            throws FeatureStoreException {
+        synchronized ( manager ) {
+            Connection conn = null;
+            PreparedStatement stmt = null;
+            ResultSet rs = null;
+            try {
+                conn = ConnectionManager.getConnection( jdbcConnId );
+                conn.setAutoCommit( false );                
+                stmt = conn.prepareStatement( "UPDATE LOCKS SET EXPIRES=? WHERE ID=?" );
+                stmt.setTimestamp( 1, new Timestamp( expiryDate ) );
+                stmt.setString( 2, id );
+                if ( stmt.executeUpdate() != 1 ) {
+                    String msg = "Could not reset expiry date for lock with id " + id;
+                    throw new FeatureStoreException( msg );
+                }
+                expires = new Date( expiryDate );
+                conn.commit();
+            } catch ( SQLException e ) {
+                rollbackQuietly( conn );
+                String msg = "Could not reset expiry date for lock with id " + id;
+                LOG.debug( msg, e );
+                throw new FeatureStoreException( msg, e );
+            } finally {
+                close( rs, stmt, conn, LOG );
+            }
+        }
+    }
+
+    @Override
     public int getNumLocked() {
         return numLocked;
     }
@@ -140,12 +176,13 @@ class DefaultLock implements Lock {
         synchronized ( manager ) {
             manager.releaseExpiredLocks();
             Connection conn = null;
-            Statement stmt = null;
+            PreparedStatement stmt = null;
             ResultSet rs = null;
             try {
                 conn = ConnectionManager.getConnection( jdbcConnId );
-                stmt = conn.createStatement();
-                rs = stmt.executeQuery( "SELECT FID FROM LOCKED_FIDS WHERE LOCK_ID=" + id );
+                stmt = conn.prepareStatement( "SELECT FID FROM LOCKED_FIDS WHERE LOCK_ID=?" );
+                stmt.setString( 1, id );
+                rs = stmt.executeQuery();
 
                 fidIter = new ResultSetIterator<String>( rs, conn, stmt ) {
                     @Override
@@ -171,12 +208,13 @@ class DefaultLock implements Lock {
         synchronized ( manager ) {
             manager.releaseExpiredLocks();
             Connection conn = null;
-            Statement stmt = null;
+            PreparedStatement stmt = null;
             ResultSet rs = null;
             try {
                 conn = ConnectionManager.getConnection( jdbcConnId );
-                stmt = conn.createStatement();
-                rs = stmt.executeQuery( "SELECT FID FROM LOCK_FAILED_FIDS WHERE LOCK_ID=" + id );
+                stmt = conn.prepareStatement( "SELECT FID FROM LOCK_FAILED_FIDS WHERE LOCK_ID=?" );
+                stmt.setString( 1, id );
+                rs = stmt.executeQuery();
 
                 fidIter = new ResultSetIterator<String>( rs, conn, stmt ) {
                     @Override
@@ -228,10 +266,12 @@ class DefaultLock implements Lock {
     public void release()
                             throws FeatureStoreException {
         synchronized ( manager ) {
+            Connection conn = null;
+            PreparedStatement stmt = null;
             try {
                 // delete entries from LOCKED_FIDS table
-                Connection conn = ConnectionManager.getConnection( jdbcConnId );
-                PreparedStatement stmt = conn.prepareStatement( "DELETE FROM LOCKED_FIDS WHERE LOCK_ID=?" );
+                conn = ConnectionManager.getConnection( jdbcConnId );
+                stmt = conn.prepareStatement( "DELETE FROM LOCKED_FIDS WHERE LOCK_ID=?" );
                 stmt.setString( 1, id );
                 stmt.execute();
                 stmt.close();
@@ -246,12 +286,12 @@ class DefaultLock implements Lock {
                 stmt = conn.prepareStatement( "DELETE FROM LOCKS WHERE ID=?" );
                 stmt.setString( 1, id );
                 stmt.execute();
-                stmt.close();
 
                 conn.commit();
-                conn.close();
             } catch ( SQLException e ) {
                 throw new FeatureStoreException( e.getMessage(), e );
+            } finally {
+                close( null, stmt, conn, LOG );
             }
         }
     }

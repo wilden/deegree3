@@ -35,6 +35,7 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wfs.client;
 
+import static org.deegree.commons.xml.stax.XMLStreamUtils.nextElement;
 import static org.deegree.protocol.wfs.WFSConstants.WFS_200_NS;
 
 import java.math.BigInteger;
@@ -52,11 +53,11 @@ import org.deegree.cs.exceptions.UnknownCRSException;
 import org.deegree.feature.FeatureCollection;
 import org.deegree.feature.types.AppSchema;
 import org.deegree.geometry.Envelope;
-import org.deegree.gml.GMLDocumentIdContext;
 import org.deegree.gml.GMLInputFactory;
 import org.deegree.gml.GMLStreamReader;
 import org.deegree.gml.GMLVersion;
 import org.deegree.gml.feature.StreamFeatureCollection;
+import org.deegree.gml.reference.GmlDocumentIdContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +72,7 @@ import org.slf4j.LoggerFactory;
  * </ul>
  * </p>
  * <p>
- * TODO in order to make this usable for <b>really</b> large amounts of complex features, {@link GMLDocumentIdContext}
+ * TODO in order to make this usable for <b>really</b> large amounts of complex features, {@link GmlDocumentIdContext}
  * needs to be rewritten (so it doesn't keep references to all features in memory).
  * </p>
  * 
@@ -93,8 +94,6 @@ public class WFSFeatureCollection<T> {
     private final XMLStreamReader xmlStream;
 
     private final GMLStreamReader gmlStream;
-
-    private final boolean wfs20;
 
     // only used in non-WFS 2.0 mode
     private StreamFeatureCollection fc;
@@ -131,7 +130,6 @@ public class WFSFeatureCollection<T> {
 
         if ( WFS_200_NS.equals( xmlStream.getNamespaceURI() ) ) {
             LOG.debug( "WFS 2.0 response" );
-            wfs20 = true;
 
             // <xsd:attribute name="timeStamp" type="xsd:dateTime" use="required"/>
             timeStamp = xmlStream.getAttributeValue( null, "timeStamp" );
@@ -184,7 +182,6 @@ public class WFSFeatureCollection<T> {
             }
         } else {
             LOG.debug( "WFS 1.0.0/1.1.0 response" );
-            wfs20 = false;
 
             // <xsd:attribute name="lockId" type="xsd:string" use="optional">
             lockId = xmlStream.getAttributeValue( null, "lockId" );
@@ -237,6 +234,7 @@ public class WFSFeatureCollection<T> {
         return boundedBy;
     }
 
+    @SuppressWarnings("unchecked")
     public Iterator<T> getMembers() {
         if ( fc != null ) {
             return (Iterator<T>) fc.iterator();
@@ -273,7 +271,7 @@ public class WFSFeatureCollection<T> {
         return null;
     }
 
-    public GMLDocumentIdContext getIdContext() {
+    public GmlDocumentIdContext getIdContext() {
         return null;
     }
 
@@ -297,12 +295,13 @@ public class WFSFeatureCollection<T> {
      * @throws UnknownCRSException
      * @throws XMLParsingException
      */
+    @SuppressWarnings("unchecked")
     private T parse200MemberProperty()
                             throws NoSuchElementException, XMLStreamException, XMLParsingException, UnknownCRSException {
 
         T value = null;
 
-        XMLStreamUtils.nextElement( xmlStream );
+        nextElement( xmlStream );
 
         if ( xmlStream.isEndElement() ) {
             // must be xlinked
@@ -320,8 +319,8 @@ public class WFSFeatureCollection<T> {
             value = (T) gmlStream.read();
         }
 
-        XMLStreamUtils.nextElement( xmlStream );
-        XMLStreamUtils.nextElement( xmlStream );
+        nextElement( xmlStream );
+        nextElement( xmlStream );
 
         return value;
     }

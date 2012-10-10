@@ -1,7 +1,7 @@
 //$HeadURL$
 /*----------------------------------------------------------------------------
  This file is part of deegree, http://deegree.org/
- Copyright (C) 2001-2011 by:
+ Copyright (C) 2001-2012 by:
  - Department of Geography, University of Bonn -
  and
  - lat/lon GmbH -
@@ -54,6 +54,7 @@ import org.deegree.commons.tom.primitive.PrimitiveValue;
  * </p>
  * 
  * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
+ * @author <a href="mailto:schmitz@lat-lon.de">Andreas Schmitz</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
@@ -87,4 +88,5 @@ public interface ElementNode extends TypedObjectNode {
      * @return XML schema element declaration, can be <code>null</code>
      */
     public XSElementDeclaration getXSType();
+    
 }

@@ -35,14 +35,13 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.metadata;
 
+import static org.deegree.commons.xml.CommonNamespaces.OWS_NS;
 import static org.deegree.protocol.csw.CSWConstants.CSW_202_NS;
 import static org.deegree.protocol.csw.CSWConstants.CSW_PREFIX;
 import static org.deegree.protocol.csw.CSWConstants.DCT_NS;
 import static org.deegree.protocol.csw.CSWConstants.DCT_PREFIX;
 import static org.deegree.protocol.csw.CSWConstants.DC_NS;
 import static org.deegree.protocol.csw.CSWConstants.DC_PREFIX;
-import static org.deegree.protocol.ows.OWSCommonXMLAdapter.OWS_NS;
-import static org.deegree.protocol.ows.OWSCommonXMLAdapter.OWS_PREFIX;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
@@ -53,6 +52,7 @@ import jj2000.j2k.NotImplementedError;
 import org.apache.axiom.om.OMElement;
 import org.deegree.commons.tom.datetime.Date;
 import org.deegree.filter.Filter;
+import org.deegree.filter.FilterEvaluationException;
 import org.deegree.filter.expression.ValueReference;
 import org.deegree.geometry.Envelope;
 import org.deegree.protocol.csw.CSWConstants.ReturnableElement;
@@ -104,7 +104,7 @@ public class DCRecord implements MetadataRecord {
     private final String source;
 
     // uri, localname, prefix
-    private static final QName ows = new QName( OWS_NS, "", OWS_PREFIX );
+    private static final QName ows = new QName( OWS_NS, "", "ows" );
 
     private static final QName csw = new QName( CSW_202_NS, "", CSW_PREFIX );
 
@@ -137,7 +137,8 @@ public class DCRecord implements MetadataRecord {
     }
 
     @Override
-    public boolean eval( Filter filter ) {
+    public boolean eval( Filter filter )
+                            throws FilterEvaluationException {
         throw new UnsupportedOperationException( "In-memory filter evaluation not implemented yet." );
     }
 

@@ -12,7 +12,7 @@
   <parent>
     <groupId>org.deegree</groupId>
     <artifactId>deegree-services</artifactId>
-    <version>3.2-pre11-SNAPSHOT</version>
+    <version>3.2-pre12-SNAPSHOT</version>
   </parent>
 
   <repositories>
@@ -45,7 +45,7 @@
     </dependency>
     <dependency>
       <groupId>org.deegree</groupId>
-      <artifactId>deegree-core-observation</artifactId>
+      <artifactId>deegree-protocol-sos</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

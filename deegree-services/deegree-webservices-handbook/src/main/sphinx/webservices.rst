@@ -344,6 +344,18 @@ Important for applications like INSPIRE, it is often desirable to include predef
     </MyCustomOutput>
   </ExtendedCapabilities>
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+Vendor specific parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The deegree WMS supports a number of vendor specific parameters. Some parameters are supported on a per layer basis while some are applied to the whole request. Most of the parameters correspond to the layer options above.
+
+The parameters which are supported on a per layer basis can be used to set an option globally, eg. ...&REQUEST=GetMap&ANTIALIAS=BOTH&..., or for each layer separately (using a comma separated list): ...&REQUEST=GetMap&ANTIALIAS=BOTH,TEXT,NONE&LAYERS=layer1,layer2,layer3&... Most of the layer options have a corresponding parameter with a similar name: ANTIALIAS, INTERPOLATION, QUALITY and MAX_FEATURES. The feature info radius can currently not be set dynamically.
+
+The PIXELSIZE parameter can be used to dynamically adjust the resolution of the resulting image. The default is the WMS default of 0.28 mm. So to achieve a double resolution, you can double the WIDTH/HEIGHT parameter values and set the PIXELSIZE parameter to 0.14.
+
+Using the QUERYBOXSIZE parameter you can include features when rendering that would normally not intersect the envelope specified in the BBOX parameter. That can be useful if you have labels at point symbols out of the envelope which would be rendered partly inside the map. Normal GetMap behaviour will exclude such a label. With the QUERYBOXSIZE parameter you can specify a factor by which to enlarge the original bounding box, which is used solely for querying the data store (the actual extent returned will not be changed!). Use values like 1.1 to enlarge the envelope by 5% in each direction (this would be 10% in total).
+
 .. _anchor-configuration-wmts:
 
 ---------------------------
@@ -402,6 +414,41 @@ In deegree terminology, a deegree CSW provides access to metadata records stored
    :target: _images/workspace-csw.png
 
    Workspace components involved in a deegree CSW configuration
+   
+.. tip::
+  In order to fully understand deegree CSW configuration, you will have to learn configuration of other workspace aspects as well. Chapter :ref:`anchor-configuration-metadatastore` describes the configuration of metadatastores.
+
+The deegree CSW config file format is defined by schema file http://schemas.deegree.org/services/csw/3.2.0/csw_configuration.xsd. The root element is ``deegreeCSW`` and the config attribute must be ``3.2.0``. There is no mandatory element, therefore a minimal CSW configuration example looks like this:
+
+.. topic:: CSW config example 1: Minimal configuration
+
+   .. literalinclude:: xml/csw_basic.xml
+      :language: xml
+   
+The following table lists all available configuration options. When specifiying them, their order must be respected.
+
+.. table:: Options for ``deegreeCSW``
+
++--------------------------+--------------+---------+----------------------------------------------------------------------------------------------+
+| Option                   | Cardinality  | Value   | Description                                                                                  |
++==========================+==============+=========+==============================================================================================+
+| SupportedVersions        | 0..1         | String  | Supported CSW Version (Default: 2.0.2)                                                       |
++--------------------------+--------------+---------+----------------------------------------------------------------------------------------------+
+| MaxMatches               | 0..1         | Integer | Not negative number of matches (Default:0)                                                   |
++--------------------------+--------------+---------+----------------------------------------------------------------------------------------------+
+| MetadataStoreId          | 0..1         | String  | Id of the meradatastoreId to use as backenend. By default the only configured store is used. |
++--------------------------+--------------+---------+----------------------------------------------------------------------------------------------+
+| EnableTransactions       | 0..1         | Boolean | Enable transactions (CSW operations) default: disabled. (Default: false)                     |
++--------------------------+--------------+---------+----------------------------------------------------------------------------------------------+
+| EnableInspireExtensions  | 0..1         |         | Enable the INSPIRE extensions, default: disabled                                             |
++--------------------------+--------------+---------+----------------------------------------------------------------------------------------------+
+| ExtendedCapabilities     | 0..1         | anyURI  | Include referenced capabilities section.                                                     |
++--------------------------+--------------+---------+----------------------------------------------------------------------------------------------+
+| ElementNames             | 0..1         |         |  List of configured return profiles. See following xml snippet for detailed informations.    |
++--------------------------+--------------+---------+----------------------------------------------------------------------------------------------+
+
+   .. literalinclude:: xml/csw_elementNames.snippet
+      :language: xml
 
 .. _anchor-configuration-wps:
 

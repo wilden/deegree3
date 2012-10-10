@@ -70,6 +70,7 @@ import java.util.Map.Entry;
 
 import java_cup.runtime.Symbol;
 
+import org.deegree.commons.ows.exception.OWSException;
 import org.deegree.commons.tom.ReferenceResolvingException;
 import org.deegree.commons.tom.ows.Version;
 import org.deegree.commons.utils.CollectionUtils;
@@ -81,7 +82,6 @@ import org.deegree.geometry.GeometryFactory;
 import org.deegree.layer.LayerRef;
 import org.deegree.layer.dims.DimensionLexer;
 import org.deegree.layer.dims.parser;
-import org.deegree.protocol.ows.exception.OWSException;
 import org.deegree.protocol.wms.Utils;
 import org.deegree.rendering.r2d.RenderHelper;
 import org.deegree.rendering.r2d.context.MapOptions.Antialias;
@@ -336,7 +336,7 @@ public class GetMap extends RequestBase {
         String psize = map.get( "PIXELSIZE" );
         if ( psize != null ) {
             try {
-                pixelSize = Double.parseDouble( psize );
+                pixelSize = Double.parseDouble( psize ) / 1000;
             } catch ( NumberFormatException e ) {
                 LOG.warn( "The value of PIXELSIZE could not be parsed as a number." );
                 LOG.trace( "Stack trace:", e );
@@ -386,7 +386,6 @@ public class GetMap extends RequestBase {
         if ( q != null ) {
             try {
                 queryBoxSize = Double.parseDouble( q );
-                System.out.println(queryBoxSize);
             } catch ( NumberFormatException e ) {
                 LOG.warn( "The QUERYBOXSIZE parameter could not be parsed." );
             }

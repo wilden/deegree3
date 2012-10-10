@@ -8,7 +8,7 @@
   <parent>
     <groupId>org.deegree</groupId>
     <artifactId>deegree-core</artifactId>
-    <version>3.2-pre11-SNAPSHOT</version>
+    <version>3.2-pre12-SNAPSHOT</version>
   </parent>
 
   <repositories>
@@ -25,10 +25,12 @@
   </repositories>
 
   <modules>
-    <module>deegree-protocol-wms</module>
-    <module>deegree-protocol-wfs</module>
-    <module>deegree-protocol-wmts</module>
+    <module>deegree-protocol-commons</module>
     <module>deegree-protocol-csw</module>
+    <module>deegree-protocol-sos</module>
+    <module>deegree-protocol-wfs</module>
+    <module>deegree-protocol-wms</module>
+    <module>deegree-protocol-wmts</module>
   </modules>
 
 </project>

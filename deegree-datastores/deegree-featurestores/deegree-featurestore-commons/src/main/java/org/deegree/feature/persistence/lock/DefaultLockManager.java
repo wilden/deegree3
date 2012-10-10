@@ -36,7 +36,10 @@
 
 package org.deegree.feature.persistence.lock;
 
+import static org.deegree.commons.ows.exception.OWSException.NO_APPLICABLE_CODE;
+import static org.deegree.commons.tom.datetime.ISO8601Converter.formatDateTime;
 import static org.deegree.commons.utils.JDBCUtils.close;
+import static org.deegree.feature.i18n.Messages.getMessage;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -46,9 +49,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.List;
 
 import org.deegree.commons.jdbc.ConnectionManager;
 import org.deegree.commons.jdbc.ResultSetIterator;
+import org.deegree.commons.ows.exception.OWSException;
+import org.deegree.commons.tom.datetime.DateTime;
 import org.deegree.commons.utils.CloseableIterator;
 import org.deegree.commons.utils.kvp.InvalidParameterValueException;
 import org.deegree.feature.Feature;
@@ -57,17 +63,7 @@ import org.deegree.feature.i18n.Messages;
 import org.deegree.feature.persistence.FeatureStore;
 import org.deegree.feature.persistence.FeatureStoreException;
 import org.deegree.feature.persistence.query.Query;
-import org.deegree.filter.Filter;
 import org.deegree.filter.FilterEvaluationException;
-import org.deegree.filter.IdFilter;
-import org.deegree.filter.OperatorFilter;
-import org.deegree.filter.spatial.BBOX;
-import org.deegree.geometry.Envelope;
-import org.deegree.protocol.wfs.getfeature.TypeName;
-import org.deegree.protocol.wfs.lockfeature.BBoxLock;
-import org.deegree.protocol.wfs.lockfeature.FeatureIdLock;
-import org.deegree.protocol.wfs.lockfeature.FilterLock;
-import org.deegree.protocol.wfs.lockfeature.LockOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -163,7 +159,7 @@ public class DefaultLockManager implements LockManager {
                 }
                 String sql = "CREATE TABLE LOCK_FAILED_FIDS (";
                 sql += "LOCK_ID INT REFERENCES LOCKS,";
-                sql += "FID VARCHAR(255) NOT NULL UNIQUE";
+                sql += "FID VARCHAR(255) NOT NULL";
                 sql += ")";
                 stmt.execute( sql );
             } else {
@@ -180,8 +176,8 @@ public class DefaultLockManager implements LockManager {
     }
 
     @Override
-    public Lock acquireLock( LockOperation[] lockRequests, boolean mustLockAll, long expireTimeout )
-                            throws FeatureStoreException {
+    public Lock acquireLock( List<Query> queries, boolean mustLockAll, long expireTimeout )
+                            throws FeatureStoreException, OWSException {
 
         Lock lock = null;
 
@@ -217,27 +213,7 @@ public class DefaultLockManager implements LockManager {
                 int numLocked = 0;
                 int numFailed = 0;
 
-                for ( LockOperation lockRequest : lockRequests ) {
-
-                    // TODO don't actually fetch the feature collection, but only the fids of the features
-                    Query query = null;
-                    if ( lockRequest instanceof BBoxLock ) {
-                        BBoxLock bboxLock = (BBoxLock) lockRequest;
-                        TypeName[] typeNames = bboxLock.getTypeNames();
-                        Envelope bbox = bboxLock.getBBox();
-                        BBOX bboxOperator = new BBOX( null, bbox );
-                        Filter filter = new OperatorFilter( bboxOperator );
-                        query = new Query( typeNames, filter, null, null, null );
-                    } else if ( lockRequest instanceof FeatureIdLock ) {
-                        FeatureIdLock fidLock = (FeatureIdLock) lockRequest;
-                        TypeName[] typeNames = fidLock.getTypeNames();
-                        Filter filter = new IdFilter( fidLock.getFeatureIds() );
-                        query = new Query( typeNames, filter, null, null, null );
-                    } else if ( lockRequest instanceof FilterLock ) {
-                        FilterLock filterLock = (FilterLock) lockRequest;
-                        TypeName[] typeNames = new TypeName[] { filterLock.getTypeName() };
-                        query = new Query( typeNames, filterLock.getFilter(), null, null, null );
-                    }
+                for ( Query query : queries ) {
                     FeatureCollection fc = store.query( query ).toCollection();
 
                     // create entries in LOCKED_FIDS/LOCK_FAILED_FIDS tables
@@ -269,8 +245,10 @@ public class DefaultLockManager implements LockManager {
                                     Timestamp acquired2 = rs.getTimestamp( 1 );
                                     Timestamp expires2 = rs.getTimestamp( 2 );
                                     rs.close();
-                                    String msg = Messages.getMessage( "LOCK_CANNOT_LOCK_ALL", fid, expires2, acquired2 );
-                                    throw new FeatureStoreException( msg );
+                                    String msg = getMessage( "LOCK_CANNOT_LOCK_ALL", fid,
+                                                             formatDateTime( new DateTime( expires2, null ) ),
+                                                             formatDateTime( new DateTime( acquired2, null ) ) );
+                                    throw new OWSException( msg, NO_APPLICABLE_CODE );
                                 }
                                 failedToLockStmt.setInt( 1, lockId );
                                 failedToLockStmt.setString( 2, fid );

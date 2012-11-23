@@ -52,8 +52,10 @@ import org.deegree.commons.jdbc.TableName;
 import org.deegree.commons.tom.TypedObjectNode;
 import org.deegree.commons.tom.genericxml.GenericXMLElement;
 import org.deegree.commons.tom.gml.property.Property;
+import org.deegree.commons.tom.primitive.BaseType;
 import org.deegree.commons.tom.primitive.PrimitiveValue;
 import org.deegree.commons.tom.sql.ParticleConverter;
+import org.deegree.commons.utils.Pair;
 import org.deegree.feature.Feature;
 import org.deegree.feature.persistence.FeatureStoreException;
 import org.deegree.feature.persistence.sql.FeatureTypeMapping;
@@ -70,11 +72,12 @@ import org.deegree.feature.persistence.sql.rules.GeometryMapping;
 import org.deegree.feature.persistence.sql.rules.Mapping;
 import org.deegree.feature.persistence.sql.rules.PrimitiveMapping;
 import org.deegree.feature.types.FeatureType;
-import org.deegree.feature.xpath.GMLObjectXPathEvaluator;
+import org.deegree.feature.xpath.TypedObjectNodeXPathEvaluator;
 import org.deegree.filter.FilterEvaluationException;
 import org.deegree.geometry.Geometry;
 import org.deegree.gml.reference.FeatureReference;
 import org.deegree.protocol.wfs.transaction.action.IDGenMode;
+import org.deegree.protocol.wfs.transaction.action.ParsedPropertyReplacement;
 import org.deegree.sqldialect.SQLDialect;
 import org.deegree.sqldialect.filter.DBField;
 import org.deegree.sqldialect.filter.MappingExpression;
@@ -189,6 +192,58 @@ public class InsertRowManager {
         return featureRow;
     }
 
+    public FeatureRow updateFeature( final Feature feature, final FeatureTypeMapping ftMapping, final String[] idParts,
+                                     Mapping mapping, ParsedPropertyReplacement replacement )
+                            throws SQLException, FeatureStoreException, FilterEvaluationException {
+
+        FeatureRow featureRow = null;
+        try {
+            featureRow = new FeatureRow( this, feature.getId() ) {
+                @Override
+                void performInsert( Connection conn, boolean propagateAutoGenColumns )
+                                        throws SQLException, FeatureStoreException {
+                    // don't
+                }
+
+                @Override
+                public Object get( SQLIdentifier id ) {
+                    int idx = 0;
+                    for ( Pair<SQLIdentifier, BaseType> p : ftMapping.getFidMapping().getColumns() ) {
+                        if ( p.first.equals( id ) ) {
+                            // TODO need to use something other than string here?
+                            return idParts[idx];
+                        }
+                        ++idx;
+                    }
+                    return null;
+                }
+            };
+
+            // tracks all rows of this feature instance
+            List<InsertRow> allRows = new ArrayList<InsertRow>();
+            allRows.add( featureRow );
+
+            buildInsertRows( feature, mapping, featureRow, allRows );
+
+            LOG.debug( "Built rows for feature '" + feature.getId() + "': " + allRows.size() );
+
+            for ( InsertRow insertRow : allRows ) {
+                if ( !insertRow.hasParents() ) {
+                    rootRows.add( insertRow );
+                }
+            }
+
+            LOG.debug( "Before heap run: uninserted rows: " + delayedRows.size() + ", root rows: " + rootRows.size() );
+            processHeap();
+            LOG.debug( "After heap run: uninserted rows: " + delayedRows.size() + ", root rows: " + rootRows.size() );
+
+        } catch ( Throwable t ) {
+            LOG.debug( t.getMessage(), t );
+            throw new FeatureStoreException( t.getMessage(), t );
+        }
+        return featureRow;
+    }
+
     SQLDialect getDialect() {
         return dialect;
     }
@@ -242,8 +297,8 @@ public class InsertRowManager {
         return featureRow;
     }
 
-    private void buildInsertRows( final TypedObjectNode particle, final Mapping mapping, final InsertRow row,
-                                  List<InsertRow> additionalRows )
+    public void buildInsertRows( final TypedObjectNode particle, final Mapping mapping, final InsertRow row,
+                                 List<InsertRow> additionalRows )
                             throws FilterEvaluationException, FeatureStoreException {
 
         List<TableJoin> jc = mapping.getJoinedTable();
@@ -253,7 +308,7 @@ public class InsertRowManager {
             }
         }
 
-        GMLObjectXPathEvaluator evaluator = new GMLObjectXPathEvaluator();
+        TypedObjectNodeXPathEvaluator evaluator = new TypedObjectNodeXPathEvaluator();
         TypedObjectNode[] values = evaluator.eval( particle, mapping.getPath() );
         int childIdx = 1;
         for ( TypedObjectNode value : values ) {
@@ -457,7 +512,7 @@ public class InsertRowManager {
         return prop;
     }
 
-    private void processHeap()
+    public void processHeap()
                             throws SQLException, FeatureStoreException {
 
         while ( !rootRows.isEmpty() ) {
@@ -495,4 +550,5 @@ public class InsertRowManager {
     public int getDelayedRows() {
         return delayedRows.size();
     }
+
 }

@@ -36,7 +36,7 @@
 package org.deegree.protocol.wfs.query;
 
 import org.deegree.cs.coordinatesystems.ICRS;
-import org.deegree.filter.ProjectionClause;
+import org.deegree.filter.projection.ProjectionClause;
 import org.deegree.filter.sort.SortProperty;
 import org.deegree.protocol.wfs.getfeature.TypeName;
 
@@ -126,9 +126,9 @@ public abstract class AdHocQuery extends Query {
     }
 
     /**
-     * Returns the properties of the features that should be retrieved.
+     * Returns the projections for the features that should be retrieved.
      * 
-     * @return the properties of the features that should be retrieved, may be empty, but never <code>null</code>
+     * @return the projections for features that should be retrieved, may be empty, but never <code>null</code>
      */
     public ProjectionClause[] getProjectionClauses() {
         return projectionClauses;

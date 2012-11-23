@@ -58,7 +58,7 @@ import org.deegree.cs.exceptions.TransformationException;
 import org.deegree.cs.exceptions.UnknownCRSException;
 import org.deegree.feature.Feature;
 import org.deegree.feature.property.ExtraProps;
-import org.deegree.filter.ProjectionClause;
+import org.deegree.filter.projection.ProjectionClause;
 import org.deegree.geometry.Geometry;
 import org.deegree.geometry.io.CoordinateFormatter;
 import org.deegree.gml.dictionary.Definition;
@@ -106,7 +106,7 @@ public class GMLStreamWriter {
 
     private GMLDictionaryWriter dictionaryWriter;
 
-    private List<ProjectionClause> projection;
+    private List<ProjectionClause> projections;
 
     private final Map<String, String> prefixToNs = new HashMap<String, String>();
 
@@ -207,22 +207,22 @@ public class GMLStreamWriter {
     }
 
     /**
-     * Returns the feature properties to be included for exported {@link Feature} instances.
+     * Returns the projections that are applied to exported {@link Feature} instances.
      * 
-     * @return feature properties to be included, or <code>null</code> (include all feature props)
+     * @return projections, or <code>null</code> (include all feature properties)
      */
     public List<ProjectionClause> getProjections() {
-        return projection;
+        return projections;
     }
 
     /**
-     * Sets the feature properties to be included for exported {@link Feature} instances.
+     * Sets the projections to be applied to exported {@link Feature} instances.
      * 
-     * @param projection
-     *            feature properties to be included, or <code>null</code> (include all feature props)
+     * @param projections
+     *            projections, or <code>null</code> (include all feature properties)
      */
-    public void setProjection( List<ProjectionClause> projection ) {
-        this.projection = projection;
+    public void setProjections( List<ProjectionClause> projections ) {
+        this.projections = projections;
     }
 
     /**

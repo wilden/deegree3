@@ -74,15 +74,18 @@ class LabelRenderer {
 
     private Java2DRenderer renderer;
 
+    private RendererContext context;
+
     LabelRenderer( Java2DRenderer renderer ) {
         this.renderer = renderer;
+        this.context = renderer.rendererContext;
     }
 
     void render( TextStyling styling, Font font, String text, Point p ) {
         Point2D.Double pt = (Point2D.Double) renderer.worldToScreen.transform( new Point2D.Double( p.get0(), p.get1() ),
                                                                                null );
-        double x = pt.x + renderer.considerUOM( styling.displacementX, styling.uom );
-        double y = pt.y - renderer.considerUOM( styling.displacementY, styling.uom );
+        double x = pt.x + context.uomCalculator.considerUOM( styling.displacementX, styling.uom );
+        double y = pt.y - context.uomCalculator.considerUOM( styling.displacementY, styling.uom );
         renderer.graphics.setFont( font );
         AffineTransform transform = renderer.graphics.getTransform();
         renderer.graphics.rotate( toRadians( styling.rotation ), x, y );
@@ -100,10 +103,10 @@ class LabelRenderer {
         double py = y + styling.anchorPointY * height;
 
         if ( styling.halo != null ) {
-            renderer.getFillRenderer().applyFill( styling.halo.fill, styling.uom );
+            context.fillRenderer.applyFill( styling.halo.fill, styling.uom );
 
-            BasicStroke stroke = new BasicStroke(
-                                                  round( 2 * renderer.considerUOM( styling.halo.radius, styling.uom ) ),
+            BasicStroke stroke = new BasicStroke( round( 2 * context.uomCalculator.considerUOM( styling.halo.radius,
+                                                                                                styling.uom ) ),
                                                   CAP_BUTT, JOIN_ROUND );
             renderer.graphics.setStroke( stroke );
             renderer.graphics.draw( layout.getOutline( getTranslateInstance( px, py ) ) );
@@ -111,14 +114,14 @@ class LabelRenderer {
 
         renderer.graphics.setStroke( new BasicStroke() );
 
-        renderer.getFillRenderer().applyFill( styling.fill, styling.uom );
+        context.fillRenderer.applyFill( styling.fill, styling.uom );
         layout.draw( renderer.graphics, (float) px, (float) py );
 
         renderer.graphics.setTransform( transform );
     }
 
-     void render( TextStyling styling, Font font, String text, Curve c ) {
-        renderer.getFillRenderer().applyFill( styling.fill, styling.uom );
+    void render( TextStyling styling, Font font, String text, Curve c ) {
+        context.fillRenderer.applyFill( styling.fill, styling.uom );
         java.awt.Stroke stroke = new TextStroke( text, font, styling.linePlacement );
         if ( isZero( ( (TextStroke) stroke ).getLineHeight() ) ) {
             return;
@@ -129,7 +132,7 @@ class LabelRenderer {
         }
 
         renderer.graphics.setStroke( stroke );
-        Double line = renderer.geomHelper.fromCurve( c, false );
+        Double line = context.geomHelper.fromCurve( c, false );
 
         renderer.graphics.draw( line );
     }

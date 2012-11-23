@@ -34,20 +34,20 @@
  e-mail: info@deegree.org
  ----------------------------------------------------------------------------*/
 
-package org.deegree.filter;
+package org.deegree.filter.projection;
 
 import org.deegree.commons.tom.ResolveParams;
 import org.deegree.filter.expression.ValueReference;
 
 /**
- * A {@link ValueReference} that is requested to be included in a Query response.
+ * {@link ProjectionClause} that is based on {@link ValueReference}s.
  * 
  * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider</a>
  * @author last edited by: $Author: schneider $
  * 
  * @version $Revision: $, $Date: $
  */
-public class ProjectionClause {
+public class PropertyName implements ProjectionClause {
 
     private final ValueReference propertyName;
 
@@ -56,7 +56,7 @@ public class ProjectionClause {
     private final ValueReference resolvePath;
 
     /**
-     * Creates a new {@link ProjectionClause} instance.
+     * Creates a new {@link PropertyName} instance.
      * 
      * @param propertyName
      *            name of the targeted property, must not be <code>null</code>
@@ -65,7 +65,7 @@ public class ProjectionClause {
      * @param resolvePath
      *            ....may be <code>null</code>
      */
-    public ProjectionClause( ValueReference propertyName, ResolveParams resolveParams, ValueReference resolvePath ) {
+    public PropertyName( ValueReference propertyName, ResolveParams resolveParams, ValueReference resolvePath ) {
         this.propertyName = propertyName;
         if ( resolveParams != null ) {
             this.resolveParams = resolveParams;

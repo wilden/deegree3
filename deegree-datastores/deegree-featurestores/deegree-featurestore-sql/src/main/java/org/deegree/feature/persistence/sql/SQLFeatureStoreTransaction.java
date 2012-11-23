@@ -44,6 +44,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -101,6 +102,7 @@ import org.deegree.geometry.Geometries;
 import org.deegree.geometry.Geometry;
 import org.deegree.protocol.wfs.transaction.action.IDGenMode;
 import org.deegree.protocol.wfs.transaction.action.ParsedPropertyReplacement;
+import org.deegree.protocol.wfs.transaction.action.UpdateAction;
 import org.deegree.sqldialect.filter.DBField;
 import org.deegree.sqldialect.filter.MappingExpression;
 import org.slf4j.Logger;
@@ -788,11 +790,85 @@ public class SQLFeatureStoreTransaction implements FeatureStoreTransaction {
 
     private List<String> performUpdateRelational( QName ftName, List<ParsedPropertyReplacement> replacementProps,
                                                   IdFilter filter )
-                            throws FeatureStoreException {
+                            throws FeatureStoreException, FilterEvaluationException {
 
         FeatureTypeMapping ftMapping = schema.getFtMapping( ftName );
         FIDMapping fidMapping = ftMapping.getFidMapping();
 
+        int updated = 0;
+        PreparedStatement stmt = null;
+        try {
+            String sql = createRelationalUpdateStatement( ftMapping, fidMapping, replacementProps,
+                                                          filter.getSelectedIds() );
+
+            if ( sql != null ) {
+                LOG.debug( "Update: " + sql );
+                stmt = conn.prepareStatement( sql.toString() );
+                setRelationalUpdateValues( replacementProps, ftMapping, stmt, filter, fidMapping );
+                int[] updates = stmt.executeBatch();
+                for ( int noUpdated : updates ) {
+                    updated += noUpdated;
+                }
+            }
+        } catch ( SQLException e ) {
+            JDBCUtils.log( e, LOG );
+            throw new FeatureStoreException( JDBCUtils.getMessage( e ), e );
+        } finally {
+            JDBCUtils.close( stmt );
+        }
+        LOG.debug( "Updated {} features.", updated );
+        return new ArrayList<String>( filter.getMatchingIds() );
+    }
+
+    private void setRelationalUpdateValues( List<ParsedPropertyReplacement> replacementProps,
+                                            FeatureTypeMapping ftMapping, PreparedStatement stmt, IdFilter filter,
+                                            FIDMapping fidMapping )
+                            throws SQLException {
+        int i = 1;
+
+        for ( ParsedPropertyReplacement replacement : replacementProps ) {
+            Property replacementProp = replacement.getNewValue();
+            QName propName = replacementProp.getType().getName();
+            Mapping mapping = ftMapping.getMapping( propName );
+            if ( mapping != null ) {
+                if ( mapping.getJoinedTable() != null && !mapping.getJoinedTable().isEmpty() ) {
+                    continue;
+                }
+                ParticleConverter<TypedObjectNode> converter = (ParticleConverter<TypedObjectNode>) fs.getConverter( mapping );
+                if ( mapping instanceof PrimitiveMapping ) {
+                    MappingExpression me = ( (PrimitiveMapping) mapping ).getMapping();
+                    if ( !( me instanceof DBField ) ) {
+                        continue;
+                    }
+                    PrimitiveValue value = (PrimitiveValue) replacementProp.getValue();
+                    converter.setParticle( stmt, value, i++ );
+                } else if ( mapping instanceof GeometryMapping ) {
+                    MappingExpression me = ( (GeometryMapping) mapping ).getMapping();
+                    if ( !( me instanceof DBField ) ) {
+                        continue;
+                    }
+                    Geometry value = (Geometry) replacementProp.getValue();
+                    converter.setParticle( stmt, value, i++ );
+                }
+            }
+        }
+
+        for ( String id : filter.getMatchingIds() ) {
+            IdAnalysis analysis = schema.analyzeId( id );
+            int j = i;
+            for ( String fidKernel : analysis.getIdKernels() ) {
+                PrimitiveValue value = new PrimitiveValue( fidKernel, new PrimitiveType( fidMapping.getColumnType() ) );
+                Object sqlValue = SQLValueMangler.internalToSQL( value );
+                stmt.setObject( j++, sqlValue );
+            }
+            stmt.addBatch();
+        }
+    }
+
+    private String createRelationalUpdateStatement( FeatureTypeMapping ftMapping, FIDMapping fidMapping,
+                                                    List<ParsedPropertyReplacement> replacementProps,
+                                                    List<ResourceId> list )
+                            throws FilterEvaluationException, FeatureStoreException, SQLException {
         StringBuffer sql = new StringBuffer( "UPDATE " );
         sql.append( ftMapping.getFtTable() );
         sql.append( " SET " );
@@ -802,6 +878,10 @@ public class SQLFeatureStoreTransaction implements FeatureStoreTransaction {
             QName propName = replacementProp.getType().getName();
             Mapping mapping = ftMapping.getMapping( propName );
             if ( mapping != null ) {
+                if ( mapping.getJoinedTable() != null && !mapping.getJoinedTable().isEmpty() ) {
+                    addRelationallyMappedMultiProperty( replacement, mapping, ftMapping, list );
+                    continue;
+                }
                 String column = null;
                 ParticleConverter<TypedObjectNode> converter = (ParticleConverter<TypedObjectNode>) fs.getConverter( mapping );
                 if ( mapping instanceof PrimitiveMapping ) {
@@ -843,6 +923,12 @@ public class SQLFeatureStoreTransaction implements FeatureStoreTransaction {
                 LOG.warn( "No mapping for update property '" + propName + "'. Omitting." );
             }
         }
+
+        // only property changes in multi properties?
+        if ( first ) {
+            return null;
+        }
+
         sql.append( " WHERE " );
         sql.append( fidMapping.getColumns().get( 0 ).first );
         sql.append( "=?" );
@@ -851,62 +937,35 @@ public class SQLFeatureStoreTransaction implements FeatureStoreTransaction {
             sql.append( fidMapping.getColumns().get( i ) );
             sql.append( "=?" );
         }
+        return sql.toString();
+    }
 
-        LOG.debug( "Update: " + sql );
-
-        int updated = 0;
-        PreparedStatement stmt = null;
-        try {
-            stmt = conn.prepareStatement( sql.toString() );
-            int i = 1;
-
-            for ( ParsedPropertyReplacement replacement : replacementProps ) {
-                Property replacementProp = replacement.getNewValue();
-                QName propName = replacementProp.getType().getName();
-                Mapping mapping = ftMapping.getMapping( propName );
-                if ( mapping != null ) {
-                    ParticleConverter<TypedObjectNode> converter = (ParticleConverter<TypedObjectNode>) fs.getConverter( mapping );
-                    if ( mapping instanceof PrimitiveMapping ) {
-                        MappingExpression me = ( (PrimitiveMapping) mapping ).getMapping();
-                        if ( !( me instanceof DBField ) ) {
-                            continue;
-                        }
-                        PrimitiveValue value = (PrimitiveValue) replacementProp.getValue();
-                        converter.setParticle( stmt, value, i++ );
-                    } else if ( mapping instanceof GeometryMapping ) {
-                        MappingExpression me = ( (GeometryMapping) mapping ).getMapping();
-                        if ( !( me instanceof DBField ) ) {
-                            continue;
-                        }
-                        Geometry value = (Geometry) replacementProp.getValue();
-                        converter.setParticle( stmt, value, i++ );
-                    }
-                }
-            }
-
-            for ( String id : filter.getMatchingIds() ) {
-                IdAnalysis analysis = schema.analyzeId( id );
-                int j = i;
-                for ( String fidKernel : analysis.getIdKernels() ) {
-                    PrimitiveValue value = new PrimitiveValue( fidKernel,
-                                                               new PrimitiveType( fidMapping.getColumnType() ) );
-                    Object sqlValue = SQLValueMangler.internalToSQL( value );
-                    stmt.setObject( j++, sqlValue );
-                }
-                stmt.addBatch();
-            }
-            int[] updates = stmt.executeBatch();
-            for ( int noUpdated : updates ) {
-                updated += noUpdated;
-            }
-        } catch ( SQLException e ) {
-            JDBCUtils.log( e, LOG );
-            throw new FeatureStoreException( JDBCUtils.getMessage( e ), e );
-        } finally {
-            JDBCUtils.close( stmt );
+    private void addRelationallyMappedMultiProperty( ParsedPropertyReplacement replacement, Mapping mapping,
+                                                     FeatureTypeMapping ftMapping, List<ResourceId> list )
+                            throws FilterEvaluationException, FeatureStoreException, SQLException {
+        UpdateAction action = replacement.getUpdateAction();
+        if ( action == null ) {
+            action = UpdateAction.INSERT_AFTER;
         }
-        LOG.debug( "Updated {} features.", updated );
-        return new ArrayList<String>( filter.getMatchingIds() );
+        switch ( action ) {
+        case INSERT_BEFORE:
+        case REMOVE:
+        case REPLACE:
+            LOG.warn( "Updating of multi properties is currently only supported for 'insertAfter' update action. Omitting." );
+            break;
+        case INSERT_AFTER:
+            break;
+        default:
+            break;
+        }
+        InsertRowManager mgr = new InsertRowManager( fs, conn, null );
+        List<Property> props = Collections.singletonList( replacement.getNewValue() );
+        for ( ResourceId id : list ) {
+            IdAnalysis analysis = schema.analyzeId( id.getRid() );
+            FeatureType featureType = schema.getFeatureType( ftMapping.getFeatureType() );
+            Feature f = featureType.newFeature( id.getRid(), props, null );
+            mgr.updateFeature( f, ftMapping, analysis.getIdKernels(), mapping, replacement );
+        }
     }
 
     private IdFilter getIdFilter( QName ftName, OperatorFilter filter )

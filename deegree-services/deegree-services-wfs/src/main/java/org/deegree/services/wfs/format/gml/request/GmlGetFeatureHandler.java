@@ -84,7 +84,8 @@ import org.deegree.feature.persistence.lock.LockManager;
 import org.deegree.feature.persistence.query.Query;
 import org.deegree.feature.stream.FeatureInputStream;
 import org.deegree.filter.FilterEvaluationException;
-import org.deegree.filter.ProjectionClause;
+import org.deegree.filter.projection.ProjectionClause;
+import org.deegree.filter.projection.PropertyName;
 import org.deegree.geometry.Envelope;
 import org.deegree.gml.GMLStreamWriter;
 import org.deegree.gml.GMLVersion;
@@ -244,7 +245,7 @@ public class GmlGetFeatureHandler extends AbstractGmlRequestHandler {
         }
 
         GMLStreamWriter gmlStream = createGMLStreamWriter( gmlVersion, xmlStream );
-        gmlStream.setProjection( analyzer.getProjection() );
+        gmlStream.setProjections( analyzer.getProjections() );
         gmlStream.setOutputCrs( analyzer.getRequestedCRS() );
         gmlStream.setCoordinateFormatter( options.getFormatter() );
         gmlStream.setGenerateBoundedByForFeatures( options.isGenerateBoundedByForFeatures() );
@@ -254,8 +255,8 @@ public class GmlGetFeatureHandler extends AbstractGmlRequestHandler {
         gmlStream.setNamespaceBindings( prefixToNs );
         GmlXlinkOptions resolveOptions = new GmlXlinkOptions( request.getResolveParams() );
         WfsXlinkStrategy additionalObjects = new WfsXlinkStrategy( (BufferableXMLStreamWriter) xmlStream,
-                                                                             localReferencesPossible, xLinkTemplate,
-                                                                             resolveOptions );
+                                                                   localReferencesPossible, xLinkTemplate,
+                                                                   resolveOptions );
         gmlStream.setReferenceResolveStrategy( additionalObjects );
 
         if ( options.isDisableStreaming() ) {
@@ -566,13 +567,16 @@ public class GmlGetFeatureHandler extends AbstractGmlRequestHandler {
             GetFeatureWithLock gfLock = (GetFeatureWithLock) request;
 
             // CITE 1.1.0 compliance (wfs:GetFeatureWithLock-Xlink)
-            if ( analyzer.getProjection() != null ) {
-                for ( ProjectionClause clause : analyzer.getProjection() ) {
-                    ResolveParams resolveParams = clause.getResolveParams();
-                    if ( resolveParams.getDepth() != null || resolveParams.getMode() != null
-                         || resolveParams.getTimeout() != null ) {
-                        throw new OWSException( "GetFeatureWithLock does not support XlinkPropertyName",
-                                                OPTION_NOT_SUPPORTED );
+            if ( analyzer.getProjections() != null ) {
+                for ( ProjectionClause clause : analyzer.getProjections() ) {
+                    if ( clause instanceof PropertyName ) {
+                        PropertyName propName = (PropertyName) clause;
+                        ResolveParams resolveParams = propName.getResolveParams();
+                        if ( resolveParams.getDepth() != null || resolveParams.getMode() != null
+                             || resolveParams.getTimeout() != null ) {
+                            throw new OWSException( "GetFeatureWithLock does not support XlinkPropertyName",
+                                                    OPTION_NOT_SUPPORTED );
+                        }
                     }
                 }
             }

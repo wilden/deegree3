@@ -39,7 +39,7 @@ import javax.xml.namespace.QName;
 
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.filter.Filter;
-import org.deegree.filter.ProjectionClause;
+import org.deegree.filter.projection.ProjectionClause;
 import org.deegree.filter.sort.SortProperty;
 import org.deegree.protocol.wfs.getfeature.TypeName;
 

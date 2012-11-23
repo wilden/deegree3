@@ -41,6 +41,17 @@
           </dependency>
         </dependencies>
       </plugin>
+      <plugin>
+        <groupId>org.antlr</groupId>
+        <artifactId>antlr3-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>antlr</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
@@ -51,13 +62,13 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>net.sf.squirrel-sql.thirdparty.non-maven</groupId>
-      <artifactId>java-cup</artifactId>
-    </dependency>
-    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
     </dependency>    
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>antlr-runtime</artifactId>
+    </dependency>
   </dependencies>
 
 </project>

@@ -36,24 +36,29 @@
 package org.deegree.metadata.iso.persistence;
 
 import static org.deegree.commons.xml.CommonNamespaces.OWS_NS;
+import static org.deegree.db.ConnectionProviderUtils.getSyntheticProvider;
+import static org.deegree.workspace.WorkspaceUtils.activateFromUrl;
+import static org.junit.Assume.assumeNotNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Set;
 
-import org.deegree.commons.config.DeegreeWorkspace;
-import org.deegree.commons.jdbc.ConnectionManager;
-import org.deegree.commons.jdbc.ConnectionManager.Type;
-import org.deegree.commons.utils.JDBCUtils;
 import org.deegree.commons.utils.test.TestProperties;
 import org.deegree.commons.xml.CommonNamespaces;
 import org.deegree.commons.xml.NamespaceBindings;
+import org.deegree.db.ConnectionProvider;
+import org.deegree.db.ConnectionProviderProvider;
 import org.deegree.metadata.persistence.MetadataResultSet;
+import org.deegree.metadata.persistence.MetadataStoreProvider;
 import org.deegree.protocol.csw.MetadataStoreException;
+import org.deegree.workspace.Workspace;
+import org.deegree.workspace.standard.DefaultWorkspace;
 import org.junit.After;
 import org.junit.Before;
 import org.slf4j.Logger;
@@ -82,7 +87,7 @@ public abstract class AbstractISOTest {
 
     protected MetadataResultSet<?> resultSet;
 
-    protected Connection conn;
+    protected Workspace workspace;
 
     static {
         nsContext.addNamespace( "ows", OWS_NS );
@@ -98,46 +103,39 @@ public abstract class AbstractISOTest {
         jdbcUser = TestProperties.getProperty( "iso_store_user" );
         jdbcPass = TestProperties.getProperty( "iso_store_pass" );
 
-        if ( jdbcURL != null && jdbcUser != null && jdbcPass != null ) {
-            Set<String> connIds = ConnectionManager.getConnectionIds();
-            LOG.info( "publish the connectionIDs: " + connIds + " " );
-            if ( connIds.contains( "iso_pg_set_up_tables" ) ) {
-                // skip new creation of the connection
-                // Connection connDeleteTables = null;
-                try {
-                    conn = ConnectionManager.getConnection( "iso_pg_set_up_tables" );
+        workspace = new DefaultWorkspace( new File( "/tmp/" ) );
+        workspace.startup();
+        workspace.getLocationHandler().addExtraResource( getSyntheticProvider( "iso_pg_set_up_tables", jdbcURL,
+                                                                               jdbcUser, jdbcPass ) );
+        workspace.initAll();
+        ConnectionProvider prov = workspace.getResource( ConnectionProviderProvider.class, "iso_pg_set_up_tables" );
 
-                    deleteFromTables( conn );
-                } finally {
-                    JDBCUtils.close( conn );
-                }
+        assumeNotNull( prov );
 
-            } else {
-                ConnectionManager.addConnection( "iso_pg_set_up_tables", jdbcURL, jdbcUser, jdbcPass, 5, 20 );
-                // Connection connSetUpTables = null;
-
-                try {
-                    conn = ConnectionManager.getConnection( "iso_pg_set_up_tables" );
-
-                    setUpTables( conn );
-
-                } finally {
-                    JDBCUtils.close( conn );
-
-                }
-            }
+        Connection conn = prov.getConnection();
+        try {
+            setUpTables( conn );
+        } catch ( Exception e ) {
+            // ignore
         }
-        DeegreeWorkspace.getInstance().initAll();
+        try {
+            deleteFromTables( conn );
+        } catch ( Exception e ) {
+            // ignore
+        }
+
+        conn.close();
     }
 
     private void setUpTables( Connection conn )
                             throws SQLException, UnsupportedEncodingException, IOException, MetadataStoreException {
 
+        ConnectionProvider prov = workspace.getResource( ConnectionProviderProvider.class, "iso_pg_set_up_tables" );
+
         Statement stmt = null;
         try {
             stmt = conn.createStatement();
-
-            for ( String sql : new ISOMetadataStoreProvider().getDropStatements( Type.PostgreSQL ) ) {
+            for ( String sql : new ISOMetadataStoreProvider().getDropStatements( prov.getDialect() ) ) {
                 try {
                     stmt.executeUpdate( sql );
                 } catch ( Exception e ) {
@@ -146,11 +144,11 @@ public abstract class AbstractISOTest {
                 }
             }
 
-            for ( String sql : new ISOMetadataStoreProvider().getCreateStatements( Type.PostgreSQL ) ) {
-
+            for ( String sql : new ISOMetadataStoreProvider().getCreateStatements( prov.getDialect() ) ) {
                 stmt.execute( sql );
             }
 
+            conn.commit();
         } finally {
             if ( stmt != null ) {
                 stmt.close();
@@ -166,16 +164,8 @@ public abstract class AbstractISOTest {
             LOG.info( "Tear down the test" );
             LOG.info( "------------------" );
             resultSet.close();
-        } else {
-            if ( conn != null && conn.isClosed() ) {
-                LOG.info( "------------------" );
-                LOG.info( "no closing of resultSet possible..." );
-                LOG.info( "so close the jdbcConnection at least!" );
-                LOG.info( "------------------" );
-                JDBCUtils.close( conn );
-            }
-
         }
+        workspace.destroy();
     }
 
     private void deleteFromTables( Connection conn )
@@ -190,6 +180,12 @@ public abstract class AbstractISOTest {
             if ( stmt != null ) {
                 stmt.close();
             }
+        }
+    }
+
+    protected void initStore( URL url ) {
+        if ( workspace.getResource( ConnectionProviderProvider.class, "iso_pg_set_up_tables" ) != null ) {
+            store = (ISOMetadataStore) activateFromUrl( workspace, MetadataStoreProvider.class, "id", url );
         }
     }
 

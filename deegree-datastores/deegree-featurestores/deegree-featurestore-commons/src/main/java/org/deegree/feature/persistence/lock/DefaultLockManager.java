@@ -51,12 +51,12 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 
-import org.deegree.commons.jdbc.ConnectionManager;
 import org.deegree.commons.jdbc.ResultSetIterator;
 import org.deegree.commons.ows.exception.OWSException;
 import org.deegree.commons.tom.datetime.DateTime;
 import org.deegree.commons.utils.CloseableIterator;
 import org.deegree.commons.utils.kvp.InvalidParameterValueException;
+import org.deegree.db.ConnectionProvider;
 import org.deegree.feature.Feature;
 import org.deegree.feature.FeatureCollection;
 import org.deegree.feature.i18n.Messages;
@@ -85,7 +85,7 @@ public class DefaultLockManager implements LockManager {
 
     private FeatureStore store;
 
-    private String jdbcConnId;
+    private ConnectionProvider connection;
 
     /**
      * Creates a new {@link DefaultLockManager} for the given {@link FeatureStore}.
@@ -95,9 +95,10 @@ public class DefaultLockManager implements LockManager {
      * @throws FeatureStoreException
      *             if the initialization of the locking backend fails
      */
-    public DefaultLockManager( FeatureStore store, String jdbcConnId ) throws FeatureStoreException {
+    public DefaultLockManager( FeatureStore store, ConnectionProvider connection )
+                            throws FeatureStoreException {
         this.store = store;
-        this.jdbcConnId = jdbcConnId;
+        this.connection = connection;
         initDatabase();
     }
 
@@ -118,7 +119,7 @@ public class DefaultLockManager implements LockManager {
         ResultSet rs = null;
         Statement stmt = null;
         try {
-            conn = ConnectionManager.getConnection( jdbcConnId );
+            conn = connection.getConnection();
             DatabaseMetaData dbMetaData = conn.getMetaData();
             rs = dbMetaData.getTables( null, null, "LOCKS", new String[] { "TABLE" } );
             if ( !rs.next() ) {
@@ -192,7 +193,7 @@ public class DefaultLockManager implements LockManager {
             ResultSet rs = null;
 
             try {
-                conn = ConnectionManager.getConnection( jdbcConnId );
+                conn = connection.getConnection();
                 conn.setAutoCommit( false );
 
                 // create entry in LOCKS table
@@ -264,7 +265,7 @@ public class DefaultLockManager implements LockManager {
                     }
                 }
                 conn.commit();
-                lock = new DefaultLock( this, jdbcConnId, "" + lockId, acquired, expires, numLocked, numFailed );
+                lock = new DefaultLock( this, connection, "" + lockId, acquired, expires, numLocked, numFailed );
             } catch ( SQLException e ) {
                 try {
                     if ( conn != null ) {
@@ -323,9 +324,8 @@ public class DefaultLockManager implements LockManager {
             Statement stmt = null;
             ResultSet rs = null;
             final DefaultLockManager manager = this;
-            final String jdbcConnId = this.jdbcConnId;
             try {
-                conn = ConnectionManager.getConnection( jdbcConnId );
+                conn = connection.getConnection();
                 LOG.debug( "Using connection: " + conn );
                 stmt = conn.createStatement();
                 rs = stmt.executeQuery( "SELECT ID,ACQUIRED,EXPIRES FROM LOCKS" );
@@ -345,7 +345,7 @@ public class DefaultLockManager implements LockManager {
                         rs2.next();
                         int numFailed = rs.getInt( 1 );
                         stmt.close();
-                        return new DefaultLock( manager, jdbcConnId, lockId, acquired, expires, numLocked, numFailed );
+                        return new DefaultLock( manager, connection, lockId, acquired, expires, numLocked, numFailed );
                     }
                 };
             } catch ( SQLException e ) {
@@ -377,7 +377,7 @@ public class DefaultLockManager implements LockManager {
             Statement stmt = null;
             ResultSet rs = null;
             try {
-                conn = ConnectionManager.getConnection( jdbcConnId );
+                conn = connection.getConnection();
                 stmt = conn.createStatement();
                 rs = stmt.executeQuery( "SELECT ACQUIRED,EXPIRES FROM LOCKS WHERE ID=" + lockIdInt + "" );
                 if ( !rs.next() ) {
@@ -392,7 +392,7 @@ public class DefaultLockManager implements LockManager {
                 rs = stmt.executeQuery( "SELECT COUNT(*) FROM LOCK_FAILED_FIDS WHERE LOCK_ID=" + lockIdInt );
                 rs.next();
                 int numFailed = rs.getInt( 1 );
-                lock = new DefaultLock( this, jdbcConnId, lockId, acquired, expires, numLocked, numFailed );
+                lock = new DefaultLock( this, connection, lockId, acquired, expires, numLocked, numFailed );
             } catch ( SQLException e ) {
                 String msg = "Could not retrieve lock with id '" + lockId + "':" + e.getMessage();
                 LOG.debug( msg, e );
@@ -415,7 +415,7 @@ public class DefaultLockManager implements LockManager {
             PreparedStatement stmt = null;
             ResultSet rs = null;
             try {
-                conn = ConnectionManager.getConnection( jdbcConnId );
+                conn = connection.getConnection();
                 stmt = conn.prepareStatement( "SELECT COUNT(*) FROM LOCKED_FIDS WHERE FID=?" );
                 stmt.setString( 1, fid );
                 rs = stmt.executeQuery();
@@ -455,7 +455,7 @@ public class DefaultLockManager implements LockManager {
             PreparedStatement stmt = null;
             ResultSet rs = null;
             try {
-                conn = ConnectionManager.getConnection( jdbcConnId );
+                conn = connection.getConnection();
                 stmt = conn.prepareStatement( "SELECT COUNT(*) FROM LOCKED_FIDS WHERE FID=? AND LOCK_ID<>?" );
                 stmt.setString( 1, fid );
                 stmt.setInt( 2, lockIdInt );
@@ -485,7 +485,7 @@ public class DefaultLockManager implements LockManager {
             Connection conn = null;
             PreparedStatement stmt = null;
             try {
-                conn = ConnectionManager.getConnection( jdbcConnId );
+                conn = connection.getConnection();
 
                 stmt = conn.prepareStatement( "DELETE FROM LOCKED_FIDS WHERE LOCK_ID IN (SELECT ID FROM LOCKS WHERE EXPIRES <=?)" );
                 stmt.setTimestamp( 1, now );
@@ -512,4 +512,5 @@ public class DefaultLockManager implements LockManager {
             }
         }
     }
+
 }

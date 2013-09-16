@@ -44,16 +44,17 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.xml.namespace.QName;
 
 import org.apache.axiom.om.OMElement;
-import org.deegree.commons.config.DeegreeWorkspace;
-import org.deegree.commons.config.ResourceInitException;
 import org.deegree.commons.ows.metadata.DatasetMetadata;
 import org.deegree.commons.ows.metadata.ServiceIdentification;
 import org.deegree.commons.ows.metadata.ServiceProvider;
 import org.deegree.services.metadata.OWSMetadataProvider;
+import org.deegree.workspace.Resource;
+import org.deegree.workspace.ResourceMetadata;
 
 /**
  * {@link OWSMetadataProvider} implementation that is a simple bean providing the metadata.
@@ -75,12 +76,18 @@ public class DefaultOWSMetadataProvider implements OWSMetadataProvider {
 
     private final Map<String, List<OMElement>> extendedCapabilities;
 
+    private final Map<String, String> authorities;
+
+    private ResourceMetadata<OWSMetadataProvider> metadata;
+
     public DefaultOWSMetadataProvider( ServiceIdentification si, ServiceProvider sp,
                                        Map<String, List<OMElement>> extendedCapabilities,
-                                       List<DatasetMetadata> datasetMetadata ) {
+                                       List<DatasetMetadata> datasetMetadata, Map<String, String> authorities,
+                                       ResourceMetadata<OWSMetadataProvider> metadata ) {
         this.serviceIdentification = si;
         this.serviceProvider = sp;
         this.extendedCapabilities = extendedCapabilities;
+        this.metadata = metadata;
         if ( datasetMetadata != null ) {
             this.datasetMetadata = datasetMetadata;
         } else {
@@ -89,11 +96,11 @@ public class DefaultOWSMetadataProvider implements OWSMetadataProvider {
         for ( DatasetMetadata dsMd : this.datasetMetadata ) {
             this.datasetNameToMetadata.put( dsMd.getQName(), dsMd );
         }
+        this.authorities = authorities;
     }
 
     @Override
-    public void init( DeegreeWorkspace workspace )
-                            throws ResourceInitException {
+    public void init() {
         // nothing to init
     }
 
@@ -124,6 +131,25 @@ public class DefaultOWSMetadataProvider implements OWSMetadataProvider {
 
     @Override
     public DatasetMetadata getDatasetMetadata( QName name ) {
-        return datasetNameToMetadata.get( name );
+        DatasetMetadata md = datasetNameToMetadata.get( name );
+        if ( md == null ) {
+            for ( Entry<QName, DatasetMetadata> e : datasetNameToMetadata.entrySet() ) {
+                if ( e.getKey().getLocalPart().equalsIgnoreCase( name.getLocalPart() ) ) {
+                    return e.getValue();
+                }
+            }
+        }
+        return md;
     }
+
+    @Override
+    public Map<String, String> getExternalMetadataAuthorities() {
+        return authorities;
+    }
+
+    @Override
+    public ResourceMetadata<? extends Resource> getMetadata() {
+        return metadata;
+    }
+
 }

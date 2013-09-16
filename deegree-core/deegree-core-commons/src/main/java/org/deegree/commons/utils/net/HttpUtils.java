@@ -58,9 +58,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeSet;
 
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -74,6 +71,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.conn.params.ConnRoutePNames;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.auth.BasicScheme;
@@ -85,8 +83,6 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.deegree.commons.utils.Pair;
-import org.deegree.commons.xml.XMLAdapter;
-import org.deegree.commons.xml.stax.XMLStreamReaderWrapper;
 import org.slf4j.Logger;
 
 import com.google.gson.JsonElement;
@@ -110,8 +106,6 @@ import com.google.gson.JsonParser;
 public class HttpUtils {
 
     private static final Logger LOG = getLogger( HttpUtils.class );
-
-    static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 
     private static final int DEFAULT_CONN_TIMEOUT = 10 * 1000;
 
@@ -143,31 +137,6 @@ public class HttpUtils {
         @Override
         public InputStream work( InputStream in ) {
             return in;
-        }
-    };
-
-    /**
-     * Returns streaming XMLAdapter.
-     */
-    public static final Worker<XMLAdapter> XML = new Worker<XMLAdapter>() {
-        @Override
-        public XMLAdapter work( InputStream in ) {
-            return new XMLAdapter( in );
-        }
-    };
-
-    /**
-     * Returns streaming XMLAdapter.
-     */
-    public static final Worker<XMLStreamReaderWrapper> XML_STREAM = new Worker<XMLStreamReaderWrapper>() {
-        @Override
-        public XMLStreamReaderWrapper work( InputStream in )
-                                throws IOException {
-            try {
-                return new XMLStreamReaderWrapper( xmlInputFactory.createXMLStreamReader( in ), "Post response" );
-            } catch ( XMLStreamException e ) {
-                throw new IOException( "Error creating XMLStreamReader for POST response: " + e.getMessage() );
-            }
         }
     };
 
@@ -413,7 +382,7 @@ public class HttpUtils {
         if ( user != null && pass != null ) {
             authenticate( client, user, pass, u );
         }
-        post.setEntity( new FileEntity( postBody, null ) );
+        post.setEntity( new FileEntity( postBody, (ContentType) null ) );
         if ( headers != null ) {
             for ( String key : headers.keySet() ) {
                 post.addHeader( key, headers.get( key ) );

@@ -35,6 +35,7 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.tools.rendering.r2d.se;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
@@ -47,12 +48,16 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.deegree.commons.annotations.Tool;
-import org.deegree.commons.jdbc.ConnectionManager;
 import org.deegree.commons.tools.CommandUtils;
+import org.deegree.db.ConnectionProvider;
+import org.deegree.db.ConnectionProviderUtils;
 import org.deegree.style.se.parser.PostgreSQLWriter;
 import org.deegree.style.se.parser.SymbologyParser;
 import org.deegree.style.se.unevaluated.Style;
 import org.deegree.tools.i18n.Messages;
+import org.deegree.workspace.ResourceLocation;
+import org.deegree.workspace.Workspace;
+import org.deegree.workspace.standard.DefaultWorkspace;
 
 /**
  * <code>PostgreSQLImporter</code>
@@ -126,13 +131,21 @@ public class PostgreSQLImporter {
 
             XMLInputFactory fac = XMLInputFactory.newInstance();
             Style style = new SymbologyParser( true ).parse( fac.createXMLStreamReader( new FileInputStream( inputFile ) ) );
-            ConnectionManager.addConnection( "style", url, user, pass, 5, 20 );
-            if ( style.isSimple() ) {
-                new PostgreSQLWriter( "style", schema ).write( style, null );
-            } else {
-                new PostgreSQLWriter( "style", schema ).write( new FileInputStream( inputFile ), style.getName() );
-            }
 
+            Workspace workspace = new DefaultWorkspace( new File( "nonexistant" ) );
+            ResourceLocation<ConnectionProvider> loc = ConnectionProviderUtils.getSyntheticProvider( "style", url,
+                                                                                                     user, pass );
+            workspace.startup();
+            workspace.getLocationHandler().addExtraResource( loc );
+            workspace.initAll();
+
+            if ( style.isSimple() ) {
+                new PostgreSQLWriter( "style", schema, workspace ).write( style, null );
+            } else {
+                new PostgreSQLWriter( "style", schema, workspace ).write( new FileInputStream( inputFile ),
+                                                                          style.getName() );
+            }
+            workspace.destroy();
         } catch ( ParseException exp ) {
             System.err.println( Messages.getMessage( "TOOL_COMMANDLINE_ERROR", exp.getMessage() ) );
             // printHelp( options );

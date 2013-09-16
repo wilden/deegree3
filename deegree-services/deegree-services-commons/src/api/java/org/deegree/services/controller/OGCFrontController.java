@@ -55,15 +55,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -108,18 +106,20 @@ import org.deegree.commons.utils.io.LoggingInputStream;
 import org.deegree.commons.utils.kvp.KVPUtils;
 import org.deegree.commons.xml.XMLAdapter;
 import org.deegree.commons.xml.XMLProcessingException;
-import org.deegree.commons.xml.jaxb.JAXBUtils;
+import org.deegree.commons.xml.stax.XMLInputFactoryUtils;
 import org.deegree.commons.xml.stax.XMLStreamUtils;
 import org.deegree.feature.stream.ThreadedFeatureInputStream;
 import org.deegree.services.OWS;
+import org.deegree.services.OWSProvider;
+import org.deegree.services.OwsManager;
 import org.deegree.services.authentication.SecurityException;
 import org.deegree.services.controller.exception.serializer.XMLExceptionSerializer;
 import org.deegree.services.controller.security.SecurityConfiguration;
 import org.deegree.services.controller.utils.HttpResponseBuffer;
 import org.deegree.services.controller.utils.LoggingHttpResponseWrapper;
-import org.deegree.services.jaxb.controller.DCPType;
 import org.deegree.services.jaxb.controller.DeegreeServiceControllerType;
 import org.deegree.services.ows.OWS110ExceptionReportSerializer;
+import org.deegree.services.resources.ResourcesServlet;
 import org.slf4j.Logger;
 
 /**
@@ -175,11 +175,15 @@ public class OGCFrontController extends HttpServlet {
     // make fields transient, serialized servlets are a bad idea IMHO
     private transient DeegreeServiceControllerType mainConfig;
 
+    private transient String hardcodedServicesUrl;
+
+    private transient String hardcodedResourcesUrl;
+
     private transient final ThreadLocal<RequestContext> CONTEXT = new ThreadLocal<RequestContext>();
 
     private transient SecurityConfiguration securityConfiguration;
 
-    private transient WebServicesConfiguration serviceConfiguration;
+    private transient OwsManager serviceConfiguration;
 
     private transient DeegreeWorkspace workspace;
 
@@ -230,50 +234,44 @@ public class OGCFrontController extends HttpServlet {
     /**
      * @return the service configuration
      */
-    public static WebServicesConfiguration getServiceConfiguration() {
+    public static OwsManager getServiceConfiguration() {
         return getInstance().serviceConfiguration;
     }
 
     /**
-     * Returns the HTTP URL for communicating with the OGCFrontController over the web (for POST requests).
+     * Returns the HTTP URL for accessing the {@link OGCFrontController}/{@link OWS} (using POST requests).
      * <p>
-     * NOTE: This method will only return a correct result if the calling thread originated in the
+     * NOTE: This includes OGC service instance path info (service identifier), if available. This method will only
+     * return a correct result if the calling thread originated in the
      * {@link #doGet(HttpServletRequest, HttpServletResponse)} or
      * {@link #doPost(HttpServletRequest, HttpServletResponse)} of this class (or has been spawned as a child thread by
      * such a thread).
      * </p>
      * 
-     * @return the HTTP URL (for POST requests)
+     * @return URL, never <code>null</code> (without trailing slash or question mark)
      */
     public static String getHttpPostURL() {
-        String url = getConfiguredHttpPostUrl();
-        if ( url == null ) {
-            url = getContext().getRequestedEndpointUrl();
-        }
-        return url;
+        return getContext().getServiceUrl();
     }
 
     /**
-     * Returns the HTTP URL for communicating with the OGCFrontController over the web (for GET requests).
+     * Returns the HTTP URL for accessing the {@link OGCFrontController}/{@link OWS} (using GET requests).
      * <p>
-     * NOTE: This method will only return a correct result if the calling thread originated in the
+     * NOTE: This includes OGC service instance path info (service identifier), if available. This method will only
+     * return a correct result if the calling thread originated in the
      * {@link #doGet(HttpServletRequest, HttpServletResponse)} or
      * {@link #doPost(HttpServletRequest, HttpServletResponse)} of this class (or has been spawned as a child thread by
      * such a thread).
      * </p>
      * 
-     * @return the HTTP URL (for GET requests)
+     * @return URL (for GET requests), never <code>null</code> (with trailing question mark)
      */
     public static String getHttpGetURL() {
-        String url = getConfiguredHttpGetUrl();
-        if ( url == null ) {
-            url = getContext().getRequestedEndpointUrl() + "?";
-        }
-        return url;
+        return getContext().getServiceUrl() + "?";
     }
 
     /**
-     * Returns the HTTP URL for accessing the webapp.
+     * Returns the HTTP URL for accessing the {@link ResourcesServlet}.
      * <p>
      * NOTE: This method will only return a correct result if the calling thread originated in the
      * {@link #doGet(HttpServletRequest, HttpServletResponse)} or
@@ -281,32 +279,10 @@ public class OGCFrontController extends HttpServlet {
      * such a thread).
      * </p>
      * 
-     * @return the HTTP URL (for GET requests)
+     * @return URL, never <code>null</code> (without trailing slash or question mark)
      */
-    public static String getWebappBaseURL() {
-        String url = getConfiguredHttpGetUrl();
-        if ( url == null ) {
-            url = getContext().getRequestedWebappBaseUrl();
-        } else {
-            url = url.substring( 0, url.lastIndexOf( '/' ) );
-        }
-        return url;
-    }
-
-    private static String getConfiguredHttpGetUrl() {
-        DCPType configuredDcp = getInstance().mainConfig.getDCP();
-        if ( configuredDcp != null && configuredDcp.getHTTPGet() != null ) {
-            return configuredDcp.getHTTPGet();
-        }
-        return null;
-    }
-
-    private static String getConfiguredHttpPostUrl() {
-        DCPType configuredDcp = getInstance().mainConfig.getDCP();
-        if ( configuredDcp != null && configuredDcp.getHTTPPost() != null ) {
-            return configuredDcp.getHTTPPost();
-        }
-        return null;
+    public static String getResourcesUrl() {
+        return getContext().getResourcesUrl();
     }
 
     /**
@@ -374,12 +350,12 @@ public class OGCFrontController extends HttpServlet {
                                            + request.getRemotePort();
                     if ( multiParts != null && multiParts.size() > 0 ) {
                         InputStream is = multiParts.get( 0 ).getInputStream();
-                        xmlStream = XMLInputFactory.newInstance().createXMLStreamReader( dummySystemId, is );
+                        xmlStream = XMLInputFactoryUtils.newSafeInstance().createXMLStreamReader( dummySystemId, is );
                     } else {
                         // decode query string
                         String decodedString = URLDecoder.decode( queryString, DEFAULT_ENCODING );
                         StringReader reader = new StringReader( decodedString );
-                        xmlStream = XMLInputFactory.newInstance().createXMLStreamReader( dummySystemId, reader );
+                        xmlStream = XMLInputFactoryUtils.newSafeInstance().createXMLStreamReader( dummySystemId, reader );
                     }
                     if ( isSOAPRequest( xmlStream ) ) {
                         dispatchSOAPRequest( xmlStream, request, responseBuffer, multiParts );
@@ -512,8 +488,8 @@ public class OGCFrontController extends HttpServlet {
 
                     String dummySystemId = "HTTP Post request from " + request.getRemoteAddr() + ":"
                                            + request.getRemotePort();
-                    XMLStreamReader xmlStream = XMLInputFactory.newInstance().createXMLStreamReader( dummySystemId,
-                                                                                                     requestInputStream );
+                    XMLStreamReader xmlStream = XMLInputFactoryUtils.newSafeInstance().createXMLStreamReader( dummySystemId,
+                                                                                                              requestInputStream );
                     // skip to start tag of root element
                     XMLStreamUtils.nextElement( xmlStream );
                     if ( isSOAPRequest( xmlStream ) ) {
@@ -527,7 +503,14 @@ public class OGCFrontController extends HttpServlet {
                            + " ms before sending exception." );
                 LOG.debug( e.getMessage(), e );
                 OWSException ex = new OWSException( e.getLocalizedMessage(), "InvalidRequest" );
-                sendException( null, ex, responseBuffer, null );
+                OWS ows = null;
+                try {
+                    ows = determineOWSByPath( request );
+                } catch ( OWSException e2 ) {
+                    sendException( ows, e2, responseBuffer, null );
+                    return;
+                }
+                sendException( ows, ex, responseBuffer, null );
             }
             LOG.debug( "Handling HTTP-POST request with status 'success' took: "
                        + ( System.currentTimeMillis() - entryTime ) + " ms." );
@@ -542,7 +525,8 @@ public class OGCFrontController extends HttpServlet {
 
     private HttpResponseBuffer createHttpResponseBuffer( HttpServletRequest request, HttpServletResponse response )
                             throws FileNotFoundException, IOException {
-        if ( serviceConfiguration.getRequestLogger() != null ) {
+        OwsGlobalConfigLoader loader = workspace.getNewWorkspace().getInitializable( OwsGlobalConfigLoader.class );
+        if ( loader.getRequestLogger() != null ) {
             response = createLoggingResponseWrapper( request, response );
         }
         return new HttpResponseBuffer( response );
@@ -550,11 +534,12 @@ public class OGCFrontController extends HttpServlet {
 
     private HttpServletResponse createLoggingResponseWrapper( HttpServletRequest request, HttpServletResponse response )
                             throws IOException, FileNotFoundException {
+        OwsGlobalConfigLoader loader = workspace.getNewWorkspace().getInitializable( OwsGlobalConfigLoader.class );
 
         Boolean conf = mainConfig.getRequestLogging().isOnlySuccessful();
         boolean onlySuccessful = conf != null && conf;
 
-        if ( "POST".equals( request.getMethod() ) && serviceConfiguration.getRequestLogger() != null ) {
+        if ( "POST".equals( request.getMethod() ) && loader.getRequestLogger() != null ) {
             String dir = mainConfig.getRequestLogging().getOutputDirectory();
             File file;
             if ( dir == null ) {
@@ -568,10 +553,10 @@ public class OGCFrontController extends HttpServlet {
             }
             InputStream is = new LoggingInputStream( request.getInputStream(), new FileOutputStream( file ) );
             response = new LoggingHttpResponseWrapper( request.getRequestURL().toString(), response, file,
-                                                       onlySuccessful, serviceConfiguration.getRequestLogger(), is );
+                                                       onlySuccessful, loader.getRequestLogger(), is );
         } else {
             response = new LoggingHttpResponseWrapper( response, request.getQueryString(), onlySuccessful,
-                                                       serviceConfiguration.getRequestLogger(), null );
+                                                       loader.getRequestLogger(), null );
         }
         return response;
     }
@@ -583,7 +568,10 @@ public class OGCFrontController extends HttpServlet {
         if ( pathInfo != null ) {
             // remove start "/"
             String serviceId = pathInfo.substring( 1 );
-            ows = serviceConfiguration.get( serviceId );
+            ows = workspace.getNewWorkspace().getResource( OWSProvider.class, serviceId );
+            if ( ows == null && serviceConfiguration.isSingleServiceConfigured() ) {
+                ows = serviceConfiguration.getSingleConfiguredService();
+            }
             if ( ows == null ) {
                 String msg = "No service with identifier '" + serviceId + "' available.";
                 OWSException e = new OWSException( msg, OWSException.NO_APPLICABLE_CODE );
@@ -611,7 +599,10 @@ public class OGCFrontController extends HttpServlet {
                 serviceId = pathInfo.substring( 1 );
             }
 
-            ows = serviceConfiguration.get( serviceId );
+            ows = workspace.getNewWorkspace().getResource( OWSProvider.class, serviceId );
+            if ( ows == null && serviceConfiguration.isSingleServiceConfigured() ) {
+                ows = serviceConfiguration.getSingleConfiguredService();
+            }
             if ( ows == null ) {
                 String msg = "No service with identifier '" + serviceId + "' available.";
                 OWSException e = new OWSException( msg, OWSException.NO_APPLICABLE_CODE );
@@ -668,7 +659,8 @@ public class OGCFrontController extends HttpServlet {
             // Parse the request
             result = upload.parseRequest( request );
             LOG.debug( "The multipart request contains: " + result.size() + " items." );
-            if ( serviceConfiguration.getRequestLogger() != null ) { // TODO, this is not actually something of the
+            OwsGlobalConfigLoader loader = workspace.getNewWorkspace().getInitializable( OwsGlobalConfigLoader.class );
+            if ( loader.getRequestLogger() != null ) { // TODO, this is not actually something of the
                 // request logger, what is
                 // actually logged here?
                 for ( FileItem item : result ) {
@@ -794,7 +786,7 @@ public class OGCFrontController extends HttpServlet {
             // Once all services properly check their requests (WFS and SOS have this problem), this workaround can be
             // removed.
             if ( service == null
-                 && !( ows.getImplementationMetadata().getImplementedServiceName()[0].equalsIgnoreCase( "WMS" ) ) ) {
+                 && !( ( (OWSProvider) ows.getMetadata().getProvider() ).getImplementationMetadata().getImplementedServiceName()[0].equalsIgnoreCase( "WMS" ) ) ) {
                 OWSException ex = new OWSException( "The 'SERVICE' parameter is missing.", "MissingParameterValue",
                                                     "service" );
                 sendException( ows, ex, response, null );
@@ -1096,7 +1088,6 @@ public class OGCFrontController extends HttpServlet {
             LOG.error( "Initialization failed!" );
             LOG.error( "An unexpected error was caught, stack trace:", e );
         } finally {
-            JAXBUtils.fixThreadLocalLeaks();
             CONTEXT.remove();
         }
     }
@@ -1131,9 +1122,34 @@ public class OGCFrontController extends HttpServlet {
 
         workspace = getActiveWorkspace();
         workspace.initAll();
-        serviceConfiguration = workspace.getSubsystemManager( WebServicesConfiguration.class );
-        mainConfig = serviceConfiguration.getMainConfiguration();
+        serviceConfiguration = workspace.getNewWorkspace().getResourceManager( OwsManager.class );
+        OwsGlobalConfigLoader loader = workspace.getNewWorkspace().getInitializable( OwsGlobalConfigLoader.class );
+        mainConfig = loader.getMainConfig();
+        if ( mainConfig != null ) {
+            initHardcodedUrls( mainConfig );
+        }
         LOG.info( "" );
+    }
+
+    private void initHardcodedUrls( DeegreeServiceControllerType mainConfig ) {
+        if ( mainConfig.getReportedUrls() != null ) {
+            hardcodedServicesUrl = mainConfig.getReportedUrls().getServices();
+            hardcodedResourcesUrl = mainConfig.getReportedUrls().getResources();
+            hardcodedServicesUrl = removeTrailingSlashOrQuestionMark( hardcodedServicesUrl );
+            hardcodedResourcesUrl = removeTrailingSlashOrQuestionMark( hardcodedResourcesUrl );
+        } else if ( mainConfig.getDCP() != null ) {
+            if ( mainConfig.getDCP().getHTTPGet() != null ) {
+                hardcodedServicesUrl = mainConfig.getDCP().getHTTPGet();
+            } else if ( mainConfig.getDCP().getHTTPPost() != null ) {
+                hardcodedServicesUrl = mainConfig.getDCP().getHTTPPost();
+            } else if ( mainConfig.getDCP().getSOAP() != null ) {
+                hardcodedServicesUrl = mainConfig.getDCP().getSOAP();
+            }
+            if ( hardcodedServicesUrl != null ) {
+                hardcodedServicesUrl = removeTrailingSlashOrQuestionMark( hardcodedServicesUrl );
+                hardcodedResourcesUrl = hardcodedServicesUrl + "/../resources";
+            }
+        }
     }
 
     private void destroyWorkspace() {
@@ -1347,8 +1363,9 @@ public class OGCFrontController extends HttpServlet {
     }
 
     /**
-     * Apply workarounds for classloader leaks, see <a
-     * href="https://wiki.deegree.org/deegreeWiki/ClassLoaderLeaks">ClassLoaderLeaks in deegree wiki</a>.
+     * Apply workarounds for classloader leaks, see eg. <a
+     * href="http://java.jiderhamn.se/2012/02/26/classloader-leaks-v-common-mistakes-and-known-offenders/">this blog
+     * post</a>.
      */
     private void plugClassLoaderLeaks() {
         // if the feature store manager does this, it breaks
@@ -1359,21 +1376,10 @@ public class OGCFrontController extends HttpServlet {
         }
         Executor.getInstance().shutdown();
 
-        // deregister all JDBC drivers loaded by webapp classloader
-        Enumeration<Driver> e = DriverManager.getDrivers();
-        while ( e.hasMoreElements() ) {
-            Driver driver = e.nextElement();
-            try {
-                if ( driver.getClass().getClassLoader() == getClass().getClassLoader() )
-                    DriverManager.deregisterDriver( driver );
-            } catch ( SQLException e1 ) {
-                LOG.error( "Cannot unload driver: " + driver );
-            }
-        }
-
         LogFactory.releaseAll();
         LogManager.shutdown();
 
+        // image io
         Iterator<Class<?>> i = IIORegistry.getDefaultInstance().getCategories();
         while ( i.hasNext() ) {
             Class<?> c = i.next();
@@ -1388,8 +1394,24 @@ public class OGCFrontController extends HttpServlet {
             }
         }
 
+        // JSF
         Introspector.flushCaches();
 
+        // Batik
+        try {
+            Class<?> cls = Class.forName( "org.apache.batik.util.CleanerThread" );
+            if ( cls != null ) {
+                Field field = cls.getDeclaredField( "thread" );
+                field.setAccessible( true );
+                Object obj = field.get( null );
+                if ( obj != null ) {
+                    // interrupt is ignored by the thread
+                    ( (Thread) obj ).stop();
+                }
+            }
+        } catch ( Exception ex ) {
+            LOG.warn( "Problem when trying to fix batik class loader leak." );
+        }
     }
 
     /**
@@ -1436,9 +1458,16 @@ public class OGCFrontController extends HttpServlet {
     }
 
     private void bindContextToThread( HttpServletRequest request, Credentials credentials ) {
-        RequestContext context = new RequestContext( request, credentials );
+        RequestContext context = new RequestContext( request, credentials, hardcodedServicesUrl, hardcodedResourcesUrl );
         CONTEXT.set( context );
         LOG.debug( "Initialized RequestContext for Thread " + Thread.currentThread() + "=" + context );
+    }
+
+    private String removeTrailingSlashOrQuestionMark( String url ) {
+        if ( url.endsWith( "?" ) || url.endsWith( "/" ) ) {
+            return url.substring( 0, url.length() - 1 );
+        }
+        return url;
     }
 
     /**

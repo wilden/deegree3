@@ -44,9 +44,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.deegree.commons.jdbc.ConnectionManager;
 import org.deegree.commons.utils.JDBCUtils;
 import org.deegree.commons.utils.Pair;
+import org.deegree.db.ConnectionProvider;
 import org.deegree.feature.persistence.shape.ShapeFeatureStoreProvider.Mapping;
 import org.deegree.filter.Filter;
 import org.deegree.filter.FilterEvaluationException;
@@ -68,7 +68,7 @@ import org.deegree.sqldialect.filter.expression.SQLExpression;
  */
 public class DBFIndex {
 
-    private String connid;
+    private ConnectionProvider connProvider;
 
     /**
      * @param dbf
@@ -78,7 +78,7 @@ public class DBFIndex {
      */
     public DBFIndex( DBFReader dbf, File file, Pair<ArrayList<Pair<float[], Long>>, Boolean> envelopes,
                      List<Mapping> mappings ) throws IOException {
-        new DbfIndexImporter( connid, dbf, file, envelopes, mappings ).createIndex();
+        connProvider = new DbfIndexImporter( dbf, file, envelopes, mappings ).createIndex();
     }
 
     /**
@@ -116,7 +116,7 @@ public class DBFIndex {
         PreparedStatement stmt = null;
         ResultSet set = null;
         try {
-            conn = ConnectionManager.getConnection( connid );
+            conn = connProvider.getConnection();
             if ( generated == null ) {
                 StringBuilder sb = new StringBuilder();
                 for ( ResourceId rid : ( (IdFilter) filter ).getSelectedIds() ) {
@@ -170,11 +170,8 @@ public class DBFIndex {
 
     }
 
-    /**
-     * Destroys h2 db connection.
-     */
     public void destroy() {
-        ConnectionManager.destroy( connid );
+        connProvider.destroy();
     }
 
 }

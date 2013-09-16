@@ -42,21 +42,20 @@
 package org.deegree.tile.persistence.geotiff;
 
 import java.io.File;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.deegree.commons.config.DeegreeWorkspace;
-import org.deegree.commons.config.ResourceInitException;
 import org.deegree.geometry.Envelope;
 import org.deegree.tile.DefaultTileDataSet;
 import org.deegree.tile.TileDataLevel;
 import org.deegree.tile.TileDataSet;
 import org.deegree.tile.TileMatrix;
 import org.deegree.tile.TileMatrixSet;
+import org.deegree.tile.persistence.TileStore;
 import org.deegree.tile.persistence.geotiff.jaxb.GeoTIFFTileStoreJAXB;
-import org.deegree.tile.tilematrixset.TileMatrixSetManager;
+import org.deegree.tile.tilematrixset.TileMatrixSetProvider;
+import org.deegree.workspace.ResourceLocation;
+import org.deegree.workspace.Workspace;
 
 /**
  * Builds tile data sets from jaxb config beans.
@@ -68,25 +67,21 @@ import org.deegree.tile.tilematrixset.TileMatrixSetManager;
  */
 class GeoTiffTileDataSetBuilder {
 
-    private DeegreeWorkspace workspace;
+    private Workspace workspace;
 
-    GeoTiffTileDataSetBuilder( DeegreeWorkspace workspace ) {
+    GeoTiffTileDataSetBuilder( Workspace workspace ) {
         this.workspace = workspace;
     }
 
-    TileDataSet buildTileDataSet( GeoTIFFTileStoreJAXB.TileDataSet cfg, URL configUrl, Envelope envelope )
-                            throws ResourceInitException, URISyntaxException {
-        TileMatrixSetManager mgr = workspace.getSubsystemManager( TileMatrixSetManager.class );
+    TileDataSet buildTileDataSet( GeoTIFFTileStoreJAXB.TileDataSet cfg, ResourceLocation<TileStore> location,
+                                  Envelope envelope ) {
         String filename = cfg.getFile();
         String format = cfg.getImageFormat();
         String tmsId = cfg.getTileMatrixSetId();
 
-        File file = new File( configUrl.toURI().resolve( filename ) );
+        File file = location.resolveToFile( filename );
 
-        TileMatrixSet tms = mgr.get( tmsId );
-        if ( tms == null ) {
-            throw new ResourceInitException( "The tile matrix set with id " + tmsId + " was not available." );
-        }
+        TileMatrixSet tms = workspace.getResource( TileMatrixSetProvider.class, tmsId );
 
         List<TileDataLevel> levels = new ArrayList<TileDataLevel>();
         double x = envelope.getMin().get0() - tms.getSpatialMetadata().getEnvelope().getMin().get0();
@@ -96,8 +91,8 @@ class GeoTiffTileDataSetBuilder {
         for ( TileMatrix tm : tms.getTileMatrices() ) {
             int xoff = (int) Math.round( x / tm.getTileWidth() );
             int yoff = (int) Math.round( y / tm.getTileHeight() );
-            int numx = (int) Math.round( envelope.getSpan0() / tm.getTileWidth() );
-            int numy = (int) Math.round( envelope.getSpan1() / tm.getTileHeight() );
+            int numx = (int) Math.ceil( envelope.getSpan0() / tm.getTileWidth() );
+            int numy = (int) Math.ceil( envelope.getSpan1() / tm.getTileHeight() );
             levels.add( new GeoTIFFTileDataLevel( tm, file, idx++, xoff, yoff, numx, numy ) );
         }
 

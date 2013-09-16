@@ -41,12 +41,13 @@ import org.deegree.feature.Feature;
 import org.deegree.filter.Expression;
 import org.deegree.filter.FilterEvaluationException;
 import org.deegree.filter.XPathEvaluator;
+import org.deegree.geometry.Envelope;
 import org.deegree.geometry.Geometry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * TODO add documentation here
+ * Responsible for representing and evaluating the <code>Intersects</code> operator.
  * 
  * @author <a href="mailto:schneider@lat-lon.de">Markus Schneider </a>
  * @author last edited by: $Author:$
@@ -86,8 +87,10 @@ public class Intersects extends SpatialOperator {
         } else if ( obj instanceof Feature ) {
             // handle the case where the property name is empty
             Feature f = (Feature) obj;
+            boolean foundGeom = false;
             for ( Property prop : f.getProperties() ) {
                 if ( prop.getValue() instanceof Geometry ) {
+                    foundGeom = true;
                     Geometry geom = (Geometry) prop.getValue();
                     Geometry transformedGeom = getCompatibleGeometry( geometry, geom );
                     if ( transformedGeom.intersects( geometry ) ) {
@@ -95,12 +98,23 @@ public class Intersects extends SpatialOperator {
                     }
                 }
             }
-            for ( Property prop : f.getExtraProperties().getProperties() ) {
-                if ( prop.getValue() instanceof Geometry ) {
-                    Geometry geom = (Geometry) prop.getValue();
-                    Geometry transformedGeom = getCompatibleGeometry( geometry, geom );
-                    if ( transformedGeom.intersects( geometry ) ) {
+            if ( !foundGeom ) {
+                Envelope env = f.getEnvelope();
+                if ( env != null ) {
+                    Geometry g = getCompatibleGeometry( geometry, env );
+                    if ( g.intersects( geometry ) ) {
                         return true;
+                    }
+                }
+            }
+            if ( f.getExtraProperties() != null ) {
+                for ( Property prop : f.getExtraProperties().getProperties() ) {
+                    if ( prop.getValue() instanceof Geometry ) {
+                        Geometry geom = (Geometry) prop.getValue();
+                        Geometry transformedGeom = getCompatibleGeometry( geometry, geom );
+                        if ( transformedGeom.intersects( geometry ) ) {
+                            return true;
+                        }
                     }
                 }
             }

@@ -241,6 +241,10 @@ public abstract class AbstractDefaultGeometry implements Geometry {
     @Override
     public Geometry getIntersection( Geometry geometry ) {
         JTSGeometryPair jtsGeoms = JTSGeometryPair.createCompatiblePair( this, geometry );
+        ICRS crs = this.crs;
+        if ( crs == null ) {
+            crs = geometry.getCoordinateSystem();
+        }
         com.vividsolutions.jts.geom.Geometry jtsGeom = jtsGeoms.first.intersection( jtsGeoms.second );
         return createFromJTS( jtsGeom, crs );
     }
@@ -341,6 +345,9 @@ public abstract class AbstractDefaultGeometry implements Geometry {
     public AbstractDefaultGeometry createFromJTS( com.vividsolutions.jts.geom.Geometry jtsGeom, ICRS crs ) {
 
         AbstractDefaultGeometry geom = null;
+        if ( jtsGeom.isEmpty() ) {
+            return null;
+        }
         if ( jtsGeom instanceof com.vividsolutions.jts.geom.Point ) {
             com.vividsolutions.jts.geom.Point jtsPoint = (com.vividsolutions.jts.geom.Point) jtsGeom;
             if ( Double.isNaN( jtsPoint.getCoordinate().z ) ) {

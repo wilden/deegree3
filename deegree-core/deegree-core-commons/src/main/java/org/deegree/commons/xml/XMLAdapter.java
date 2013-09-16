@@ -37,7 +37,6 @@
 package org.deegree.commons.xml;
 
 import static javax.xml.XMLConstants.DEFAULT_NS_PREFIX;
-import static javax.xml.XMLConstants.NULL_NS_URI;
 import static javax.xml.stream.XMLStreamConstants.CDATA;
 import static javax.xml.stream.XMLStreamConstants.CHARACTERS;
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
@@ -79,7 +78,6 @@ import org.apache.axiom.om.OMNamespace;
 import org.apache.axiom.om.OMText;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axiom.om.xpath.AXIOMXPath;
-import org.deegree.commons.i18n.Messages;
 import org.deegree.commons.tom.ows.Version;
 import org.deegree.commons.xml.stax.XMLStreamReaderDoc;
 import org.jaxen.JaxenException;
@@ -669,7 +667,7 @@ public class XMLAdapter {
         } else if ( "false".equals( s ) || "0".equals( s ) ) {
             value = false;
         } else {
-            String msg = Messages.getMessage( "XML_SYNTAX_ERROR_BOOLEAN", s );
+            String msg = "'" + s + "' is not a valid xsd:boolean value. Must be 'true', '1', 'false' or '0'.";
             throw new XMLParsingException( this, (OMElement) null, msg );
         }
         return value;
@@ -691,7 +689,7 @@ public class XMLAdapter {
         try {
             value = Double.parseDouble( s );
         } catch ( NumberFormatException e ) {
-            String msg = Messages.getMessage( "XML_SYNTAX_ERROR_DOUBLE", s );
+            String msg = "'" + s + "' is not a valid xsd:double value.";
             throw new XMLParsingException( this, (OMElement) null, msg );
         }
         return value;
@@ -713,7 +711,7 @@ public class XMLAdapter {
         try {
             value = Float.parseFloat( s );
         } catch ( NumberFormatException e ) {
-            String msg = Messages.getMessage( "XML_SYNTAX_ERROR_FLOAT", s );
+            String msg = "'" + s + "' is not a valid xsd:float value.";
             throw new XMLParsingException( this, (OMElement) null, msg );
         }
         return value;
@@ -735,7 +733,7 @@ public class XMLAdapter {
         try {
             value = Integer.parseInt( s );
         } catch ( NumberFormatException e ) {
-            String msg = Messages.getMessage( "XML_SYNTAX_ERROR_INT", s );
+            String msg = "'" + s + "' is not a valid xsd:integer value.";
             throw new XMLParsingException( this, (OMElement) null, msg );
         }
         return value;
@@ -757,7 +755,7 @@ public class XMLAdapter {
         try {
             value = new URL( s );
         } catch ( MalformedURLException e ) {
-            String msg = Messages.getMessage( "XML_SYNTAX_ERROR_URL", s );
+            String msg = "'" + s + "' is not a well-formed URL.";
             throw new XMLParsingException( this, (OMElement) null, msg );
         }
         return value;
@@ -798,7 +796,8 @@ public class XMLAdapter {
             return null;
         }
         if ( !( result instanceof OMElement ) ) {
-            String msg = Messages.getMessage( "XML_PARSING_ERROR_NOT_ELEMENT", xpath, context, result.getClass() );
+            String msg = "Unexpected result for evaluating XPath-expression '" + xpath + "' from context node '"
+                         + context + "': expected an OMElement, got: '" + result.getClass() + "'.";
             throw new XMLParsingException( this, context, msg );
         }
         return (OMElement) result;
@@ -807,7 +806,7 @@ public class XMLAdapter {
     @SuppressWarnings("unchecked")
     public List<OMElement> getElements( OMElement context, XPath xpath )
                             throws XMLParsingException {
-        return getNodes( context, xpath );
+        return (List<OMElement>) getNodes( context, xpath );
     }
 
     // TODO Should we consider changing OMElement in OMNode for getNode* methods?
@@ -947,7 +946,7 @@ public class XMLAdapter {
 
     }
 
-    public synchronized List getNodes( OMElement context, XPath xpath )
+    public synchronized List<?> getNodes( OMElement context, XPath xpath )
                             throws XMLParsingException {
         List<?> nodes;
         try {
@@ -1023,7 +1022,7 @@ public class XMLAdapter {
                             throws XMLParsingException {
         OMElement element = getElement( context, xpath );
         if ( element == null ) {
-            String msg = Messages.getMessage( "XML_REQUIRED_ELEMENT_MISSING", xpath, context.getQName() );
+            String msg = "Required element '" + xpath + "' (starting from '" + context.getQName() + "') is missing.";
             throw new XMLParsingException( this, context, msg );
         }
         return element;
@@ -1033,7 +1032,7 @@ public class XMLAdapter {
                             throws XMLParsingException {
         List<OMElement> elements = getElements( context, xpath );
         if ( elements.size() == 0 ) {
-            String msg = Messages.getMessage( "XML_REQUIRED_ELEMENT_MISSING", xpath, context.getQName() );
+            String msg = "Required element '" + xpath + "' (starting from '" + context.getQName() + "') is missing.";
             throw new XMLParsingException( this, context, msg );
         }
         return elements;
@@ -1043,7 +1042,8 @@ public class XMLAdapter {
                             throws XMLParsingException {
         Object node = getNode( context, xpath );
         if ( node == null ) {
-            String msg = Messages.getMessage( "XML_REQUIRED_NODE_MISSING", xpath, context.getQName() );
+            String msg = "Required element/node '" + xpath + "' (starting from '" + context.getQName()
+                         + "') is missing.";
             throw new XMLParsingException( this, context, msg );
         }
         return node;
@@ -1092,7 +1092,8 @@ public class XMLAdapter {
 
         String value = getNodeAsString( context, xpath, null );
         if ( value == null ) {
-            String msg = Messages.getMessage( "XML_REQUIRED_NODE_MISSING", xpath, context.getQName() );
+            String msg = "Required element/node '" + xpath + "' (starting from '" + context.getQName()
+                         + "') is missing.";
             throw new XMLParsingException( this, context, msg );
         }
         return value;
@@ -1103,7 +1104,8 @@ public class XMLAdapter {
 
         QName value = getNodeAsQName( context, xpath, null );
         if ( value == null ) {
-            String msg = Messages.getMessage( "XML_REQUIRED_NODE_MISSING", xpath, context.getQName() );
+            String msg = "Required element/node '" + xpath + "' (starting from '" + context.getQName()
+                         + "') is missing.";
             throw new XMLParsingException( this, context, msg );
         }
         return value;
@@ -1113,18 +1115,19 @@ public class XMLAdapter {
                             throws XMLParsingException {
         Version value = getNodeAsVersion( context, xpath, null );
         if ( value == null ) {
-            String msg = Messages.getMessage( "XML_REQUIRED_NODE_MISSING", xpath, context.getQName() );
+            String msg = "Required element/node '" + xpath + "' (starting from '" + context.getQName()
+                         + "') is missing.";
             throw new XMLParsingException( this, context, msg );
         }
         return value;
     }
 
-    @SuppressWarnings("unchecked")
     public List getRequiredNodes( OMElement context, XPath xpath )
                             throws XMLParsingException {
-        List nodes = getNodes( context, xpath );
+        List<?> nodes = getNodes( context, xpath );
         if ( nodes.size() == 0 ) {
-            String msg = Messages.getMessage( "XML_REQUIRED_NODE_MISSING", xpath, context.getQName() );
+            String msg = "Required element/node '" + xpath + "' (starting from '" + context.getQName()
+                         + "') is missing.";
             throw new XMLParsingException( this, context, msg );
         }
         return nodes;
@@ -1395,7 +1398,7 @@ public class XMLAdapter {
             case START_ELEMENT: {
                 String prefix = inStream.getPrefix();
                 String namespaceURI = inStream.getNamespaceURI();
-                if ( NULL_NS_URI.equals( namespaceURI ) && ( prefix == null || DEFAULT_NS_PREFIX.equals( prefix ) ) ) {
+                if ( "".equals( namespaceURI ) && ( prefix == null || DEFAULT_NS_PREFIX.equals( prefix ) ) ) {
                     writer.writeStartElement( inStream.getLocalName() );
                 } else {
                     if ( prefix == null || DEFAULT_NS_PREFIX.equals( prefix ) ) {
@@ -1450,7 +1453,7 @@ public class XMLAdapter {
     private static void ensureBinding( XMLStreamWriter writer, String prefix, String namespaceURI )
                             throws XMLStreamException {
         String boundPrefix = writer.getPrefix( namespaceURI );
-        if ( prefix == null && !NULL_NS_URI.equals( boundPrefix ) ) {
+        if ( prefix == null && !"".equals( boundPrefix ) ) {
             writer.writeDefaultNamespace( namespaceURI );
         } else if ( prefix != null && !prefix.equals( writer.getPrefix( namespaceURI ) ) ) {
             writer.writeNamespace( prefix, namespaceURI );

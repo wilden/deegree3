@@ -37,21 +37,21 @@ package org.deegree.commons.xml.jaxb;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
-import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
-import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 
-import org.deegree.commons.config.DeegreeWorkspace;
 import org.deegree.commons.utils.net.DURL;
-import org.deegree.commons.xml.XMLAdapter;
+import org.deegree.workspace.Workspace;
 import org.slf4j.Logger;
 
 /**
@@ -65,76 +65,24 @@ public class JAXBUtils {
 
     private static final Logger LOG = getLogger( JAXBUtils.class );
 
-    private final static SchemaFactory sf = SchemaFactory.newInstance( XMLConstants.W3C_XML_SCHEMA_NS_URI );
+    private final static SchemaFactory sf = SchemaFactory.newInstance( "http://www.w3.org/2001/XMLSchema" );
 
-    /**
-     * Call this once you're done in the thread that uses jaxb (un-)marshalling.
-     */
-    public static void fixThreadLocalLeaks() {
-          LOG.warn ("Not fixing JAXB classloader leaks. Code needs updating.");
-//        try {
-//            Field f = ClassFactory.class.getDeclaredField( "tls" );
-//            f.setAccessible( true );
-//            ( (ThreadLocal<?>) f.get( null ) ).set( null );
-//            f = Coordinator.class.getDeclaredField( "activeTable" );
-//            f.setAccessible( true );
-//            ( (ThreadLocal<?>) f.get( null ) ).set( null );
-//        } catch ( java.lang.SecurityException e ) {
-//            LOG.error( "Failed to plug thread local leaks of jaxb." );
-//            LOG.trace( "Stack trace:", e );
-//        } catch ( NoSuchFieldException e ) {
-//            LOG.error( "Failed to plug thread local leaks of jaxb." );
-//            LOG.trace( "Stack trace:", e );
-//        } catch ( IllegalArgumentException e ) {
-//            LOG.error( "Failed to plug thread local leaks of jaxb." );
-//            LOG.trace( "Stack trace:", e );
-//        } catch ( IllegalAccessException e ) {
-//            LOG.error( "Failed to plug thread local leaks of jaxb." );
-//            LOG.trace( "Stack trace:", e );
-//        }
-    }
-
-    public static Object unmarshall( String jaxbPackage, URL schemaLocation, URL url, DeegreeWorkspace workspace )
+    public static Object unmarshall( String jaxbPackage, URL schemaLocation, InputStream input, Workspace workspace )
                             throws JAXBException {
         Object o = null;
         Unmarshaller u = getUnmarshaller( jaxbPackage, schemaLocation, workspace );
         try {
-            o = u.unmarshal( url );
+            o = u.unmarshal( input );
         } catch ( JAXBException e ) {
-            LOG.error( "Error in configuration file: '{}'", url );
+            LOG.error( "Error in configuration file" );
             // whyever they use the linked exception here...
             // http://www.jaxb.com/how/to/hide/important/information/from/the/user/of/the/api/unknown_xml_format.xml
             LOG.error( "Error: " + e.getLinkedException().getMessage() );
             LOG.error( "Hint: Try validating the file with an XML-schema aware editor." );
             throw e;
-        } catch ( Throwable e ) {
-            LOG.error( "Error in configuration file '{}': {}", url, e.getLocalizedMessage() );
+        } catch ( Exception e ) {
+            LOG.error( "Error in configuration file: {}", e.getLocalizedMessage() );
             LOG.error( "Hint: Try validating the file with an XML-schema aware editor." );
-        }
-        return o;
-    }
-
-    /**
-     * Use #unmarshall(String, URL, URL, DeegreeWorkspace) instead.
-     * 
-     */
-    @Deprecated
-    public static Object unmarshall( String jaxbPackage, String schemaLocation, XMLAdapter xmlAdapter,
-                                     DeegreeWorkspace workspace )
-                            throws JAXBException {
-        XMLStreamReader xmlStream = xmlAdapter.getRootElement().getXMLStreamReaderWithoutCaching();
-        Object o = null;
-        URL schemaURL = JAXBUtils.class.getResource( schemaLocation );
-        Unmarshaller u = getUnmarshaller( jaxbPackage, schemaURL, workspace );
-        try {
-            o = u.unmarshal( xmlStream );
-        } catch ( JAXBException e ) {
-            LOG.error( "Error in configuration file: '{}'", xmlAdapter.getSystemId() );
-            // whyever they use the linked exception here...
-            // http://www.jaxb.com/how/to/hide/important/information/from/the/user/of/the/api/unknown_xml_format.xml
-            LOG.error( "Error: " + e.getLinkedException().getMessage(), e );
-            LOG.error( "Hint: Try validating the file with an XML-schema aware editor." );
-            throw e;
         }
         return o;
     }
@@ -154,7 +102,7 @@ public class JAXBUtils {
      * @throws JAXBException
      *             if the {@link Unmarshaller} could not be created.
      */
-    private static Unmarshaller getUnmarshaller( String jaxbPackage, URL schemaLocation, DeegreeWorkspace workspace )
+    private static Unmarshaller getUnmarshaller( String jaxbPackage, URL schemaLocation, Workspace workspace )
                             throws JAXBException {
 
         JAXBContext jc = null;
@@ -198,12 +146,24 @@ public class JAXBUtils {
                                                             schemaFile.toExternalForm() );
                 URL descUrl = JAXBUtils.class.getResource( "/META-INF/schemas/commons/description/3.1.0/description.xsd" );
                 URL spatUrl = JAXBUtils.class.getResource( "/META-INF/schemas/commons/spatialmetadata/3.1.0/spatialmetadata.xsd" );
+                URL layUrl = JAXBUtils.class.getResource( "/META-INF/schemas/layers/base/3.2.0/base.xsd" );
                 StreamSource desc = new StreamSource( new DURL( descUrl.toExternalForm() ).openStream(),
                                                       descUrl.toExternalForm() );
-                StreamSource spat = new StreamSource( new DURL( spatUrl.toExternalForm() ).openStream(),
-                                                      spatUrl.toExternalForm() );
-                result = sf.newSchema( new Source[] { origSchema, desc, spat } );
-            } catch ( Throwable e ) {
+                List<Source> list = new ArrayList<Source>();
+                list.add( desc );
+                if ( spatUrl != null ) {
+                    StreamSource spat = new StreamSource( new DURL( spatUrl.toExternalForm() ).openStream(),
+                                                          spatUrl.toExternalForm() );
+                    list.add( spat );
+                }
+                if ( layUrl != null ) {
+                    StreamSource lay = new StreamSource( new DURL( layUrl.toExternalForm() ).openStream(),
+                                                         layUrl.toExternalForm() );
+                    list.add( lay );
+                }
+                list.add( origSchema );
+                result = sf.newSchema( list.toArray( new Source[list.size()] ) );
+            } catch ( Exception e ) {
                 LOG.error( "No schema could be loaded from file: " + schemaFile + " because: "
                            + e.getLocalizedMessage() );
                 LOG.trace( "Stack trace:", e );
@@ -211,4 +171,5 @@ public class JAXBUtils {
         }
         return result;
     }
+
 }

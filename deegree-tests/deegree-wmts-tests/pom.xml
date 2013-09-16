@@ -8,7 +8,7 @@
   <parent>
     <groupId>org.deegree</groupId>
     <artifactId>deegree-tests</artifactId>
-    <version>3.2-pre13-SNAPSHOT</version>
+    <version>3.4-pre6-SNAPSHOT</version>
   </parent>
 
   <repositories>
@@ -82,12 +82,13 @@
         <executions>
           <execution>
             <id>normal-tests</id>
+            <phase>test</phase>
             <goals>
               <goal>test</goal>
             </goals>
             <configuration>
               <excludes>
-                <exclude>**/*IntegrationTest.java</exclude>
+                <exclude>**/*IT.java</exclude>
               </excludes>
               <skip>false</skip>
             </configuration>
@@ -100,7 +101,7 @@
             </goals>
             <configuration>
               <includes>
-                <include>**/*IntegrationTest.java</include>
+                <include>**/*IT.java</include>
               </includes>
               <skip>false</skip>
             </configuration>
@@ -140,6 +141,14 @@
       <groupId>org.deegree</groupId>
       <artifactId>deegree-layers-tile</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>it.geosolutions.imageio-ext</groupId>
+      <artifactId>imageio-ext-tiff</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>it.geosolutions.imageio-ext</groupId>
+      <artifactId>imageio-ext-utilities</artifactId>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

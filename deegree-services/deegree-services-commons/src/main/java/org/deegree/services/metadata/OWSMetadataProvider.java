@@ -46,11 +46,11 @@ import java.util.Map;
 import javax.xml.namespace.QName;
 
 import org.apache.axiom.om.OMElement;
-import org.deegree.commons.config.Resource;
 import org.deegree.commons.ows.metadata.DatasetMetadata;
 import org.deegree.commons.ows.metadata.ServiceIdentification;
 import org.deegree.commons.ows.metadata.ServiceProvider;
 import org.deegree.services.OWS;
+import org.deegree.workspace.Resource;
 
 /**
  * Implementations provide metadata that {@link OWS} instances can use in their <code>GetCapabilities</code> responses.
@@ -93,6 +93,11 @@ public interface OWSMetadataProvider extends Resource {
     List<DatasetMetadata> getDatasetMetadata();
 
     /**
+     * @return a mapping from metadata authority name to authority url
+     */
+    Map<String, String> getExternalMetadataAuthorities();
+
+    /**
      * Returns data metadata for the specified dataset.
      * 
      * @param name
@@ -100,4 +105,5 @@ public interface OWSMetadataProvider extends Resource {
      * @return metadata, possibly <code>null</code> (no metadata available)
      */
     DatasetMetadata getDatasetMetadata( QName name );
+
 }

@@ -37,7 +37,9 @@ import java.util.Map;
 
 import org.deegree.tile.TileDataSet;
 import org.deegree.tile.persistence.GenericTileStore;
+import org.deegree.tile.persistence.TileStore;
 import org.deegree.tile.persistence.TileStoreTransaction;
+import org.deegree.workspace.ResourceMetadata;
 
 /**
  * Generic {@link org.deegree.tile.persistence.TileStore}.
@@ -54,10 +56,12 @@ public class FileSystemTileStore extends GenericTileStore {
      * Creates a new {@link FileSystemTileStore} instance.
      * 
      * @param tileDataSets
-     *            the tile data sets to serve
+     *            the tile data sets to serve, must not be <code>null</code>
+     * @param metadata
+     *            resource metadata for this tile store, may not be <code>null</code> if managed by workspace
      */
-    public FileSystemTileStore( Map<String, TileDataSet> tileDataSets ) {
-        super( tileDataSets );
+    public FileSystemTileStore( Map<String, TileDataSet> tileDataSets, ResourceMetadata<TileStore> metadata ) {
+        super( tileDataSets, metadata );
     }
 
     @Override

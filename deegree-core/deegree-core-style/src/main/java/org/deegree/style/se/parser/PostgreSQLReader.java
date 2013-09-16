@@ -38,7 +38,6 @@ package org.deegree.style.se.parser;
 import static java.lang.Double.NEGATIVE_INFINITY;
 import static java.lang.Double.POSITIVE_INFINITY;
 import static java.util.Arrays.asList;
-import static org.deegree.commons.jdbc.ConnectionManager.getConnection;
 import static org.deegree.commons.utils.ArrayUtils.splitAsDoubles;
 import static org.deegree.commons.utils.ColorUtils.decodeWithAlpha;
 import static org.deegree.style.se.parser.SymbologyParser.getUOM;
@@ -72,6 +71,7 @@ import org.deegree.commons.utils.Pair;
 import org.deegree.commons.utils.StringUtils;
 import org.deegree.commons.utils.Triple;
 import org.deegree.commons.xml.XMLParsingException;
+import org.deegree.db.ConnectionProvider;
 import org.deegree.feature.Feature;
 import org.deegree.filter.Expression;
 import org.deegree.filter.FilterEvaluationException;
@@ -141,19 +141,19 @@ public class PostgreSQLReader {
 
     private final HashMap<Styling<?>, Continuation<Styling<?>>> continuations = new HashMap<Styling<?>, Continuation<Styling<?>>>();
 
-    private String connid;
-
     private final String baseSystemId;
 
     private final String schema;
+
+    private ConnectionProvider connProvider;
 
     /**
      * @param connid
      * @param baseSystemId
      *            to resolve relative references in sld files
      */
-    public PostgreSQLReader( String connid, String schema, String baseSystemId ) {
-        this.connid = connid;
+    public PostgreSQLReader( ConnectionProvider connProvider, String schema, String baseSystemId ) {
+        this.connProvider = connProvider;
         this.schema = schema;
         this.baseSystemId = baseSystemId;
     }
@@ -839,7 +839,7 @@ public class PostgreSQLReader {
         ResultSet rs = null;
         Connection conn = null;
         try {
-            conn = getConnection( connid );
+            conn = connProvider.getConnection();
             stmt = conn.prepareStatement( "select type, fk, minscale, maxscale, sld, name from " + schema
                                           + ".styles where id = ?" );
             stmt.setInt( 1, id );

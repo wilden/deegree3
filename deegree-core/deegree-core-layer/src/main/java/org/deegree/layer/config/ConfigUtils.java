@@ -1,7 +1,7 @@
 //$HeadURL: svn+ssh://aschmitz@wald.intevation.org/deegree/base/trunk/resources/eclipse/files_template.xml $
 /*----------------------------------------------------------------------------
  This file is part of deegree, http://deegree.org/
- Copyright (C) 2001-2011 by:
+ Copyright (C) 2001-2012 by:
  - Department of Geography, University of Bonn -
  and
  - lat/lon GmbH -
@@ -37,11 +37,13 @@ package org.deegree.layer.config;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import java.io.File;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.deegree.commons.config.DeegreeWorkspace;
 import org.deegree.commons.utils.Pair;
 import org.deegree.layer.dims.Dimension;
 import org.deegree.layer.persistence.base.jaxb.DimensionType;
@@ -54,8 +56,11 @@ import org.deegree.rendering.r2d.context.MapOptions.Antialias;
 import org.deegree.rendering.r2d.context.MapOptions.Interpolation;
 import org.deegree.rendering.r2d.context.MapOptions.Quality;
 import org.deegree.style.persistence.StyleStore;
-import org.deegree.style.persistence.StyleStoreManager;
+import org.deegree.style.persistence.StyleStoreProvider;
 import org.deegree.style.se.unevaluated.Style;
+import org.deegree.workspace.ResourceIdentifier;
+import org.deegree.workspace.Workspace;
+import org.deegree.workspace.standard.DefaultResourceIdentifier;
 import org.slf4j.Logger;
 
 /**
@@ -70,22 +75,17 @@ public class ConfigUtils {
 
     private static final Logger LOG = getLogger( ConfigUtils.class );
 
-    public static Pair<Map<String, Style>, Map<String, Style>> parseStyles( DeegreeWorkspace workspace,
-                                                                            String layerName, List<StyleRefType> styles ) {
+    public static Pair<Map<String, Style>, Map<String, Style>> parseStyles( Workspace workspace, String layerName,
+                                                                            List<StyleRefType> styles ) {
         // hail java 7 to finally be able to do some really complicated type inference
         Map<String, Style> styleMap = new LinkedHashMap<String, Style>();
         Map<String, Style> legendStyleMap = new LinkedHashMap<String, Style>();
 
         Style defaultStyle = null, defaultLegendStyle = null;
 
-        StyleStoreManager mgr = workspace.getSubsystemManager( StyleStoreManager.class );
         for ( StyleRefType srt : styles ) {
             String id = srt.getStyleStoreId();
-            StyleStore store = mgr.get( id );
-            if ( store == null ) {
-                LOG.warn( "Style store with id {} was not available, ignoring style definition.", id );
-                continue;
-            }
+            StyleStore store = workspace.getResource( StyleStoreProvider.class, id );
             if ( srt.getStyle() == null || srt.getStyle().isEmpty() ) {
                 if ( store.getAll( layerName ) != null ) {
                     for ( Style s : store.getAll( layerName ) ) {
@@ -99,8 +99,8 @@ public class ConfigUtils {
                 }
                 continue;
             }
-            Pair<Style, Style> p = useSelectedStyles( store, srt, id, styleMap, legendStyleMap, defaultStyle,
-                                                      defaultLegendStyle );
+            Pair<Style, Style> p = useSelectedStyles( workspace, store, srt, id, styleMap, legendStyleMap,
+                                                      defaultStyle, defaultLegendStyle );
             defaultStyle = p.first;
             defaultLegendStyle = p.second;
         }
@@ -108,11 +108,21 @@ public class ConfigUtils {
         return new Pair<Map<String, Style>, Map<String, Style>>( styleMap, legendStyleMap );
     }
 
-    private static Pair<Style, Style> useSelectedStyles( StyleStore store, StyleRefType srt, String id,
-                                                         Map<String, Style> styleMap,
+    public static List<ResourceIdentifier<StyleStore>> getStyleDeps( List<StyleRefType> styles ) {
+        List<ResourceIdentifier<StyleStore>> list = new ArrayList<ResourceIdentifier<StyleStore>>();
+        for ( StyleRefType srt : styles ) {
+            String id = srt.getStyleStoreId();
+            list.add( new DefaultResourceIdentifier<StyleStore>( StyleStoreProvider.class, id ) );
+        }
+        return list;
+    }
+
+    private static Pair<Style, Style> useSelectedStyles( Workspace workspace, StyleStore store, StyleRefType srt,
+                                                         String id, Map<String, Style> styleMap,
                                                          Map<String, Style> legendStyleMap, Style defaultStyle,
                                                          Style defaultLegendStyle ) {
         for ( org.deegree.layer.persistence.base.jaxb.StyleRefType.Style s : srt.getStyle() ) {
+            boolean isDefault = false;
             String name = s.getStyleName();
             String nameRef = s.getStyleNameRef();
             String layerRef = s.getLayerNameRef();
@@ -123,15 +133,38 @@ public class ConfigUtils {
                 continue;
             }
             if ( defaultStyle == null ) {
+                isDefault = true;
                 defaultStyle = st;
             }
             st = st.copy();
             st.setName( name );
             styleMap.put( name, st );
+            if ( isDefault && !styleMap.containsKey( "default" ) ) {
+                styleMap.put( "default", st );
+            }
             if ( s.getLegendGraphic() != null ) {
                 LegendGraphic g = s.getLegendGraphic();
-                // TODO properly handle this
-                // st.setLegendFile( null )
+
+                URL url = null;
+                try {
+                    url = new URL( g.getValue() );
+                    if ( url.toURI().isAbsolute() ) {
+                        st.setLegendURL( url );
+                    }
+                    st.setPrefersGetLegendGraphicUrl( g.isOutputGetLegendGraphicUrl() );
+                } catch ( Exception e ) {
+                    LOG.debug( "LegendGraphic was not an absolute URL." );
+                    LOG.trace( "Stack trace:", e );
+                }
+
+                if ( url == null ) {
+                    File file = store.getMetadata().getLocation().resolveToFile( g.getValue() );
+                    if ( file.exists() ) {
+                        st.setLegendFile( file );
+                    } else {
+                        LOG.warn( "LegendGraphic {} could not be resolved to a legend.", g.getValue() );
+                    }
+                }
             } else {
                 LegendStyle ls = s.getLegendStyle();
                 if ( ls != null ) {
@@ -152,10 +185,17 @@ public class ConfigUtils {
                                            Map<String, Style> legendStyleMap ) {
         if ( defaultStyle != null && !styleMap.containsKey( "default" ) ) {
             styleMap.put( "default", defaultStyle );
+        }
+        if ( defaultLegendStyle != null && !legendStyleMap.containsKey( "default" ) ) {
             legendStyleMap.put( "default", defaultLegendStyle );
+        }
+        if ( defaultStyle != null && !legendStyleMap.containsKey( "default" ) ) {
+            legendStyleMap.put( "default", defaultStyle );
         }
         if ( !styleMap.containsKey( "default" ) ) {
             styleMap.put( "default", new Style() );
+        }
+        if ( !legendStyleMap.containsKey( "default" ) ) {
             legendStyleMap.put( "default", new Style() );
         }
     }
@@ -172,7 +212,7 @@ public class ConfigUtils {
         Quality quali = null;
         Interpolation interpol = null;
         int maxFeats = -1;
-        int rad = -1;
+        int rad = 1;
         try {
             alias = Antialias.valueOf( cfg.getAntiAliasing() );
         } catch ( Throwable e ) {
@@ -191,7 +231,9 @@ public class ConfigUtils {
         if ( cfg.getMaxFeatures() != null ) {
             maxFeats = cfg.getMaxFeatures();
         }
-        if ( cfg.getFeatureInfoRadius() != null ) {
+        if ( cfg.getFeatureInfo() != null && cfg.getFeatureInfo().isEnabled() ) {
+            rad = cfg.getFeatureInfo().getPixelRadius().intValue();
+        } else if ( cfg.getFeatureInfoRadius() != null ) {
             rad = cfg.getFeatureInfoRadius();
         }
         return new MapOptions( quali, interpol, alias, maxFeats, rad );

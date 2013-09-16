@@ -55,9 +55,13 @@ import org.deegree.tile.TileDataLevel;
 import org.deegree.tile.TileDataSet;
 import org.deegree.tile.TileMatrix;
 import org.deegree.tile.TileMatrixSet;
+import org.deegree.tile.persistence.remotewmts.jaxb.ParameterScopeType;
+import org.deegree.tile.persistence.remotewmts.jaxb.ParameterUseType;
 import org.deegree.tile.persistence.remotewmts.jaxb.RemoteWMTSTileStoreJAXB;
 import org.deegree.tile.persistence.remotewmts.jaxb.RemoteWMTSTileStoreJAXB.TileDataSet.RequestParams;
-import org.deegree.tile.tilematrixset.TileMatrixSetManager;
+import org.deegree.tile.persistence.remotewmts.jaxb.RemoteWMTSTileStoreJAXB.TileDataSet.RequestParams.Parameter;
+import org.deegree.tile.tilematrixset.TileMatrixSetProvider;
+import org.deegree.workspace.Workspace;
 
 /**
  * Builds a tile data set from jaxb.
@@ -71,11 +75,11 @@ class TileDataSetBuilder {
 
     private WMTSClient client;
 
-    private TileMatrixSetManager tileMatrixSetManager;
+    private Workspace workspace;
 
-    TileDataSetBuilder( WMTSClient client, TileMatrixSetManager tileMatrixSetManager ) {
+    TileDataSetBuilder( WMTSClient client, Workspace workspace ) {
         this.client = client;
-        this.tileMatrixSetManager = tileMatrixSetManager;
+        this.workspace = workspace;
     }
 
     Map<String, TileDataSet> buildTileDataSetMap( RemoteWMTSTileStoreJAXB config )
@@ -135,7 +139,7 @@ class TileDataSetBuilder {
             tileMatrixSetId = requestTileMatrixSetId;
         }
 
-        TileMatrixSet tileMatrixSet = tileMatrixSetManager.get( tileMatrixSetId );
+        TileMatrixSet tileMatrixSet = workspace.getResource( TileMatrixSetProvider.class, tileMatrixSetId );
         if ( tileMatrixSet == null ) {
             String msg = "No local TileMatrixSet definition with identifier '" + tileMatrixSetId + "' available.";
             throw new ResourceInitException( msg );
@@ -165,6 +169,13 @@ class TileDataSetBuilder {
         String format = requestParams.getFormat();
         String remoteTileMatrixSetId = remoteTileMatrixSet.getIdentifier();
 
+        Map<String, String> defaultGetMap = new HashMap<String, String>();
+        Map<String, String> hardGetMap = new HashMap<String, String>();
+        Map<String, String> defaultGetFeatureInfo = new HashMap<String, String>();
+        Map<String, String> hardGetFeatureInfo = new HashMap<String, String>();
+        extractParameters( requestParams.getParameter(), defaultGetMap, defaultGetFeatureInfo, hardGetMap,
+                           hardGetFeatureInfo );
+
         List<TileDataLevel> dataLevels = new ArrayList<TileDataLevel>();
         List<TileMatrix> localTileMatrices = localTileMatrixSet.getTileMatrices();
         List<TileMatrix> remoteTileMatrices = remoteTileMatrixSet.getTileMatrices();
@@ -177,7 +188,8 @@ class TileDataSetBuilder {
             TileMatrix remoteTileMatrix = remoteTileMatrices.get( i );
             String remoteTileMatrixId = remoteTileMatrix.getIdentifier();
             TileDataLevel level = buildTileDataLevel( localTileMatrix, remoteTileMatrixSetId, remoteTileMatrixId,
-                                                      layer, style, format, outputFormat );
+                                                      layer, style, format, outputFormat, defaultGetMap, hardGetMap,
+                                                      defaultGetFeatureInfo, hardGetFeatureInfo );
             dataLevels.add( level );
         }
         return dataLevels;
@@ -185,9 +197,57 @@ class TileDataSetBuilder {
 
     private TileDataLevel buildTileDataLevel( TileMatrix tileMatrix, String remoteTileMatrixSetId,
                                               String remoteTileMatrixId, String layer, String style, String format,
-                                              String outputFormat ) {
+                                              String outputFormat, Map<String, String> defaultGetMap,
+                                              Map<String, String> hardGetMap,
+                                              Map<String, String> defaultGetFeatureInfo,
+                                              Map<String, String> hardGetFeatureInfo ) {
         return new RemoteWMTSTileDataLevel( tileMatrix, remoteTileMatrixSetId, remoteTileMatrixId, format, layer,
-                                            style, client, outputFormat );
+                                            style, client, outputFormat, defaultGetMap, hardGetMap,
+                                            defaultGetFeatureInfo, hardGetFeatureInfo );
+    }
+
+    private static void extractParameters( List<Parameter> params, Map<String, String> defaultParametersGetMap,
+                                           Map<String, String> defaultParametersGetFeatureInfo,
+                                           Map<String, String> hardParametersGetMap,
+                                           Map<String, String> hardParametersGetFeatureInfo ) {
+        if ( params != null && !params.isEmpty() ) {
+            for ( Parameter p : params ) {
+                String name = p.getName();
+                String value = p.getValue();
+                ParameterUseType use = p.getUse();
+                ParameterScopeType scope = p.getScope();
+                switch ( use ) {
+                case ALLOW_OVERRIDE:
+                    switch ( scope ) {
+                    case GET_TILE:
+                        defaultParametersGetMap.put( name, value );
+                        break;
+                    case GET_FEATURE_INFO:
+                        defaultParametersGetFeatureInfo.put( name, value );
+                        break;
+                    default:
+                        defaultParametersGetMap.put( name, value );
+                        defaultParametersGetFeatureInfo.put( name, value );
+                        break;
+                    }
+                    break;
+                case FIXED:
+                    switch ( scope ) {
+                    case GET_TILE:
+                        hardParametersGetMap.put( name, value );
+                        break;
+                    case GET_FEATURE_INFO:
+                        hardParametersGetFeatureInfo.put( name, value );
+                        break;
+                    default:
+                        hardParametersGetMap.put( name, value );
+                        hardParametersGetFeatureInfo.put( name, value );
+                        break;
+                    }
+                    break;
+                }
+            }
+        }
     }
 
 }

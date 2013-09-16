@@ -47,11 +47,13 @@ import static org.deegree.commons.utils.net.HttpUtils.retrieve;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.commons.io.IOUtils;
 import org.deegree.commons.utils.test.IntegrationTestUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -74,14 +76,19 @@ public class RemoteWMSIntegrationTest {
 
     private static final Logger LOG = getLogger( RemoteWMSIntegrationTest.class );
 
+    private static int numFailed = 0;
+
     private String request;
 
     private List<byte[]> response;
 
-    public RemoteWMSIntegrationTest( Object wasXml, String request, List<byte[]> response ) {
+    private String name;
+
+    public RemoteWMSIntegrationTest( Object wasXml, String request, List<byte[]> response, String name ) {
         // we only use .kvp for WMS
         this.request = request;
         this.response = response;
+        this.name = name;
     }
 
     @Parameters
@@ -93,15 +100,35 @@ public class RemoteWMSIntegrationTest {
     public void testSimilarity()
                             throws IOException {
         String base = "http://localhost:" + System.getProperty( "portnumber" );
-        base += "/deegree-wms-remoteows-tests/services" + request;
+        base += "/deegree-wms-remoteows-tests/services/wms" + request;
         LOG.info( "Requesting {}", base );
         InputStream in = retrieve( STREAM, base );
+        byte[] bsin = IOUtils.toByteArray( in );
+        in.close();
         double sim = 0;
 
         for ( byte[] response : this.response ) {
+            in = new ByteArrayInputStream( bsin );
             sim = Math.max( sim, determineSimilarity( in, new ByteArrayInputStream( response ) ) );
         }
-        Assert.assertEquals( "Images are not similar enough (" + base + ").", 1.0, sim, 0.01 );
+
+        if ( Math.abs( 1.0 - sim ) > 0.01 ) {
+            System.out.println( "Trying to store request/response in tempdir: remoteows_expected/response"
+                                + ++numFailed + ".png" );
+            try {
+                int idx = 0;
+                for ( byte[] response : this.response ) {
+                    IOUtils.write( response, new FileOutputStream( System.getProperty( "java.io.tmpdir" )
+                                                                   + "/remoteows_expected" + numFailed + "_" + ++idx
+                                                                   + ".png" ) );
+                }
+                IOUtils.write( bsin, new FileOutputStream( System.getProperty( "java.io.tmpdir" )
+                                                           + "/remoteows_response" + numFailed + ".png" ) );
+            } catch ( Throwable t ) {
+            }
+        }
+
+        Assert.assertEquals( "Images are not similar enough for " + name + " (" + base + ").", 1.0, sim, 0.01 );
     }
 
 }

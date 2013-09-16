@@ -35,14 +35,17 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.feature.persistence.sql;
 
-import static junit.framework.Assert.assertEquals;
 import static org.deegree.commons.tom.primitive.BaseType.DOUBLE;
 import static org.deegree.commons.tom.primitive.BaseType.STRING;
+import static org.deegree.db.ConnectionProviderUtils.getSyntheticProvider;
 import static org.deegree.feature.types.property.GeometryPropertyType.CoordinateDimension.DIM_2;
 import static org.deegree.gml.GMLVersion.GML_2;
 import static org.deegree.protocol.wfs.transaction.action.IDGenMode.GENERATE_NEW;
+import static org.junit.Assert.assertEquals;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -55,21 +58,20 @@ import java.util.Set;
 
 import javax.xml.namespace.QName;
 
-import junit.framework.Assert;
-
-import org.deegree.commons.config.DeegreeWorkspace;
 import org.deegree.commons.config.ResourceInitException;
-import org.deegree.commons.jdbc.ConnectionManager;
 import org.deegree.commons.tom.primitive.PrimitiveValue;
 import org.deegree.commons.utils.test.TestDBProperties;
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.exceptions.UnknownCRSException;
 import org.deegree.cs.persistence.CRSManager;
+import org.deegree.db.ConnectionProvider;
+import org.deegree.db.ConnectionProviderProvider;
 import org.deegree.feature.Feature;
 import org.deegree.feature.FeatureCollection;
+import org.deegree.feature.persistence.FeatureStore;
 import org.deegree.feature.persistence.FeatureStoreException;
-import org.deegree.feature.persistence.FeatureStoreManager;
 import org.deegree.feature.persistence.FeatureStoreTransaction;
+import org.deegree.feature.persistence.FeatureStoreProvider;
 import org.deegree.feature.persistence.query.Query;
 import org.deegree.feature.persistence.sql.ddl.DDLCreator;
 import org.deegree.feature.persistence.sql.mapper.AppSchemaMapper;
@@ -81,16 +83,19 @@ import org.deegree.filter.OperatorFilter;
 import org.deegree.filter.comparison.PropertyIsEqualTo;
 import org.deegree.filter.expression.Literal;
 import org.deegree.filter.expression.ValueReference;
-import org.deegree.filter.function.FunctionManager;
 import org.deegree.filter.spatial.BBOX;
 import org.deegree.geometry.GeometryFactory;
 import org.deegree.gml.GMLInputFactory;
 import org.deegree.gml.GMLStreamReader;
 import org.deegree.gml.schema.GMLAppSchemaReader;
 import org.deegree.sqldialect.SQLDialect;
-import org.deegree.sqldialect.SQLDialectManager;
-import org.deegree.sqldialect.filter.function.SQLFunctionManager;
+import org.deegree.workspace.PreparedResources;
+import org.deegree.workspace.ResourceLocation;
+import org.deegree.workspace.Workspace;
+import org.deegree.workspace.standard.DefaultResourceIdentifier;
+import org.deegree.workspace.standard.DefaultWorkspace;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -122,11 +127,13 @@ public class SQLFeatureStoreTOPPStatesTest {
 
     private final TestDBProperties settings;
 
-    private DeegreeWorkspace ws;
+    private Workspace ws;
 
     private SQLDialect dialect;
 
     private SQLFeatureStore fs;
+
+    private PreparedResources prepared;
 
     public SQLFeatureStoreTOPPStatesTest( TestDBProperties settings ) {
         this.settings = settings;
@@ -137,13 +144,17 @@ public class SQLFeatureStoreTOPPStatesTest {
                             throws Throwable {
 
         initWorkspace();
-        createDB();
-        createTables();
+        ws.init( new DefaultResourceIdentifier<ConnectionProvider>( ConnectionProviderProvider.class, "admin" ),
+                 prepared );
+        ConnectionProvider prov = ws.getResource( ConnectionProviderProvider.class, "admin" );
+        dialect = prov.getDialect();
 
-        SQLFeatureStoreProvider provider = new SQLFeatureStoreProvider();
-        provider.init( ws );
-        fs = provider.create( SQLFeatureStoreTOPPStatesTest.class.getResource( "topp_states/topp_states.xml" ) );
-        fs.init( ws );
+        createDB();
+        ws.init( new DefaultResourceIdentifier<ConnectionProvider>( ConnectionProviderProvider.class, "deegree-test" ),
+                 prepared );
+        createTables();
+        fs = (SQLFeatureStore) ws.init( new DefaultResourceIdentifier<FeatureStore>( FeatureStoreProvider.class,
+                                                                                     "topp_states" ), prepared );
 
         populateStore();
     }
@@ -169,27 +180,26 @@ public class SQLFeatureStoreTOPPStatesTest {
     }
 
     private void initWorkspace()
-                            throws ResourceInitException {
-        // TODO
-        ws = DeegreeWorkspace.getInstance( "deegree-featurestore-sql-tests" );
-        ws.initManagers();
-        ws.getSubsystemManager( ConnectionManager.class ).startup( ws );
-        ws.getSubsystemManager( SQLDialectManager.class ).startup( ws );
-        ws.getSubsystemManager( FeatureStoreManager.class ).startup( ws );
-        ws.getSubsystemManager( FunctionManager.class ).startup( ws );
-        ws.getSubsystemManager( SQLFunctionManager.class ).startup( ws );
+                            throws ResourceInitException, URISyntaxException {
+        URL url = SQLFeatureStoreTOPPStatesTest.class.getResource( "/org/deegree/feature/persistence/sql/topp_states/" );
+        File dir = new File( url.toURI() );
+        ws = new DefaultWorkspace( dir );
 
-        ConnectionManager.addConnection( "admin", settings.getAdminUrl(), settings.getAdminUser(),
-                                         settings.getAdminPass(), 1, 10 );
-        ConnectionManager.addConnection( "deegree-test", settings.getUrl(), settings.getUser(), settings.getPass(), 1,
-                                         10 );
+        ws.startup();
 
-        dialect = ws.getSubsystemManager( SQLDialectManager.class ).create( "admin" );
+        ResourceLocation<ConnectionProvider> loc = getSyntheticProvider( "deegree-test", settings.getUrl(),
+                                                                         settings.getUser(), settings.getPass() );
+        ws.getLocationHandler().addExtraResource( loc );
+        loc = getSyntheticProvider( "admin", settings.getAdminUrl(), settings.getAdminUser(), settings.getAdminPass() );
+        ws.getLocationHandler().addExtraResource( loc );
+        ws.startup();
+        prepared = ws.prepare();
     }
 
     private void createDB()
                             throws SQLException {
-        Connection adminConn = ConnectionManager.getConnection( "admin" );
+        ConnectionProvider prov = ws.getResource( ConnectionProviderProvider.class, "admin" );
+        Connection adminConn = prov.getConnection();
         try {
             dialect.createDB( adminConn, settings.getDbName() );
         } finally {
@@ -215,7 +225,8 @@ public class SQLFeatureStoreTOPPStatesTest {
         // create tables
         String[] ddl = DDLCreator.newInstance( mappedSchema, dialect ).getDDL();
 
-        Connection conn = ConnectionManager.getConnection( "deegree-test" );
+        ConnectionProvider prov = ws.getResource( ConnectionProviderProvider.class, "deegree-test" );
+        Connection conn = prov.getConnection();
         Statement stmt = null;
         try {
             stmt = conn.createStatement();
@@ -231,15 +242,17 @@ public class SQLFeatureStoreTOPPStatesTest {
     @After
     public void tearDown()
                             throws Exception {
-        Connection adminConn = ConnectionManager.getConnection( "admin" );
-        ConnectionManager.destroy( "deegree-test" );
+        ConnectionProvider prov = ws.getResource( ConnectionProviderProvider.class, "admin" );
+        ConnectionProvider dtest = ws.getResource( ConnectionProviderProvider.class, "deegree-test" );
+        fs.destroy();
+        dtest.destroy();
+        Connection adminConn = prov.getConnection();
         try {
             dialect.dropDB( adminConn, settings.getDbName() );
         } finally {
             adminConn.close();
         }
-        ws.destroyAll();
-        fs.destroy();
+        ws.destroy();
     }
 
     @Test

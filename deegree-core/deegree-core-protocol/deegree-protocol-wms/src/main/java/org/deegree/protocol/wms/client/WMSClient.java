@@ -38,22 +38,17 @@ package org.deegree.protocol.wms.client;
 
 import static java.awt.image.BufferedImage.TYPE_4BYTE_ABGR;
 import static java.lang.Math.abs;
-import static org.deegree.commons.tom.primitive.BaseType.STRING;
+import static org.deegree.commons.ows.exception.OWSException.NO_APPLICABLE_CODE;
+import static org.deegree.commons.proxy.ProxySettings.getHttpProxyPassword;
+import static org.deegree.commons.proxy.ProxySettings.getHttpProxyUser;
 import static org.deegree.commons.utils.ArrayUtils.join;
-import static org.deegree.commons.utils.ProxyUtils.getHttpProxyPassword;
-import static org.deegree.commons.utils.ProxyUtils.getHttpProxyUser;
 import static org.deegree.commons.utils.kvp.KVPUtils.toQueryString;
 import static org.deegree.commons.utils.math.MathUtils.round;
 import static org.deegree.commons.utils.net.HttpUtils.IMAGE;
-import static org.deegree.commons.utils.net.HttpUtils.XML;
-import static org.deegree.commons.xml.stax.XMLStreamUtils.nextElement;
-import static org.deegree.commons.xml.stax.XMLStreamUtils.skipElement;
 import static org.deegree.coverage.raster.geom.RasterGeoReference.OriginLocation.OUTER;
 import static org.deegree.coverage.raster.interpolation.InterpolationType.BILINEAR;
 import static org.deegree.coverage.raster.utils.RasterFactory.rasterDataFromImage;
 import static org.deegree.coverage.raster.utils.RasterFactory.rasterDataToImage;
-import static org.deegree.gml.GMLInputFactory.createGMLStreamReader;
-import static org.deegree.gml.GMLVersion.GML_2;
 import static org.deegree.protocol.i18n.Messages.get;
 import static org.deegree.protocol.oldwms.WMSConstants.VERSION_111;
 import static org.deegree.protocol.oldwms.WMSConstants.VERSION_130;
@@ -71,7 +66,6 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -80,21 +74,19 @@ import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 
 import javax.imageio.ImageIO;
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.apache.axiom.om.OMElement;
 import org.deegree.commons.concurrent.Executor;
+import org.deegree.commons.ows.exception.OWSException;
+import org.deegree.commons.proxy.ProxySettings;
 import org.deegree.commons.struct.Tree;
-import org.deegree.commons.tom.gml.property.Property;
-import org.deegree.commons.tom.gml.property.PropertyType;
 import org.deegree.commons.tom.ows.Version;
 import org.deegree.commons.utils.Pair;
-import org.deegree.commons.utils.ProxyUtils;
 import org.deegree.commons.xml.XMLAdapter;
-import org.deegree.commons.xml.stax.XMLStreamUtils;
+import org.deegree.commons.xml.XmlHttpUtils;
 import org.deegree.coverage.raster.RasterTransformer;
 import org.deegree.coverage.raster.SimpleRaster;
 import org.deegree.coverage.raster.data.RasterData;
@@ -104,20 +96,17 @@ import org.deegree.cs.components.Axis;
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.persistence.CRSManager;
 import org.deegree.feature.FeatureCollection;
-import org.deegree.feature.GenericFeature;
-import org.deegree.feature.GenericFeatureCollection;
-import org.deegree.feature.property.SimpleProperty;
-import org.deegree.feature.types.GenericFeatureType;
-import org.deegree.feature.types.property.SimplePropertyType;
+import org.deegree.featureinfo.parsing.FeatureInfoParser;
 import org.deegree.geometry.Envelope;
 import org.deegree.geometry.GeometryFactory;
 import org.deegree.geometry.GeometryTransformer;
-import org.deegree.gml.GMLStreamReader;
 import org.deegree.layer.LayerRef;
 import org.deegree.layer.metadata.LayerMetadata;
 import org.deegree.protocol.ows.client.AbstractOWSClient;
+import org.deegree.protocol.ows.exception.OWSExceptionReader;
 import org.deegree.protocol.ows.exception.OWSExceptionReport;
 import org.deegree.protocol.ows.http.OwsHttpClientImpl;
+import org.deegree.protocol.ows.http.OwsHttpResponse;
 import org.deegree.protocol.wms.WMSConstants.WMSRequestType;
 import org.deegree.protocol.wms.ops.GetFeatureInfo;
 import org.deegree.protocol.wms.ops.GetMap;
@@ -336,212 +325,85 @@ public class WMSClient extends AbstractOWSClient<WMSCapabilitiesAdapter> {
     }
 
     /**
-     * @param hardParameters
-     *            parameters to override in the request, may be null
+     * Performs a <code>GetFeatureInfo</code> request and returns the response as a {@link FeatureCollection}.
+     * 
+     * @param request
+     *            request parameter, must not be <code>null</code>
+     * @param hardParams
+     *            raw parameters for augmenting overriding KVPs, must not be <code>null</code>
+     * @return response parsed as feature collection, never <code>null</code>
      * @throws IOException
+     * @throws OWSExceptionReport
+     * @throws XMLStreamException
      */
-    public FeatureCollection getFeatureInfo( GetFeatureInfo gfi, Map<String, String> hardParameters )
-                            throws IOException {
-        if ( VERSION_111.equals( wmsVersion ) ) {
-            String url = getAddress( GetFeatureInfo, true );
-            if ( url == null ) {
-                LOG.warn( get( "WMSCLIENT.SERVER_NO_GETMAP_URL" ), "Capabilities: ", capaDoc );
-                return null;
-            }
-            url = repairGetUrl( url );
-            String lays = join( ",", gfi.getQueryLayers() );
+    public FeatureCollection doGetFeatureInfo( GetFeatureInfo request, Map<String, String> hardParams )
+                            throws IOException, OWSExceptionReport, XMLStreamException {
 
-            Map<String, String> map = new HashMap<String, String>();
-            map.put( "request", "GetFeatureInfo" );
-            map.put( "version", "1.1.1" );
-            map.put( "service", "WMS" );
-            map.put( "layers", lays );
-            map.put( "query_layers", lays );
-            map.put( "styles", "" );
-            map.put( "width", Integer.toString( gfi.getWidth() ) );
-            map.put( "height", Integer.toString( gfi.getHeight() ) );
+        Map<String, String> params = buildGetFeatureInfoParamMap( request, hardParams );
+        overrideHardParams( params, hardParams );
+
+        OwsHttpResponse response = null;
+        try {
+            URL url = getGetUrl( GetFeatureInfo.name() );
+            response = httpClient.doGet( url, params, null );
+            response.assertHttpStatus200();
+            XMLStreamReader reader = response.getAsXMLStream();
+            String csvLayerNames = join( ",", request.getQueryLayers() );
+            return FeatureInfoParser.parseAsFeatureCollection( reader, csvLayerNames );
+        } finally {
+            closeQuietly( response );
+        }
+    }
+
+    private Map<String, String> buildGetFeatureInfoParamMap( GetFeatureInfo gfi, Map<String, String> hardParams ) {
+        Map<String, String> params = new HashMap<String, String>();
+        params.put( "request", "GetFeatureInfo" );
+        params.put( "version", wmsVersion.toString() );
+        params.put( "service", "WMS" );
+        String csvLayerNames = join( ",", gfi.getQueryLayers() );
+        params.put( "layers", csvLayerNames );
+        params.put( "query_layers", csvLayerNames );
+        params.put( "styles", "" );
+        params.put( "width", Integer.toString( gfi.getWidth() ) );
+        params.put( "height", Integer.toString( gfi.getHeight() ) );
+        params.put( "format", getFormats( GetMap ).getFirst() );
+        params.put( "feature_count", Integer.toString( gfi.getFeatureCount() ) );
+
+        if ( wmsVersion.equals( VERSION_111 ) ) {
+            params.put( "x", Integer.toString( gfi.getX() ) );
+            params.put( "y", Integer.toString( gfi.getY() ) );
+            params.put( "srs", gfi.getCoordinateSystem().getAlias() );
+            params.put( "info_format", "application/vnd.ogc.gml" );
             Envelope bbox = gfi.getEnvelope();
-            map.put( "bbox", bbox.getMin().get0() + "," + bbox.getMin().get1() + "," + bbox.getMax().get0() + ","
-                             + bbox.getMax().get1() );
-            map.put( "srs", gfi.getCoordinateSystem().getAlias() );
-            map.put( "format", getFormats( GetMap ).getFirst() );
-            map.put( "info_format", "application/vnd.ogc.gml" );
-            map.put( "x", Integer.toString( gfi.getX() ) );
-            map.put( "y", Integer.toString( gfi.getY() ) );
-            map.put( "feature_count", Integer.toString( gfi.getFeatureCount() ) );
-            if ( hardParameters != null ) {
-                for ( Entry<String, String> e : hardParameters.entrySet() ) {
-                    if ( map.containsKey( e.getKey().toLowerCase() ) ) {
-                        LOG.debug( "Overriding preset parameter {}.", e.getKey() );
-                        map.put( e.getKey().toLowerCase(), e.getValue() );
-                    } else
-                        map.put( e.getKey(), e.getValue() );
-                }
+            params.put( "bbox", bbox.getMin().get0() + "," + bbox.getMin().get1() + "," + bbox.getMax().get0() + ","
+                                + bbox.getMax().get1() );
+        } else {
+            params.put( "i", Integer.toString( gfi.getX() ) );
+            params.put( "j", Integer.toString( gfi.getY() ) );
+            params.put( "crs", gfi.getCoordinateSystem().getAlias() );
+            params.put( "info_format", "text/xml" );
+            Envelope bbox = gfi.getEnvelope();
+            if ( axisFlipped( bbox.getCoordinateSystem() ) ) {
+                params.put( "bbox", bbox.getMin().get0() + "," + bbox.getMin().get1() + "," + bbox.getMax().get0()
+                                    + "," + bbox.getMax().get1() );
+            } else {
+                params.put( "bbox", bbox.getMin().get1() + "," + bbox.getMin().get0() + "," + bbox.getMax().get1()
+                                    + "," + bbox.getMax().get0() );
             }
-
-            url += toQueryString( map );
-
-            URL theUrl = new URL( url );
-            LOG.debug( "Connecting to URL " + theUrl );
-            URLConnection conn = ProxyUtils.openURLConnection( theUrl, getHttpProxyUser( true ),
-                                                               getHttpProxyPassword( true ), httpBasicUser,
-                                                               httpBasicPass );
-            conn.setConnectTimeout( connectionTimeout * 1000 );
-            conn.setReadTimeout( requestTimeout * 1000 );
-            conn.connect();
-            LOG.debug( "Connected." );
-
-            XMLInputFactory fac = XMLInputFactory.newInstance();
-            XMLStreamReader xmlReader = null;
-            try {
-                xmlReader = fac.createXMLStreamReader( conn.getInputStream() );
-                xmlReader.next();
-                // ESRI workaround
-                if ( ( xmlReader.getNamespaceURI() == null || xmlReader.getNamespaceURI().isEmpty() )
-                     && xmlReader.getLocalName().equals( "FeatureInfoResponse" ) ) {
-                    return readESRICollection( xmlReader, lays );
-                }
-                // myWMS workaround
-                if ( ( xmlReader.getNamespaceURI() == null || xmlReader.getNamespaceURI().isEmpty() )
-                     && xmlReader.getLocalName().equals( "featureInfo" ) ) {
-                    return readMyWMSCollection( xmlReader );
-                }
-                // UMN workaround
-                if ( ( xmlReader.getNamespaceURI() == null || xmlReader.getNamespaceURI().isEmpty() )
-                     && xmlReader.getLocalName().equals( "msGMLOutput" ) ) {
-                    return readUMNCollection( xmlReader );
-                }
-                GMLStreamReader reader = createGMLStreamReader( GML_2, xmlReader );
-                return reader.readFeatureCollection();
-            } catch ( Throwable e ) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } finally {
-                try {
-                    if ( xmlReader != null ) {
-                        xmlReader.close();
-                    }
-                } catch ( XMLStreamException e ) {
-                    LOG.trace( "Stack trace:", e );
-                }
-            }
-
-            return null;
         }
-        throw new IllegalArgumentException( "GetMap request for other versions than 1.1.1 are not supported yet." );
+        return params;
     }
 
-    private static FeatureCollection readESRICollection( XMLStreamReader reader, String idPrefix )
-                            throws XMLStreamException {
-        GenericFeatureCollection col = new GenericFeatureCollection();
-
-        int count = 0;
-        nextElement( reader );
-        while ( reader.isStartElement() && reader.getLocalName().equals( "FIELDS" ) ) {
-            List<PropertyType> props = new ArrayList<PropertyType>( reader.getAttributeCount() );
-            List<Property> propValues = new ArrayList<Property>( reader.getAttributeCount() );
-            for ( int i = 0; i < reader.getAttributeCount(); ++i ) {
-                String name = reader.getAttributeLocalName( i );
-                name = name.substring( name.lastIndexOf( "." ) + 1 );
-                String value = reader.getAttributeValue( i );
-                SimplePropertyType tp = new SimplePropertyType( new QName( name ), 0, 1, STRING, null, null );
-                propValues.add( new SimpleProperty( tp, value ) );
-                props.add( tp );
+    private void overrideHardParams( Map<String, String> params, Map<String, String> hardParameters ) {
+        if ( hardParameters != null ) {
+            for ( Entry<String, String> e : hardParameters.entrySet() ) {
+                if ( params.containsKey( e.getKey().toLowerCase() ) ) {
+                    LOG.debug( "Overriding preset parameter {}.", e.getKey() );
+                    params.put( e.getKey().toLowerCase(), e.getValue() );
+                } else
+                    params.put( e.getKey(), e.getValue() );
             }
-            GenericFeatureType ft = new GenericFeatureType( new QName( "feature" ), props, false );
-            col.add( new GenericFeature( ft, idPrefix + "_esri_" + ++count, propValues, null ) );
-            skipElement( reader );
-            nextElement( reader );
         }
-        LOG.debug( "Found {} features.", col.size() );
-        return col;
-    }
-
-    private static FeatureCollection readMyWMSCollection( XMLStreamReader reader )
-                            throws XMLStreamException {
-        GenericFeatureCollection col = new GenericFeatureCollection();
-
-        nextElement( reader );
-        while ( reader.isStartElement() && reader.getLocalName().equals( "query_layer" ) ) {
-
-            String ftName = reader.getAttributeValue( null, "name" );
-            int count = 0;
-
-            nextElement( reader );
-            while ( reader.isStartElement() && reader.getLocalName().equals( "object" ) ) {
-
-                List<PropertyType> props = new ArrayList<PropertyType>();
-                List<Property> propValues = new ArrayList<Property>();
-
-                nextElement( reader );
-                while ( !( reader.isEndElement() && reader.getLocalName().equals( "object" ) ) ) {
-                    String name = reader.getLocalName();
-                    String value = reader.getElementText();
-                    SimplePropertyType tp = new SimplePropertyType( new QName( name ), 0, 1, STRING, null, null );
-                    propValues.add( new SimpleProperty( tp, value ) );
-                    props.add( tp );
-                    nextElement( reader );
-                }
-
-                GenericFeatureType ft = new GenericFeatureType( new QName( ftName ), props, false );
-                col.add( new GenericFeature( ft, "ftName_" + ++count, propValues, null ) );
-                nextElement( reader );
-            }
-            nextElement( reader );
-
-        }
-
-        return col;
-    }
-
-    private static FeatureCollection readUMNCollection( XMLStreamReader reader )
-                            throws XMLStreamException {
-        GenericFeatureCollection col = new GenericFeatureCollection();
-        nextElement( reader );
-
-        String ftName = reader.getLocalName();
-        String singleFeatureTagName = ftName.split( "_" )[0] + "_feature";
-
-        while ( reader.isStartElement() && reader.getLocalName().equals( ftName ) ) {
-
-            int count = 0;
-            nextElement( reader );
-
-            // gml:name seems to be an optional element
-            if ( reader.getLocalName().equals( "name" ) ) {
-                skipElement( reader );
-                reader.nextTag();
-            }
-
-            while ( reader.isStartElement() && reader.getLocalName().equals( singleFeatureTagName ) ) {
-                List<PropertyType> props = new ArrayList<PropertyType>();
-                List<Property> propValues = new ArrayList<Property>();
-
-                nextElement( reader );
-                while ( !( reader.isEndElement() && reader.getLocalName().equals( singleFeatureTagName ) ) ) {
-
-                    // Skip boundedBy
-                    if ( reader.isStartElement() && reader.getLocalName().equals( "boundedBy" ) ) {
-                        XMLStreamUtils.skipElement( reader );
-                        nextElement( reader );
-                    }
-
-                    String name = reader.getLocalName();
-                    String value = reader.getElementText();
-                    SimplePropertyType tp = new SimplePropertyType( new QName( name ), 0, 1, STRING, null, null );
-                    propValues.add( new SimpleProperty( tp, value ) );
-                    props.add( tp );
-                    nextElement( reader );
-                }
-                GenericFeatureType ft = new GenericFeatureType( new QName( ftName ), props, false );
-                col.add( new GenericFeature( ft, "ftName_" + ++count, propValues, null ) );
-                nextElement( reader );
-            }
-            nextElement( reader );
-
-        }
-
-        return col;
     }
 
     // -----------------------------------------------------------------------
@@ -691,9 +553,9 @@ public class WMSClient extends AbstractOWSClient<WMSCapabilitiesAdapter> {
 
                 URL theUrl = new URL( url );
                 LOG.debug( "Connecting to URL " + theUrl );
-                URLConnection conn = ProxyUtils.openURLConnection( theUrl, ProxyUtils.getHttpProxyUser( true ),
-                                                                   ProxyUtils.getHttpProxyPassword( true ),
-                                                                   httpBasicUser, httpBasicPass );
+                URLConnection conn = ProxySettings.openURLConnection( theUrl, ProxySettings.getHttpProxyUser( true ),
+                                                                      ProxySettings.getHttpProxyPassword( true ),
+                                                                      httpBasicUser, httpBasicPass );
                 conn.setConnectTimeout( connectionTimeout * 1000 );
                 conn.setReadTimeout( requestTimeout * 1000 );
                 conn.connect();
@@ -707,12 +569,12 @@ public class WMSClient extends AbstractOWSClient<WMSCapabilitiesAdapter> {
                     res.first = IMAGE.work( conn.getInputStream() );
                 } else if ( conn.getContentType() != null
                             && conn.getContentType().startsWith( "application/vnd.ogc.se_xml" ) ) {
-                    res.second = XML.work( conn.getInputStream() ).toString();
+                    res.second = XmlHttpUtils.XML.work( conn.getInputStream() ).toString();
                 } else { // try and find out the hard way
                     res.first = IMAGE.work( conn.getInputStream() );
                     if ( res.first == null ) {
                         conn = theUrl.openConnection();
-                        res.second = XML.work( conn.getInputStream() ).toString();
+                        res.second = XmlHttpUtils.XML.work( conn.getInputStream() ).toString();
                     }
                 }
 
@@ -729,7 +591,7 @@ public class WMSClient extends AbstractOWSClient<WMSCapabilitiesAdapter> {
                     LOG.debug( "Performing raster transformation." );
                     RasterGeoReference env = RasterGeoReference.create( OUTER, reqEnv, reqWidth, reqHeight );
                     RasterData data = rasterDataFromImage( res.first );
-                    SimpleRaster raster = new SimpleRaster( data, reqEnv, env );
+                    SimpleRaster raster = new SimpleRaster( data, reqEnv, env, null );
 
                     SimpleRaster transformed = rtrans.transform( raster, bbox, width, height, BILINEAR ).getAsSimpleRaster();
 
@@ -851,7 +713,7 @@ public class WMSClient extends AbstractOWSClient<WMSCapabilitiesAdapter> {
     }
 
     public InputStream getMap( GetMap getMap )
-                            throws IOException {
+                            throws IOException, OWSException {
         Map<String, String> map = new HashMap<String, String>();
         map.put( "request", "GetMap" );
         map.put( "version", wmsVersion.toString() );
@@ -869,8 +731,7 @@ public class WMSClient extends AbstractOWSClient<WMSCapabilitiesAdapter> {
         map.put( "height", Integer.toString( getMap.getHeight() ) );
         map.put( "transparent", "true" );
         Envelope bbox = getMap.getBoundingBox();
-        if ( wmsVersion.equals( VERSION_111 )
-             || getMap.getCoordinateSystem().getAxis()[0].getOrientation() == Axis.AO_EAST ) {
+        if ( axisFlipped( bbox.getCoordinateSystem() ) ) {
             map.put( "bbox", bbox.getMin().get0() + "," + bbox.getMin().get1() + "," + bbox.getMax().get0() + ","
                              + bbox.getMax().get1() );
         } else {
@@ -884,6 +745,16 @@ public class WMSClient extends AbstractOWSClient<WMSCapabilitiesAdapter> {
         }
         map.put( "format", getMap.getFormat() );
 
+        if ( getMap.getOverriddenParameters() != null ) {
+            for ( Entry<String, String> e : getMap.getOverriddenParameters().entrySet() ) {
+                if ( map.containsKey( e.getKey().toLowerCase() ) ) {
+                    LOG.debug( "Overriding preset parameter {}.", e.getKey() );
+                    map.put( e.getKey().toLowerCase(), e.getValue() );
+                } else
+                    map.put( e.getKey(), e.getValue() );
+            }
+        }
+
         String url = getAddress( GetMap, true );
         if ( url == null ) {
             LOG.warn( get( "WMSCLIENT.SERVER_NO_GETMAP_URL" ), "Capabilities: ", capaDoc );
@@ -894,14 +765,33 @@ public class WMSClient extends AbstractOWSClient<WMSCapabilitiesAdapter> {
 
         URL theUrl = new URL( query );
         LOG.debug( "Connecting to URL " + theUrl );
-        URLConnection conn = ProxyUtils.openURLConnection( theUrl, getHttpProxyUser( true ),
-                                                           getHttpProxyPassword( true ), httpBasicUser, httpBasicPass );
+        URLConnection conn = ProxySettings.openURLConnection( theUrl, getHttpProxyUser( true ),
+                                                              getHttpProxyPassword( true ), httpBasicUser,
+                                                              httpBasicPass );
         conn.setConnectTimeout( connectionTimeout * 1000 );
         conn.setReadTimeout( requestTimeout * 1000 );
         conn.connect();
         LOG.debug( "Connected." );
 
+        String fld = conn.getHeaderField( "Content-Type" );
+        if ( fld != null && !( fld.startsWith( getMap.getFormat() ) || fld.startsWith( "image" ) ) ) {
+            XMLInputFactory fac = XMLInputFactory.newInstance();
+            try {
+                OWSExceptionReport rep = OWSExceptionReader.parseExceptionReport( fac.createXMLStreamReader( conn.getInputStream() ) );
+                throw rep.getExceptions().get( 0 );
+            } catch ( Throwable e ) {
+                throw new OWSException( e.getMessage(), e, NO_APPLICABLE_CODE );
+            }
+        }
+
         return conn.getInputStream();
+    }
+
+    private boolean axisFlipped( ICRS crs ) {
+        if ( crs.getAlias().startsWith( "EPSG:" ) ) {
+            crs = CRSManager.getCRSRef( "urn:ogc:def:crs:EPSG::" + crs.getAlias().substring( 5 ) );
+        }
+        return wmsVersion.equals( VERSION_111 ) || crs.getAxis()[0].getOrientation() == Axis.AO_EAST;
     }
 
     protected WMSCapabilitiesAdapter getCapabilitiesAdapter( OMElement root, String version )
@@ -910,6 +800,7 @@ public class WMSClient extends AbstractOWSClient<WMSCapabilitiesAdapter> {
             wmsVersion = Version.parseVersion( version );
         } else {
             LOG.warn( "No version attribute in WMS capabilities document. Defaulting to 1.1.1." );
+            wmsVersion = VERSION_111;
         }
         if ( VERSION_111.equals( wmsVersion ) ) {
             return new WMS111CapabilitiesAdapter( root );
@@ -974,4 +865,13 @@ public class WMSClient extends AbstractOWSClient<WMSCapabilitiesAdapter> {
     public OMElement getExtendedCapabilities( String prefix, String localName, String namespaceUri ) {
         return capaDoc.getExtendedCapabilities( prefix, localName, namespaceUri );
     }
+
+    public int getConnectTimeout() {
+        return connectionTimeout;
+    }
+
+    public int getReadTimeout() {
+        return requestTimeout;
+    }
+
 }

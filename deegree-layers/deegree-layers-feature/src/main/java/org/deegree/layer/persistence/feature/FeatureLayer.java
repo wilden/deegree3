@@ -117,6 +117,7 @@ public class FeatureLayer extends AbstractLayer {
             throw new OWSException( "The style " + ref.getName() + " is not defined for layer "
                                     + getMetadata().getName() + ".", "StyleNotDefined", "styles" );
         }
+        style = style.filter( query.getScale() );
 
         OperatorFilter filter = buildFilterForMap( this.filter, style, query, dimFilterBuilder, headers );
 
@@ -173,7 +174,7 @@ public class FeatureLayer extends AbstractLayer {
 
         filter = (OperatorFilter) Filters.addBBoxConstraint( clickBox, filter, null );
 
-        QName featureType = style == null ? this.featureType : style.getFeatureType();
+        QName featureType = this.featureType == null ? style.getFeatureType() : this.featureType;
 
         filter = Filters.repair( filter, AppSchemas.collectProperyNames( featureStore.getSchema(), featureType ) );
 

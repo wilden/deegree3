@@ -12,7 +12,7 @@
   <parent>
     <groupId>org.deegree</groupId>
     <artifactId>deegree-workspaces</artifactId>
-    <version>3.2-pre13-SNAPSHOT</version>
+    <version>3.4-pre6-SNAPSHOT</version>
   </parent>
 
   <repositories>
@@ -29,12 +29,6 @@
   </repositories>
 
   <dependencies>
-    <dependency>
-      <groupId>org.deegree</groupId>
-      <artifactId>deegree-workspace-base</artifactId>
-      <version>${project.version}</version>
-      <type>deegree-workspace</type>
-    </dependency>
     <dependency>
       <groupId>org.deegree</groupId>
       <artifactId>utah-demodata</artifactId>

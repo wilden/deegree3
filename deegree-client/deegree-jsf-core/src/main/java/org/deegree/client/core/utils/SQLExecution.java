@@ -47,8 +47,10 @@ import javax.faces.application.FacesMessage;
 import javax.faces.context.FacesContext;
 
 import org.deegree.commons.annotations.LoggingNotes;
-import org.deegree.commons.jdbc.ConnectionManager;
 import org.deegree.commons.utils.JDBCUtils;
+import org.deegree.db.ConnectionProvider;
+import org.deegree.db.ConnectionProviderProvider;
+import org.deegree.workspace.Workspace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,10 +69,13 @@ public class SQLExecution implements Serializable {
 
     private String backOutcome;
 
-    public SQLExecution( String connId, String[] sqlStatements, String backOutcome ) {
+    private Workspace workspace;
+
+    public SQLExecution( String connId, String[] sqlStatements, String backOutcome, Workspace workspace ) {
         this.connId = connId;
         this.sqlStatements = sqlStatements;
         this.backOutcome = backOutcome;
+        this.workspace = workspace;
     }
 
     public String getMessage() {
@@ -102,7 +107,8 @@ public class SQLExecution implements Serializable {
         Connection conn = null;
         Statement stmt = null;
         try {
-            conn = ConnectionManager.getConnection( connId );
+            ConnectionProvider prov = workspace.getResource( ConnectionProviderProvider.class, connId );
+            conn = prov.getConnection();
             conn.setAutoCommit( false );
             stmt = conn.createStatement();
             for ( String sql : sqlStatements ) {
@@ -110,8 +116,9 @@ public class SQLExecution implements Serializable {
                 stmt.execute( sql );
             }
             conn.commit();
-            FacesMessage fm = new FacesMessage( SEVERITY_INFO, "Executed " + sqlStatements.length + " statements successfully.", null );
-            FacesContext.getCurrentInstance().addMessage( null, fm );            
+            FacesMessage fm = new FacesMessage( SEVERITY_INFO, "Executed " + sqlStatements.length
+                                                               + " statements successfully.", null );
+            FacesContext.getCurrentInstance().addMessage( null, fm );
         } catch ( Throwable t ) {
             if ( conn != null ) {
                 try {

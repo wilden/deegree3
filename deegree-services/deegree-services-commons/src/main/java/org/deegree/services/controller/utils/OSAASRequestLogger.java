@@ -35,7 +35,6 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.services.controller.utils;
 
-import static org.deegree.commons.jdbc.ConnectionManager.getConnection;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.File;
@@ -47,8 +46,12 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 
 import org.deegree.commons.utils.JDBCUtils;
+import org.deegree.db.ConnectionProvider;
+import org.deegree.db.ConnectionProviderProvider;
 import org.deegree.services.controller.Credentials;
+import org.deegree.services.controller.OGCFrontController;
 import org.deegree.services.controller.RequestLogger;
+import org.deegree.workspace.Workspace;
 import org.slf4j.Logger;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -92,7 +95,9 @@ public class OSAASRequestLogger implements RequestLogger {
         Connection conn = null;
         PreparedStatement stmt = null;
         try {
-            conn = getConnection( connid );
+            Workspace workspace = OGCFrontController.getServiceWorkspace().getNewWorkspace();
+            ConnectionProvider prov = workspace.getResource( ConnectionProviderProvider.class, connid );
+            conn = prov.getConnection();
             stmt = conn.prepareStatement( "insert into " + table + "(wfsidintern,wfsidextern,username,starttime"
                                           + ",endtime,requestformat,rawrequest) values (?,?,?,?,?,?,?)" );
             String[] ss = address.split( "\\?" );
@@ -133,7 +138,9 @@ public class OSAASRequestLogger implements RequestLogger {
         PreparedStatement stmt = null;
         FileInputStream is = null;
         try {
-            conn = getConnection( connid );
+            Workspace workspace = OGCFrontController.getServiceWorkspace().getNewWorkspace();
+            ConnectionProvider prov = workspace.getResource( ConnectionProviderProvider.class, connid );
+            conn = prov.getConnection();
             stmt = conn.prepareStatement( "insert into " + table + "(wfsidintern,wfsidextern,username,starttime"
                                           + ",endtime,requestformat,rawrequest) values (?,?,?,?,?,?,?)" );
             String[] ss = address.split( "\\?" );

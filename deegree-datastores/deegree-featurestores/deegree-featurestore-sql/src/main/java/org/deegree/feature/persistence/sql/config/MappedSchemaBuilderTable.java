@@ -36,7 +36,6 @@
 package org.deegree.feature.persistence.sql.config;
 
 import static javax.xml.XMLConstants.DEFAULT_NS_PREFIX;
-import static javax.xml.XMLConstants.NULL_NS_URI;
 import static org.deegree.commons.tom.primitive.BaseType.valueOf;
 import static org.deegree.feature.types.property.GeometryPropertyType.CoordinateDimension.DIM_2;
 import static org.deegree.feature.types.property.GeometryPropertyType.CoordinateDimension.DIM_3;
@@ -58,7 +57,6 @@ import java.util.Set;
 import javax.xml.bind.JAXBElement;
 import javax.xml.namespace.QName;
 
-import org.deegree.commons.jdbc.ConnectionManager;
 import org.deegree.commons.jdbc.SQLIdentifier;
 import org.deegree.commons.jdbc.TableName;
 import org.deegree.commons.tom.gml.property.PropertyType;
@@ -68,6 +66,8 @@ import org.deegree.commons.utils.JDBCUtils;
 import org.deegree.commons.utils.Pair;
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.persistence.CRSManager;
+import org.deegree.db.ConnectionProvider;
+import org.deegree.db.ConnectionProviderProvider;
 import org.deegree.feature.persistence.FeatureStoreException;
 import org.deegree.feature.persistence.sql.FeatureTypeMapping;
 import org.deegree.feature.persistence.sql.GeometryStorageParams;
@@ -97,6 +97,7 @@ import org.deegree.gml.schema.GMLSchemaInfoSet;
 import org.deegree.sqldialect.SQLDialect;
 import org.deegree.sqldialect.filter.DBField;
 import org.deegree.sqldialect.filter.MappingExpression;
+import org.deegree.workspace.Workspace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -138,9 +139,11 @@ public class MappedSchemaBuilderTable extends AbstractMappedSchemaBuilder {
      * @throws FeatureStoreException
      */
     public MappedSchemaBuilderTable( String jdbcConnId, List<FeatureTypeMappingJAXB> ftDecls, SQLDialect dialect,
-                                     boolean deleteCascadingByDB ) throws SQLException, FeatureStoreException {
+                                     boolean deleteCascadingByDB, Workspace workspace ) throws SQLException,
+                            FeatureStoreException {
         this.dialect = dialect;
-        conn = ConnectionManager.getConnection( jdbcConnId );
+        ConnectionProvider prov = workspace.getResource( ConnectionProviderProvider.class, jdbcConnId );
+        conn = prov.getConnection();
         try {
             for ( FeatureTypeMappingJAXB ftDecl : ftDecls ) {
                 process( ftDecl );
@@ -435,7 +438,7 @@ public class MappedSchemaBuilderTable extends AbstractMappedSchemaBuilder {
             prefix = defaultPrefix;
             namespace = defaultNamespace;
         }
-        if ( NULL_NS_URI.equals( namespace ) ) {
+        if ( "".equals( namespace ) ) {
             namespace = defaultNamespace;
         }
         return new QName( namespace, localPart, prefix );

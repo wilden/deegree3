@@ -42,19 +42,20 @@
 package org.deegree.services.wmts.controller;
 
 import static org.deegree.commons.ows.exception.OWSException.NO_APPLICABLE_CODE;
-import static org.deegree.commons.ows.exception.OWSException.OPERATION_NOT_SUPPORTED;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.util.Map;
 
 import javax.servlet.ServletException;
 
-import org.deegree.commons.config.DeegreeWorkspace;
 import org.deegree.commons.ows.exception.OWSException;
 import org.deegree.commons.tom.ows.Version;
 import org.deegree.protocol.wmts.WMTSConstants.WMTSRequestType;
 import org.deegree.services.controller.utils.HttpResponseBuffer;
 import org.deegree.services.jaxb.metadata.DeegreeServicesMetadataType;
+import org.deegree.services.wmts.jaxb.DeegreeWMTS;
+import org.deegree.workspace.ResourceLocation;
+import org.deegree.workspace.Workspace;
 import org.slf4j.Logger;
 
 /**
@@ -74,10 +75,14 @@ class WmtsRequestDispatcher {
 
     private TileHandler tileHandler;
 
-    WmtsRequestDispatcher( DeegreeServicesMetadataType mainMetadataConf, DeegreeWorkspace workspace,
-                           WmtsBuilder builder, String wmtsId ) {
+    private FeatureInfoHandler featureInfoHandler;
+
+    WmtsRequestDispatcher( DeegreeWMTS controllerConf, DeegreeServicesMetadataType mainMetadataConf,
+                           Workspace workspace, WmtsBuilder builder, String wmtsId, ResourceLocation<?> location ) {
+        featureInfoHandler = new FeatureInfoHandler( builder.getFeatureInfoFormatsConf(), location, workspace,
+                                                     builder.getThemes() );
         capabilitiesHandler = new CapabilitiesHandler( mainMetadataConf, workspace, builder.getMetadataUrlTemplate(),
-                                                       wmtsId, builder.getThemes() );
+                                                       wmtsId, builder.getThemes(), featureInfoHandler.getManager() );
         tileHandler = new TileHandler( builder.getThemes() );
     }
 
@@ -86,6 +91,7 @@ class WmtsRequestDispatcher {
         switch ( req ) {
         case GetCapabilities:
             try {
+                response.setContentType( "application/xml" );
                 capabilitiesHandler.handleGetCapabilities( map, response.getXMLWriter() );
             } catch ( Throwable e ) {
                 LOG.trace( "Stack trace:", e );
@@ -93,7 +99,15 @@ class WmtsRequestDispatcher {
             }
             break;
         case GetFeatureInfo:
-            throw new OWSException( "The GetFeatureInfo operation is not supported yet.", OPERATION_NOT_SUPPORTED );
+            try {
+                featureInfoHandler.getFeatureInfo( map, response );
+            } catch ( OWSException e ) {
+                throw e;
+            } catch ( Throwable e ) {
+                LOG.trace( "Stack trace:", e );
+                throw new OWSException( e.getMessage(), NO_APPLICABLE_CODE );
+            }
+            break;
         case GetTile:
             tileHandler.getTile( map, response );
             break;

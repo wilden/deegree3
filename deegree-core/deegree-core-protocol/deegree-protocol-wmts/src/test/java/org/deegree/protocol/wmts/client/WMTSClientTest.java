@@ -35,7 +35,7 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.protocol.wmts.client;
 
-import static junit.framework.Assert.assertNotNull;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
 import java.net.URL;
@@ -149,6 +149,7 @@ public class WMTSClientTest {
     }
 
     private GetTile buildExampleRequest() {
-        return new GetTile( "medford:hydro", "_null", "image/png", "EPSG:900913", "EPSG:900913:24", 6203400, 2660870 );
+        return new GetTile( "medford:hydro", "_null", "image/png", "EPSG:900913", "EPSG:900913:24", 6203400, 2660870,
+                            null );
     }
 }

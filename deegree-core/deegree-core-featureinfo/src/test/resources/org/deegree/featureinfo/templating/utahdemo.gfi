@@ -1,0 +1,20 @@
+<?template start>
+<html>
+<body>
+<ul>
+<?feature *:myfeaturetemplate>
+<?feature test*:myfeaturetemplate>
+<?feature *test:myfeaturetemplate>
+<?link:http://something/else:Dokument herunterladen>
+<?link:http://something:8080/else:Dokument herunterladen>
+<?link:http://something/else:>
+<?link:http://something:8080/else:>
+</ul>
+</body>
+</html>
+
+<?template myfeaturetemplate>
+<li>I have a <?name> feature and properties <?property *:mypropertytemplate></li>
+
+<?template mypropertytemplate>
+<?name>=<?value>
